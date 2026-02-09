@@ -1,0 +1,53 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+{#include admin-layout}
+{#content}
+<div class="support-header">
+    <h1>Entitlements</h1>
+    <a class="action-button" href="/admin/entitlements/create">Create</a>
+</div>
+<table>
+    <thead>
+    <tr>
+        <th>Name <button class="sort-button" type="button" onclick="sortTable(this, 0)">↕</button></th>
+        <th>Description <button class="sort-button" type="button" onclick="sortTable(this, 1)">↕</button></th>
+        <th>Price <button class="sort-button" type="button" onclick="sortTable(this, 2)">↕</button></th>
+        <th>Actions <button class="sort-button" type="button" onclick="sortTable(this, 3)">↕</button></th>
+    </tr>
+    </thead>
+    <tbody>
+    {#for entitlement in entitlements}
+    <tr>
+        <td>{entitlement.name}</td>
+        <td>{entitlement.description}</td>
+        <td>{entitlement.price}</td>
+        <td data-sort-value="{entitlement.id}">
+            <a class="icon-link" href="/admin/entitlements/{entitlement.id}/edit" title="Edit" aria-label="Edit">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" />
+                    <path d="M14.06 4.94l3.75 3.75" />
+                </svg>
+            </a>
+            <form class="inline" method="post" action="/admin/entitlements/{entitlement.id}/delete">
+                <button class="icon-button" type="submit" title="Remove" aria-label="Remove">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 6h18" />
+                        <path d="M8 6V4h8v2" />
+                        <path d="M7 6l1 14h8l1-14" />
+                        <path d="M10 10v8M14 10v8" />
+                    </svg>
+                </button>
+            </form>
+        </td>
+    </tr>
+    {/for}
+    </tbody>
+</table>
+{/content}
+{/include}

@@ -1,0 +1,51 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+{#include layout}
+{#content}
+<h1>Companies</h1>
+<p><a href="/companies/new">New Company</a></p>
+<table>
+    <thead>
+    <tr>
+        <th>ID <button class="sort-button" type="button" onclick="sortTable(this, 0)">↕</button></th>
+        <th>Name <button class="sort-button" type="button" onclick="sortTable(this, 1)">↕</button></th>
+        <th>Address1 <button class="sort-button" type="button" onclick="sortTable(this, 2)">↕</button></th>
+        <th>Address2 <button class="sort-button" type="button" onclick="sortTable(this, 3)">↕</button></th>
+        <th>Users <button class="sort-button" type="button" onclick="sortTable(this, 4)">↕</button></th>
+        <th>City <button class="sort-button" type="button" onclick="sortTable(this, 5)">↕</button></th>
+        <th>State <button class="sort-button" type="button" onclick="sortTable(this, 6)">↕</button></th>
+        <th>Zip <button class="sort-button" type="button" onclick="sortTable(this, 7)">↕</button></th>
+        <th>Country <button class="sort-button" type="button" onclick="sortTable(this, 8)">↕</button></th>
+        <th>Actions <button class="sort-button" type="button" onclick="sortTable(this, 9)">↕</button></th>
+    </tr>
+    </thead>
+    <tbody>
+    {#for company in companies}
+    <tr>
+        <td>{company.id}</td>
+        <td>{company.name}</td>
+        <td>{company.address1}</td>
+        <td>{company.address2}</td>
+        <td>{company.emailsDisplay.raw}</td>
+        <td>{company.city}</td>
+        <td>{company.state}</td>
+        <td>{company.zip}</td>
+        <td>{company.country}</td>
+        <td data-sort-value="{company.id}">
+            <a href="/companies/{company.id}/edit">Edit</a>
+            <form class="inline" method="post" action="/companies/{company.id}/delete">
+                <button type="submit">Delete</button>
+            </form>
+        </td>
+    </tr>
+    {/for}
+    </tbody>
+</table>
+{/content}
+{/include}

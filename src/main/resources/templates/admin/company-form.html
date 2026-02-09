@@ -1,0 +1,432 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+{#include admin-layout}
+{#content}
+<div class="form-card" style="max-width: 980px;">
+    <h1>{title}</h1>
+    <form method="post" action="{action}" onsubmit="selectAll('selectedUsers'); selectAll('selectedTams'); syncEntitlementHidden()">
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start;">
+            <div>
+                <div>
+                    <label>Name
+                        <input type="text" name="name" value="{company.name}" required>
+                    </label>
+                </div>
+                <div>
+                    <label>Address1
+                        <input type="text" name="address1" value="{company.address1}">
+                    </label>
+                </div>
+                <div>
+                    <label>Address2
+                        <input type="text" name="address2" value="{company.address2}">
+                    </label>
+                </div>
+                <div>
+                    <label>City
+                        <input type="text" name="city" value="{company.city}">
+                    </label>
+                </div>
+                <div>
+                    <label>State
+                        <input type="text" name="state" value="{company.state}">
+                    </label>
+                </div>
+                <div>
+                    <label>Zip
+                        <input type="text" name="zip" value="{company.zip}">
+                    </label>
+                </div>
+                <div>
+                    <label>Country
+                        <select name="country" required>
+                    <option value="Afghanistan" {#if company.country == 'Afghanistan'}selected{/if}>Afghanistan</option>
+                    <option value="Albania" {#if company.country == 'Albania'}selected{/if}>Albania</option>
+                    <option value="Algeria" {#if company.country == 'Algeria'}selected{/if}>Algeria</option>
+                    <option value="Andorra" {#if company.country == 'Andorra'}selected{/if}>Andorra</option>
+                    <option value="Angola" {#if company.country == 'Angola'}selected{/if}>Angola</option>
+                    <option value="Antigua and Barbuda" {#if company.country == 'Antigua and Barbuda'}selected{/if}>Antigua and Barbuda</option>
+                    <option value="Argentina" {#if company.country == 'Argentina'}selected{/if}>Argentina</option>
+                    <option value="Armenia" {#if company.country == 'Armenia'}selected{/if}>Armenia</option>
+                    <option value="Australia" {#if company.country == 'Australia'}selected{/if}>Australia</option>
+                    <option value="Austria" {#if company.country == 'Austria'}selected{/if}>Austria</option>
+                    <option value="Azerbaijan" {#if company.country == 'Azerbaijan'}selected{/if}>Azerbaijan</option>
+                    <option value="Bahamas" {#if company.country == 'Bahamas'}selected{/if}>Bahamas</option>
+                    <option value="Bahrain" {#if company.country == 'Bahrain'}selected{/if}>Bahrain</option>
+                    <option value="Bangladesh" {#if company.country == 'Bangladesh'}selected{/if}>Bangladesh</option>
+                    <option value="Barbados" {#if company.country == 'Barbados'}selected{/if}>Barbados</option>
+                    <option value="Belarus" {#if company.country == 'Belarus'}selected{/if}>Belarus</option>
+                    <option value="Belgium" {#if company.country == 'Belgium'}selected{/if}>Belgium</option>
+                    <option value="Belize" {#if company.country == 'Belize'}selected{/if}>Belize</option>
+                    <option value="Benin" {#if company.country == 'Benin'}selected{/if}>Benin</option>
+                    <option value="Bhutan" {#if company.country == 'Bhutan'}selected{/if}>Bhutan</option>
+                    <option value="Bolivia" {#if company.country == 'Bolivia'}selected{/if}>Bolivia</option>
+                    <option value="Bosnia and Herzegovina" {#if company.country == 'Bosnia and Herzegovina'}selected{/if}>Bosnia and Herzegovina</option>
+                    <option value="Botswana" {#if company.country == 'Botswana'}selected{/if}>Botswana</option>
+                    <option value="Brazil" {#if company.country == 'Brazil'}selected{/if}>Brazil</option>
+                    <option value="Brunei" {#if company.country == 'Brunei'}selected{/if}>Brunei</option>
+                    <option value="Bulgaria" {#if company.country == 'Bulgaria'}selected{/if}>Bulgaria</option>
+                    <option value="Burkina Faso" {#if company.country == 'Burkina Faso'}selected{/if}>Burkina Faso</option>
+                    <option value="Burundi" {#if company.country == 'Burundi'}selected{/if}>Burundi</option>
+                    <option value="Cabo Verde" {#if company.country == 'Cabo Verde'}selected{/if}>Cabo Verde</option>
+                    <option value="Cambodia" {#if company.country == 'Cambodia'}selected{/if}>Cambodia</option>
+                    <option value="Cameroon" {#if company.country == 'Cameroon'}selected{/if}>Cameroon</option>
+                    <option value="Canada" {#if company.country == 'Canada'}selected{/if}>Canada</option>
+                    <option value="Central African Republic" {#if company.country == 'Central African Republic'}selected{/if}>Central African Republic</option>
+                    <option value="Chad" {#if company.country == 'Chad'}selected{/if}>Chad</option>
+                    <option value="Chile" {#if company.country == 'Chile'}selected{/if}>Chile</option>
+                    <option value="China" {#if company.country == 'China'}selected{/if}>China</option>
+                    <option value="Colombia" {#if company.country == 'Colombia'}selected{/if}>Colombia</option>
+                    <option value="Comoros" {#if company.country == 'Comoros'}selected{/if}>Comoros</option>
+                    <option value="Congo (Congo-Brazzaville)" {#if company.country == 'Congo (Congo-Brazzaville)'}selected{/if}>Congo (Congo-Brazzaville)</option>
+                    <option value="Costa Rica" {#if company.country == 'Costa Rica'}selected{/if}>Costa Rica</option>
+                    <option value="Côte d'Ivoire" {#if company.country == 'Côte d''Ivoire'}selected{/if}>Côte d'Ivoire</option>
+                    <option value="Croatia" {#if company.country == 'Croatia'}selected{/if}>Croatia</option>
+                    <option value="Cuba" {#if company.country == 'Cuba'}selected{/if}>Cuba</option>
+                    <option value="Cyprus" {#if company.country == 'Cyprus'}selected{/if}>Cyprus</option>
+                    <option value="Czechia (Czech Republic)" {#if company.country == 'Czechia (Czech Republic)'}selected{/if}>Czechia (Czech Republic)</option>
+                    <option value="Democratic Republic of the Congo" {#if company.country == 'Democratic Republic of the Congo'}selected{/if}>Democratic Republic of the Congo</option>
+                    <option value="Denmark" {#if company.country == 'Denmark'}selected{/if}>Denmark</option>
+                    <option value="Djibouti" {#if company.country == 'Djibouti'}selected{/if}>Djibouti</option>
+                    <option value="Dominica" {#if company.country == 'Dominica'}selected{/if}>Dominica</option>
+                    <option value="Dominican Republic" {#if company.country == 'Dominican Republic'}selected{/if}>Dominican Republic</option>
+                    <option value="Ecuador" {#if company.country == 'Ecuador'}selected{/if}>Ecuador</option>
+                    <option value="Egypt" {#if company.country == 'Egypt'}selected{/if}>Egypt</option>
+                    <option value="El Salvador" {#if company.country == 'El Salvador'}selected{/if}>El Salvador</option>
+                    <option value="Equatorial Guinea" {#if company.country == 'Equatorial Guinea'}selected{/if}>Equatorial Guinea</option>
+                    <option value="Eritrea" {#if company.country == 'Eritrea'}selected{/if}>Eritrea</option>
+                    <option value="Estonia" {#if company.country == 'Estonia'}selected{/if}>Estonia</option>
+                    <option value="Eswatini (fmr. Swaziland)" {#if company.country == 'Eswatini (fmr. Swaziland)'}selected{/if}>Eswatini (fmr. Swaziland)</option>
+                    <option value="Ethiopia" {#if company.country == 'Ethiopia'}selected{/if}>Ethiopia</option>
+                    <option value="Fiji" {#if company.country == 'Fiji'}selected{/if}>Fiji</option>
+                    <option value="Finland" {#if company.country == 'Finland'}selected{/if}>Finland</option>
+                    <option value="France" {#if company.country == 'France'}selected{/if}>France</option>
+                    <option value="Gabon" {#if company.country == 'Gabon'}selected{/if}>Gabon</option>
+                    <option value="Gambia" {#if company.country == 'Gambia'}selected{/if}>Gambia</option>
+                    <option value="Georgia" {#if company.country == 'Georgia'}selected{/if}>Georgia</option>
+                    <option value="Germany" {#if company.country == 'Germany'}selected{/if}>Germany</option>
+                    <option value="Ghana" {#if company.country == 'Ghana'}selected{/if}>Ghana</option>
+                    <option value="Greece" {#if company.country == 'Greece'}selected{/if}>Greece</option>
+                    <option value="Grenada" {#if company.country == 'Grenada'}selected{/if}>Grenada</option>
+                    <option value="Guatemala" {#if company.country == 'Guatemala'}selected{/if}>Guatemala</option>
+                    <option value="Guinea" {#if company.country == 'Guinea'}selected{/if}>Guinea</option>
+                    <option value="Guinea-Bissau" {#if company.country == 'Guinea-Bissau'}selected{/if}>Guinea-Bissau</option>
+                    <option value="Guyana" {#if company.country == 'Guyana'}selected{/if}>Guyana</option>
+                    <option value="Haiti" {#if company.country == 'Haiti'}selected{/if}>Haiti</option>
+                    <option value="Holy See" {#if company.country == 'Holy See'}selected{/if}>Holy See</option>
+                    <option value="Honduras" {#if company.country == 'Honduras'}selected{/if}>Honduras</option>
+                    <option value="Hungary" {#if company.country == 'Hungary'}selected{/if}>Hungary</option>
+                    <option value="Iceland" {#if company.country == 'Iceland'}selected{/if}>Iceland</option>
+                    <option value="India" {#if company.country == 'India'}selected{/if}>India</option>
+                    <option value="Indonesia" {#if company.country == 'Indonesia'}selected{/if}>Indonesia</option>
+                    <option value="Iran" {#if company.country == 'Iran'}selected{/if}>Iran</option>
+                    <option value="Iraq" {#if company.country == 'Iraq'}selected{/if}>Iraq</option>
+                    <option value="Ireland" {#if company.country == 'Ireland'}selected{/if}>Ireland</option>
+                    <option value="Israel" {#if company.country == 'Israel'}selected{/if}>Israel</option>
+                    <option value="Italy" {#if company.country == 'Italy'}selected{/if}>Italy</option>
+                    <option value="Jamaica" {#if company.country == 'Jamaica'}selected{/if}>Jamaica</option>
+                    <option value="Japan" {#if company.country == 'Japan'}selected{/if}>Japan</option>
+                    <option value="Jordan" {#if company.country == 'Jordan'}selected{/if}>Jordan</option>
+                    <option value="Kazakhstan" {#if company.country == 'Kazakhstan'}selected{/if}>Kazakhstan</option>
+                    <option value="Kenya" {#if company.country == 'Kenya'}selected{/if}>Kenya</option>
+                    <option value="Kiribati" {#if company.country == 'Kiribati'}selected{/if}>Kiribati</option>
+                    <option value="Kuwait" {#if company.country == 'Kuwait'}selected{/if}>Kuwait</option>
+                    <option value="Kyrgyzstan" {#if company.country == 'Kyrgyzstan'}selected{/if}>Kyrgyzstan</option>
+                    <option value="Laos" {#if company.country == 'Laos'}selected{/if}>Laos</option>
+                    <option value="Latvia" {#if company.country == 'Latvia'}selected{/if}>Latvia</option>
+                    <option value="Lebanon" {#if company.country == 'Lebanon'}selected{/if}>Lebanon</option>
+                    <option value="Lesotho" {#if company.country == 'Lesotho'}selected{/if}>Lesotho</option>
+                    <option value="Liberia" {#if company.country == 'Liberia'}selected{/if}>Liberia</option>
+                    <option value="Libya" {#if company.country == 'Libya'}selected{/if}>Libya</option>
+                    <option value="Liechtenstein" {#if company.country == 'Liechtenstein'}selected{/if}>Liechtenstein</option>
+                    <option value="Lithuania" {#if company.country == 'Lithuania'}selected{/if}>Lithuania</option>
+                    <option value="Luxembourg" {#if company.country == 'Luxembourg'}selected{/if}>Luxembourg</option>
+                    <option value="Madagascar" {#if company.country == 'Madagascar'}selected{/if}>Madagascar</option>
+                    <option value="Malawi" {#if company.country == 'Malawi'}selected{/if}>Malawi</option>
+                    <option value="Malaysia" {#if company.country == 'Malaysia'}selected{/if}>Malaysia</option>
+                    <option value="Maldives" {#if company.country == 'Maldives'}selected{/if}>Maldives</option>
+                    <option value="Mali" {#if company.country == 'Mali'}selected{/if}>Mali</option>
+                    <option value="Malta" {#if company.country == 'Malta'}selected{/if}>Malta</option>
+                    <option value="Marshall Islands" {#if company.country == 'Marshall Islands'}selected{/if}>Marshall Islands</option>
+                    <option value="Mauritania" {#if company.country == 'Mauritania'}selected{/if}>Mauritania</option>
+                    <option value="Mauritius" {#if company.country == 'Mauritius'}selected{/if}>Mauritius</option>
+                    <option value="Mexico" {#if company.country == 'Mexico'}selected{/if}>Mexico</option>
+                    <option value="Micronesia" {#if company.country == 'Micronesia'}selected{/if}>Micronesia</option>
+                    <option value="Moldova" {#if company.country == 'Moldova'}selected{/if}>Moldova</option>
+                    <option value="Monaco" {#if company.country == 'Monaco'}selected{/if}>Monaco</option>
+                    <option value="Mongolia" {#if company.country == 'Mongolia'}selected{/if}>Mongolia</option>
+                    <option value="Montenegro" {#if company.country == 'Montenegro'}selected{/if}>Montenegro</option>
+                    <option value="Morocco" {#if company.country == 'Morocco'}selected{/if}>Morocco</option>
+                    <option value="Mozambique" {#if company.country == 'Mozambique'}selected{/if}>Mozambique</option>
+                    <option value="Myanmar (formerly Burma)" {#if company.country == 'Myanmar (formerly Burma)'}selected{/if}>Myanmar (formerly Burma)</option>
+                    <option value="Namibia" {#if company.country == 'Namibia'}selected{/if}>Namibia</option>
+                    <option value="Nauru" {#if company.country == 'Nauru'}selected{/if}>Nauru</option>
+                    <option value="Nepal" {#if company.country == 'Nepal'}selected{/if}>Nepal</option>
+                    <option value="Netherlands" {#if company.country == 'Netherlands'}selected{/if}>Netherlands</option>
+                    <option value="New Zealand" {#if company.country == 'New Zealand'}selected{/if}>New Zealand</option>
+                    <option value="Nicaragua" {#if company.country == 'Nicaragua'}selected{/if}>Nicaragua</option>
+                    <option value="Niger" {#if company.country == 'Niger'}selected{/if}>Niger</option>
+                    <option value="Nigeria" {#if company.country == 'Nigeria'}selected{/if}>Nigeria</option>
+                    <option value="North Korea" {#if company.country == 'North Korea'}selected{/if}>North Korea</option>
+                    <option value="North Macedonia" {#if company.country == 'North Macedonia'}selected{/if}>North Macedonia</option>
+                    <option value="Norway" {#if company.country == 'Norway'}selected{/if}>Norway</option>
+                    <option value="Oman" {#if company.country == 'Oman'}selected{/if}>Oman</option>
+                    <option value="Pakistan" {#if company.country == 'Pakistan'}selected{/if}>Pakistan</option>
+                    <option value="Palau" {#if company.country == 'Palau'}selected{/if}>Palau</option>
+                    <option value="Palestine State" {#if company.country == 'Palestine State'}selected{/if}>Palestine State</option>
+                    <option value="Panama" {#if company.country == 'Panama'}selected{/if}>Panama</option>
+                    <option value="Papua New Guinea" {#if company.country == 'Papua New Guinea'}selected{/if}>Papua New Guinea</option>
+                    <option value="Paraguay" {#if company.country == 'Paraguay'}selected{/if}>Paraguay</option>
+                    <option value="Peru" {#if company.country == 'Peru'}selected{/if}>Peru</option>
+                    <option value="Philippines" {#if company.country == 'Philippines'}selected{/if}>Philippines</option>
+                    <option value="Poland" {#if company.country == 'Poland'}selected{/if}>Poland</option>
+                    <option value="Portugal" {#if company.country == 'Portugal'}selected{/if}>Portugal</option>
+                    <option value="Qatar" {#if company.country == 'Qatar'}selected{/if}>Qatar</option>
+                    <option value="Romania" {#if company.country == 'Romania'}selected{/if}>Romania</option>
+                    <option value="Russia" {#if company.country == 'Russia'}selected{/if}>Russia</option>
+                    <option value="Rwanda" {#if company.country == 'Rwanda'}selected{/if}>Rwanda</option>
+                    <option value="Saint Kitts and Nevis" {#if company.country == 'Saint Kitts and Nevis'}selected{/if}>Saint Kitts and Nevis</option>
+                    <option value="Saint Lucia" {#if company.country == 'Saint Lucia'}selected{/if}>Saint Lucia</option>
+                    <option value="Saint Vincent and the Grenadines" {#if company.country == 'Saint Vincent and the Grenadines'}selected{/if}>Saint Vincent and the Grenadines</option>
+                    <option value="Samoa" {#if company.country == 'Samoa'}selected{/if}>Samoa</option>
+                    <option value="San Marino" {#if company.country == 'San Marino'}selected{/if}>San Marino</option>
+                    <option value="Sao Tome and Principe" {#if company.country == 'Sao Tome and Principe'}selected{/if}>Sao Tome and Principe</option>
+                    <option value="Saudi Arabia" {#if company.country == 'Saudi Arabia'}selected{/if}>Saudi Arabia</option>
+                    <option value="Senegal" {#if company.country == 'Senegal'}selected{/if}>Senegal</option>
+                    <option value="Serbia" {#if company.country == 'Serbia'}selected{/if}>Serbia</option>
+                    <option value="Seychelles" {#if company.country == 'Seychelles'}selected{/if}>Seychelles</option>
+                    <option value="Sierra Leone" {#if company.country == 'Sierra Leone'}selected{/if}>Sierra Leone</option>
+                    <option value="Singapore" {#if company.country == 'Singapore'}selected{/if}>Singapore</option>
+                    <option value="Slovakia" {#if company.country == 'Slovakia'}selected{/if}>Slovakia</option>
+                    <option value="Slovenia" {#if company.country == 'Slovenia'}selected{/if}>Slovenia</option>
+                    <option value="Solomon Islands" {#if company.country == 'Solomon Islands'}selected{/if}>Solomon Islands</option>
+                    <option value="Somalia" {#if company.country == 'Somalia'}selected{/if}>Somalia</option>
+                    <option value="South Africa" {#if company.country == 'South Africa'}selected{/if}>South Africa</option>
+                    <option value="South Korea" {#if company.country == 'South Korea'}selected{/if}>South Korea</option>
+                    <option value="South Sudan" {#if company.country == 'South Sudan'}selected{/if}>South Sudan</option>
+                    <option value="Spain" {#if company.country == 'Spain'}selected{/if}>Spain</option>
+                    <option value="Sri Lanka" {#if company.country == 'Sri Lanka'}selected{/if}>Sri Lanka</option>
+                    <option value="Sudan" {#if company.country == 'Sudan'}selected{/if}>Sudan</option>
+                    <option value="Suriname" {#if company.country == 'Suriname'}selected{/if}>Suriname</option>
+                    <option value="Sweden" {#if company.country == 'Sweden'}selected{/if}>Sweden</option>
+                    <option value="Switzerland" {#if company.country == 'Switzerland'}selected{/if}>Switzerland</option>
+                    <option value="Syria" {#if company.country == 'Syria'}selected{/if}>Syria</option>
+                    <option value="Tajikistan" {#if company.country == 'Tajikistan'}selected{/if}>Tajikistan</option>
+                    <option value="Tanzania" {#if company.country == 'Tanzania'}selected{/if}>Tanzania</option>
+                    <option value="Thailand" {#if company.country == 'Thailand'}selected{/if}>Thailand</option>
+                    <option value="Timor-Leste" {#if company.country == 'Timor-Leste'}selected{/if}>Timor-Leste</option>
+                    <option value="Togo" {#if company.country == 'Togo'}selected{/if}>Togo</option>
+                    <option value="Tonga" {#if company.country == 'Tonga'}selected{/if}>Tonga</option>
+                    <option value="Trinidad and Tobago" {#if company.country == 'Trinidad and Tobago'}selected{/if}>Trinidad and Tobago</option>
+                    <option value="Tunisia" {#if company.country == 'Tunisia'}selected{/if}>Tunisia</option>
+                    <option value="Turkey" {#if company.country == 'Turkey'}selected{/if}>Turkey</option>
+                    <option value="Turkmenistan" {#if company.country == 'Turkmenistan'}selected{/if}>Turkmenistan</option>
+                    <option value="Tuvalu" {#if company.country == 'Tuvalu'}selected{/if}>Tuvalu</option>
+                    <option value="Uganda" {#if company.country == 'Uganda'}selected{/if}>Uganda</option>
+                    <option value="Ukraine" {#if company.country == 'Ukraine'}selected{/if}>Ukraine</option>
+                    <option value="United Arab Emirates" {#if company.country == 'United Arab Emirates'}selected{/if}>United Arab Emirates</option>
+                    <option value="United Kingdom" {#if company.country == 'United Kingdom'}selected{/if}>United Kingdom</option>
+                    <option value="United States of America" {#if company.country == 'United States of America'}selected{/if}>United States of America</option>
+                    <option value="Uruguay" {#if company.country == 'Uruguay'}selected{/if}>Uruguay</option>
+                    <option value="Uzbekistan" {#if company.country == 'Uzbekistan'}selected{/if}>Uzbekistan</option>
+                    <option value="Vanuatu" {#if company.country == 'Vanuatu'}selected{/if}>Vanuatu</option>
+                    <option value="Venezuela" {#if company.country == 'Venezuela'}selected{/if}>Venezuela</option>
+                    <option value="Vietnam" {#if company.country == 'Vietnam'}selected{/if}>Vietnam</option>
+                    <option value="Yemen" {#if company.country == 'Yemen'}selected{/if}>Yemen</option>
+                    <option value="Zambia" {#if company.country == 'Zambia'}selected{/if}>Zambia</option>
+                    <option value="Zimbabwe" {#if company.country == 'Zimbabwe'}selected{/if}>Zimbabwe</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+            <div style="display: grid; gap: 24px;">
+                <div>
+                    <label style="font-weight: 600;">Entitlements</label>
+                    <div style="display: grid; gap: 12px;">
+                        <div>
+                            <select id="entitlementPairs" multiple size="6" style="width: 100%;">
+                                {#for entry in companyEntitlements}
+                                <option value="{entry.entitlement.id}:{entry.supportLevel.id}">{entry.entitlement.name} - {entry.supportLevel.name}</option>
+                                {/for}
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button type="button" class="secondary-button" onclick="removeSelectedEntitlement()">Remove</button>
+                        </div>
+                        <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 12px; align-items: end;">
+                            <div>
+                                <label style="font-weight: 600;">Entitlement</label>
+                                <select id="entitlementPicker">
+                                    <option value="">Select entitlement</option>
+                                    {#for entitlement in entitlements}
+                                    <option value="{entitlement.id}">{entitlement.name}</option>
+                                    {/for}
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-weight: 600;">Service level</label>
+                                <select id="supportLevelPicker">
+                                    <option value="">Select service level</option>
+                                    {#for level in supportLevels}
+                                    <option value="{level.id}">{level.name}</option>
+                                    {/for}
+                                </select>
+                            </div>
+                            <button type="button" class="secondary-button" onclick="addEntitlementPair()">Add</button>
+                        </div>
+                        <div id="entitlementHidden"></div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: start;">
+                        <div>
+                            <label style="font-weight: 600;">Users available</label>
+                            <select id="availableUsers" multiple size="10" style="width: 100%;">
+                                {#for user in users}
+                                {#if !selectedUserIds.contains(user.id)}
+                                <option value="{user.id}">{user.name} ({user.email})</option>
+                                {/if}
+                                {/for}
+                            </select>
+                        </div>
+                        <div style="display: grid; gap: 8px;">
+                            <button type="button" class="secondary-button" onclick="moveSelected('availableUsers', 'selectedUsers')">→</button>
+                            <button type="button" class="secondary-button" onclick="moveSelected('selectedUsers', 'availableUsers')">←</button>
+                        </div>
+                        <div>
+                            <label style="font-weight: 600;">Company users</label>
+                            <select id="selectedUsers" name="userIds" multiple size="10" style="width: 100%;">
+                                {#for user in users}
+                                {#if selectedUserIds.contains(user.id)}
+                                <option value="{user.id}">{user.name} ({user.email})</option>
+                                {/if}
+                                {/for}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: start;">
+                        <div>
+                            <label style="font-weight: 600;">TAMs available</label>
+                            <select id="availableTams" multiple size="10" style="width: 100%;">
+                                {#for tam in tams}
+                                {#if !selectedTamIds.contains(tam.id)}
+                                <option value="{tam.id}">{tam.name} ({tam.email})</option>
+                                {/if}
+                                {/for}
+                            </select>
+                        </div>
+                        <div style="display: grid; gap: 8px;">
+                            <button type="button" class="secondary-button" onclick="moveSelected('availableTams', 'selectedTams')">→</button>
+                            <button type="button" class="secondary-button" onclick="moveSelected('selectedTams', 'availableTams')">←</button>
+                        </div>
+                        <div>
+                            <label style="font-weight: 600;">Company TAMs</label>
+                            <select id="selectedTams" name="tamIds" multiple size="10" style="width: 100%;">
+                                {#for tam in tams}
+                                {#if selectedTamIds.contains(tam.id)}
+                                <option value="{tam.id}">{tam.name} ({tam.email})</option>
+                                {/if}
+                                {/for}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-actions">
+            <a class="secondary-button" href="/admin/companies">Cancel</a>
+            <button type="submit" class="action-button">Save</button>
+        </div>
+    </form>
+</div>
+<script>
+    function moveSelected(sourceId, targetId) {
+        const source = document.getElementById(sourceId);
+        const target = document.getElementById(targetId);
+        const selected = Array.from(source.selectedOptions);
+        selected.forEach(option => {
+            source.removeChild(option);
+            option.selected = false;
+            target.appendChild(option);
+        });
+    }
+
+    function selectAll(selectId) {
+        const select = document.getElementById(selectId);
+        if (!select) {
+            return;
+        }
+        Array.from(select.options).forEach(option => {
+            option.selected = true;
+        });
+    }
+
+    function addEntitlementPair() {
+        const entitlementPicker = document.getElementById('entitlementPicker');
+        const levelPicker = document.getElementById('supportLevelPicker');
+        const list = document.getElementById('entitlementPairs');
+        if (!entitlementPicker || !levelPicker || !list) {
+            return;
+        }
+        if (!entitlementPicker.value || !levelPicker.value) {
+            return;
+        }
+        const value = entitlementPicker.value + ':' + levelPicker.value;
+        const exists = Array.from(list.options).some(option => option.value === value);
+        if (exists) {
+            return;
+        }
+        const entitlementText = entitlementPicker.options[entitlementPicker.selectedIndex].textContent;
+        const levelText = levelPicker.options[levelPicker.selectedIndex].textContent;
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = entitlementText + ' - ' + levelText;
+        list.appendChild(option);
+        entitlementPicker.selectedIndex = 0;
+        levelPicker.selectedIndex = 0;
+    }
+
+    function removeSelectedEntitlement() {
+        const list = document.getElementById('entitlementPairs');
+        if (!list) {
+            return;
+        }
+        const selected = Array.from(list.selectedOptions);
+        selected.forEach(option => option.remove());
+    }
+
+    function syncEntitlementHidden() {
+        const list = document.getElementById('entitlementPairs');
+        const container = document.getElementById('entitlementHidden');
+        if (!list || !container) {
+            return;
+        }
+        container.innerHTML = '';
+        Array.from(list.options).forEach(option => {
+            const [entitlementId, levelId] = option.value.split(':');
+            if (!entitlementId || !levelId) {
+                return;
+            }
+            const entitlementInput = document.createElement('input');
+            entitlementInput.type = 'hidden';
+            entitlementInput.name = 'entitlementIds';
+            entitlementInput.value = entitlementId;
+            container.appendChild(entitlementInput);
+            const levelInput = document.createElement('input');
+            levelInput.type = 'hidden';
+            levelInput.name = 'supportLevelIds';
+            levelInput.value = levelId;
+            container.appendChild(levelInput);
+        });
+    }
+</script>
+{/content}
+{/include}

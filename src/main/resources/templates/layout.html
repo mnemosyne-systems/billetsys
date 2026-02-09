@@ -1,0 +1,427 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket System</title>
+    <style>
+        :root {
+            --header-bg: #b00020;
+            --header-text: #ffffff;
+            --body-bg: #ffffff;
+            --body-text: #1a1a1a;
+            --table-border: #ddd;
+            --table-header: #f2f2f2;
+            --card-bg: #ffffff;
+            --card-border: #ddd;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: var(--body-bg);
+            color: var(--body-text);
+        }
+        .app-header {
+            background: var(--header-bg);
+            color: var(--header-text);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--header-text);
+            text-decoration: none;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .brand svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--header-text);
+            fill: none;
+            stroke-width: 2;
+        }
+        .header-nav a {
+            color: var(--header-text);
+            text-decoration: none;
+            margin-right: 12px;
+            font-weight: 600;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header-clock {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+        .user-summary {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: var(--header-text);
+        }
+        .user-logo,
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .user-logo {
+            object-fit: cover;
+        }
+        .user-avatar svg {
+            width: 16px;
+            height: 16px;
+            stroke: var(--header-text);
+            fill: none;
+            stroke-width: 2;
+        }
+        .profile-menu summary {
+            list-style: none;
+        }
+        .profile-menu summary::-webkit-details-marker {
+            display: none;
+        }
+        .profile-dropdown {
+            position: absolute;
+            right: 0;
+            background: var(--card-bg);
+            color: var(--body-text);
+            border: 1px solid var(--card-border);
+            padding: 8px 12px;
+            margin-top: 6px;
+            min-width: 140px;
+        }
+        .profile-dropdown a {
+            display: block;
+            color: var(--body-text);
+            text-decoration: none;
+            padding: 6px 0;
+        }
+        .profile-menu {
+            position: relative;
+        }
+        main {
+            padding: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid var(--table-border);
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--table-header);
+        }
+        th .sort-button {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            padding: 0 4px;
+            font-size: 12px;
+            color: var(--body-text);
+        }
+        form.inline {
+            display: inline;
+        }
+        .support-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .icon-link,
+        .icon-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--body-text);
+            cursor: pointer;
+            padding: 0;
+        }
+        .icon-link svg,
+        .icon-button svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+        .icon-link:hover,
+        .icon-button:hover {
+            border-color: var(--card-border);
+        }
+        .form-card {
+            max-width: 420px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .action-button {
+            display: inline-block;
+            padding: 8px 12px;
+            background: #b00020;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+        .secondary-button {
+            display: inline-block;
+            padding: 8px 12px;
+            background: transparent;
+            color: var(--body-text);
+            text-decoration: none;
+            border-radius: 4px;
+            border: 1px solid var(--card-border);
+        }
+        form label {
+            display: grid;
+            gap: 6px;
+            font-weight: 600;
+        }
+        form input, form select {
+            padding: 8px 10px;
+            font-size: 14px;
+        }
+        form {
+            display: grid;
+            gap: 12px;
+        }
+        .session-warning {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .session-warning.is-visible {
+            display: flex;
+        }
+        .session-warning-card {
+            background: var(--card-bg);
+            color: var(--body-text);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 360px;
+            width: calc(100% - 40px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        .session-warning-card h2 {
+            margin: 0 0 8px 0;
+            font-size: 20px;
+        }
+        .session-warning-card p {
+            margin: 0 0 16px 0;
+            font-size: 14px;
+        }
+        .session-warning-card .session-countdown {
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+<header class="app-header">
+    <div class="header-left">
+        <a class="brand" href="/">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M7 8h10M7 12h10M7 16h6" />
+                <path d="M6 8l1 1 2-2" />
+            </svg>
+            billetsys
+        </a>
+        <nav class="header-nav">
+            {#if currentUser != null && (currentUser.type == 'tam' || currentUser.type == 'user')}
+            <a href="/user/tickets">Tickets</a>
+            {#else}
+            <a href="/">Home</a>
+            <a href="/companies">Companies</a>
+            <a href="/tickets">Tickets</a>
+            <a href="/messages">Messages</a>
+            <a href="/admin/companies">Admin</a>
+            <a href="/admin/users">Users</a>
+            {/if}
+        </nav>
+    </div>
+    <div class="header-actions">
+        {#if currentUser != null}
+        <details class="profile-menu">
+            <summary class="user-summary">
+                {#if currentUser.logoBase64 != null && !currentUser.logoBase64.isBlank}
+                <img class="user-logo" src="{currentUser.logoBase64}" alt="User logo" />
+                {#else}
+                <span class="user-avatar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4 0-7 2-7 4v2h14v-2c0-2-3-4-7-4z" />
+                    </svg>
+                </span>
+                {/if}
+                <span class="user-name">{currentUser.name}</span>
+            </summary>
+            <div class="profile-dropdown">
+                <a href="/profile">Edit</a>
+                <a href="/profile/password">Password</a>
+                <a href="/logout">Logout</a>
+            </div>
+        </details>
+        <span class="header-clock" data-header-clock></span>
+        {/if}
+    </div>
+</header>
+<main>
+    {#insert content}{/insert}
+</main>
+<div class="session-warning" data-session-warning>
+    <div class="session-warning-card">
+        <h2>Session expiring</h2>
+        <p>You will be logged out in <span class="session-countdown" data-session-countdown></span>.</p>
+        <button type="button" class="action-button" data-session-stay>Stay signed in</button>
+    </div>
+</div>
+    <script>
+    function sortTable(button, columnIndex) {
+        const table = button.closest('table');
+        if (!table) {
+            return;
+        }
+        const tbody = table.querySelector('tbody');
+        if (!tbody) {
+            return;
+        }
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const current = button.getAttribute('data-sort') || 'none';
+        const direction = current === 'asc' ? 'desc' : 'asc';
+        const multiplier = direction === 'asc' ? 1 : -1;
+        rows.sort((left, right) => {
+            const leftCell = left.children[columnIndex];
+            const rightCell = right.children[columnIndex];
+            const leftText = leftCell ? (leftCell.getAttribute('data-sort-value') || leftCell.textContent.trim()) : '';
+            const rightText = rightCell ? (rightCell.getAttribute('data-sort-value') || rightCell.textContent.trim()) : '';
+            const leftNumber = parseFloat(leftText.replace(/[^0-9.\\-]/g, ''));
+            const rightNumber = parseFloat(rightText.replace(/[^0-9.\\-]/g, ''));
+            if (!Number.isNaN(leftNumber) && !Number.isNaN(rightNumber)) {
+                return (leftNumber - rightNumber) * multiplier;
+            }
+            return leftText.localeCompare(rightText) * multiplier;
+        });
+        rows.forEach(row => tbody.appendChild(row));
+        const buttons = table.querySelectorAll('th .sort-button');
+        buttons.forEach(btn => btn.setAttribute('data-sort', 'none'));
+        button.setAttribute('data-sort', direction);
+    }
+
+    function updateHeaderClock() {
+        const clock = document.querySelector('[data-header-clock]');
+        if (!clock) {
+            return;
+        }
+        clock.textContent = new Date().toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function formatCountdown(msRemaining) {
+        const totalSeconds = Math.max(0, Math.ceil(msRemaining / 1000));
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return minutes + ':' + seconds.toString().padStart(2, '0');
+    }
+
+    function setupSessionTimeout() {
+        const timeoutMs = 60 * 60 * 1000;
+        const warningMs = 5 * 60 * 1000;
+        const warningEl = document.querySelector('[data-session-warning]');
+        const countdownEl = document.querySelector('[data-session-countdown]');
+        const stayButton = document.querySelector('[data-session-stay]');
+        if (!warningEl || !countdownEl || !stayButton) {
+            return;
+        }
+        let lastActivity = Date.now();
+        let warningVisible = false;
+
+        const resetActivity = () => {
+            lastActivity = Date.now();
+            if (warningVisible) {
+                warningVisible = false;
+                warningEl.classList.remove('is-visible');
+            }
+        };
+
+        ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach(eventType => {
+            document.addEventListener(eventType, resetActivity, { passive: true });
+        });
+
+        stayButton.addEventListener('click', () => {
+            resetActivity();
+        });
+
+        setInterval(() => {
+            const elapsed = Date.now() - lastActivity;
+            const remaining = timeoutMs - elapsed;
+            if (remaining <= 0) {
+                window.location.href = '/logout';
+                return;
+            }
+            if (remaining <= warningMs) {
+                if (!warningVisible) {
+                    warningVisible = true;
+                    warningEl.classList.add('is-visible');
+                }
+                countdownEl.textContent = formatCountdown(remaining);
+            }
+        }, 1000);
+    }
+
+    updateHeaderClock();
+    setInterval(updateHeaderClock, 1000);
+    setupSessionTimeout();
+    </script>
+</body>
+</html>

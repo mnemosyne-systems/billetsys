@@ -1,0 +1,132 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket System Login</title>
+    <style>
+        :root {
+            --header-bg: #b00020;
+            --header-text: #ffffff;
+            --card-bg: #ffffff;
+            --card-border: #ddd;
+            --body-text: #1a1a1a;
+            --body-bg: #b00020;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--body-bg);
+            color: var(--body-text);
+        }
+        .app-header {
+            background: var(--header-bg);
+            color: var(--header-text);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--header-text);
+            text-decoration: none;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .brand svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--header-text);
+            fill: none;
+            stroke-width: 2;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .profile-menu summary {
+            cursor: pointer;
+            list-style: none;
+        }
+        .profile-menu summary::-webkit-details-marker {
+            display: none;
+        }
+        .profile-dropdown {
+            position: absolute;
+            right: 0;
+            background: var(--card-bg);
+            color: var(--body-text);
+            border: 1px solid var(--card-border);
+            padding: 8px 12px;
+            margin-top: 6px;
+            min-width: 120px;
+        }
+        .profile-dropdown a {
+            color: var(--body-text);
+            text-decoration: none;
+        }
+        .profile-menu {
+            position: relative;
+        }
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .login-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 28px 32px;
+            min-width: 320px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+        form {
+            display: grid;
+            gap: 12px;
+        }
+        label {
+            display: grid;
+            gap: 6px;
+            font-weight: 600;
+        }
+        input {
+            padding: 8px 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<header class="app-header">
+    <a class="brand" href="/">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M7 8h10M7 12h10M7 16h6" />
+            <path d="M6 8l1 1 2-2" />
+        </svg>
+        billetsys
+    </a>
+    <div class="header-actions"></div>
+</header>
+<main>
+    {#insert content}{/insert}
+</main>
+</body>
+</html>

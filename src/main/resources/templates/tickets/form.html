@@ -1,0 +1,97 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+{#include layout}
+{#content}
+    <div class="form-card">
+        <h1>{#if ticket.name?? && !ticket.name.isBlank}{ticket.name}{#else}{title}{/if}</h1>
+        <form method="post" action="{action}">
+            <div>
+                <label>Ticket
+                    <input type="text" name="ticketName" value="{ticket.name}" readonly>
+                </label>
+            </div>
+            <div>
+                <label>Status
+                    <select name="status" required>
+                        <option value="Open" {#if ticket.status == 'Open'}selected{/if}>Open</option>
+                        <option value="Assigned" {#if ticket.status == 'Assigned'}selected{/if}>Assigned</option>
+                        <option value="In Progress" {#if ticket.status == 'In Progress'}selected{/if}>In Progress</option>
+                        <option value="Resolved" {#if ticket.status == 'Resolved'}selected{/if}>Resolved</option>
+                        <option value="Closed" {#if ticket.status == 'Closed'}selected{/if}>Closed</option>
+                    </select>
+                </label>
+            </div>
+            {#if ticket.id != null}
+            <div>
+                <label>Company
+                    <input type="text" value="{ticket.company.name}" readonly>
+                </label>
+            </div>
+            <div>
+                <label>Entitlement
+                    {#if ticket.companyEntitlement == null || ticket.companyEntitlement.entitlement == null}
+                    <input type="text" value="-" readonly>
+                    {#else}
+                    <input type="text" value="{ticket.companyEntitlement.entitlement.name}" readonly>
+                    {/if}
+                </label>
+            </div>
+            <div>
+                <label>Service level
+                    {#if ticket.companyEntitlement == null || ticket.companyEntitlement.supportLevel == null}
+                    <input type="text" value="-" readonly>
+                    {#else}
+                    <input type="text" value="{ticket.companyEntitlement.supportLevel.name}" readonly>
+                    {/if}
+                </label>
+            </div>
+            <input type="hidden" name="companyId" value="{ticket.company.id}">
+            <input type="hidden" name="companyEntitlementId" value="{ticket.companyEntitlement.id}">
+            {#else}
+            <div>
+                <label>Company
+                    <select name="companyId" required onchange="window.location = '/tickets/company/' + this.value + '/entitlements'">
+                        <option value="">Select a company</option>
+                        {#for company in companies}
+                        <option value="{company.id}" {#if ticket.company != null && ticket.company.id == company.id}selected{/if}>{company.name}</option>
+                        {/for}
+                    </select>
+                </label>
+            </div>
+            <div>
+                <label>Entitlement
+                    <select name="companyEntitlementId" required>
+                        <option value="">Select entitlement</option>
+                        {#for entry in companyEntitlements}
+                        <option value="{entry.id}" {#if selectedCompanyEntitlementId == entry.id}selected{/if}>{entry.entitlement.name} - {entry.supportLevel.name}</option>
+                        {/for}
+                    </select>
+                </label>
+            </div>
+            {/if}
+            <div class="form-actions">
+                <a class="secondary-button" href="/tickets">Cancel</a>
+                <button type="submit" class="action-button">Save</button>
+            </div>
+        </form>
+</div>
+{#if ticket.id != null}
+<h2>Messages</h2>
+{#if messages.isEmpty}
+<p>No messages yet.</p>
+{/if}
+{#for message in messages}
+<div style="margin-bottom: 12px;">
+    <div><strong>{messageLabels.get(message.id)}</strong></div>
+    <div>{message.body}</div>
+</div>
+{/for}
+{/if}
+{/content}
+{/include}

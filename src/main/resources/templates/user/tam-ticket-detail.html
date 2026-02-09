@@ -1,0 +1,123 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+{#include support-layout}
+{#content}
+<div class="form-card ticket-detail-card" style="margin-bottom: 16px;">
+    <h1>{ticket.name}</h1>
+    <form>
+        <div class="ticket-detail-grid">
+            <label>Ticket
+                <input type="text" value="{ticket.name}" readonly>
+            </label>
+            <label>Company
+                <input type="text" value="{ticket.company.name}" readonly>
+            </label>
+            <label>Status
+                <input type="text" value="{ticket.status}" readonly>
+            </label>
+            <label>Entitlement
+                {#if ticket.companyEntitlement == null || ticket.companyEntitlement.entitlement == null}
+                <input type="text" value="-" readonly>
+                {#else}
+                <input type="text" value="{ticket.companyEntitlement.entitlement.name}" readonly>
+                {/if}
+            </label>
+            <label>Support users
+                {#if supportUsers.isEmpty}
+                <input type="text" value="-" readonly>
+                {#else}
+                <div>
+                    {#for user in supportUsers}
+                    <a href="mailto:{user.email}">{user.email}</a>{#if !user_isLast}, {/if}
+                    {/for}
+                </div>
+                {/if}
+            </label>
+            <label>Service Level
+                {#if ticket.companyEntitlement == null || ticket.companyEntitlement.supportLevel == null}
+                <input type="text" value="-" readonly>
+                {#else}
+                <input type="text" value="{ticket.companyEntitlement.supportLevel.name}" readonly>
+                {/if}
+            </label>
+            <label class="ticket-detail-spacer" aria-hidden="true">
+                <input type="text" value="-" readonly>
+            </label>
+            <label>TAMs
+                {#if tamUsers.isEmpty}
+                <input type="text" value="-" readonly>
+                {#else}
+                <div>
+                    {#for user in tamUsers}
+                    <a href="mailto:{user.email}">{user.email}</a>{#if !user_isLast}, {/if}
+                    {/for}
+                </div>
+                {/if}
+            </label>
+        </div>
+    </form>
+</div>
+
+<style>
+    .message-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 16px;
+    }
+    .message-table td {
+        border: 1px solid var(--table-border);
+        padding: 8px;
+        text-align: left;
+    }
+    .message-table tbody:nth-of-type(even) {
+        background-color: #f2f2f2;
+    }
+    .message-header {
+        font-weight: 700;
+        background-color: rgba(176, 0, 32, 0.1);
+    }
+    .message-table .message-email {
+        text-align: right;
+    }
+</style>
+
+<h2>Messages</h2>
+{#if messages.isEmpty}
+<p>No messages yet.</p>
+{#else}
+<table class="message-table">
+    {#for message in messages}
+    <tbody>
+    <tr class="message-header">
+        <td>{messageLabels.get(message.id)}</td>
+        <td class="message-email">
+            {#if message.author != null}<a href="mailto:{message.author.email}">{message.author.email}</a>{#else}-{/if}
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2">{message.body}</td>
+    </tr>
+    </tbody>
+    {/for}
+</table>
+{/if}
+
+<h2>Reply</h2>
+<form method="post" action="/user/tickets/{ticket.id}/messages">
+    <div>
+        <label>
+            <textarea name="body" rows="4" required></textarea>
+        </label>
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="action-button">Add</button>
+    </div>
+</form>
+{/content}
+{/include}

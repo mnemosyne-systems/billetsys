@@ -1,0 +1,46 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+<table>
+    <thead>
+    <tr>
+        <th>Name <button class="sort-button" type="button" onclick="sortTable(this, 0)">↕</button></th>
+        <th>Date <button class="sort-button" type="button" onclick="sortTable(this, 1)">↕</button></th>
+        <th>Status <button class="sort-button" type="button" onclick="sortTable(this, 2)">↕</button></th>
+        <th>Support <button class="sort-button" type="button" onclick="sortTable(this, 3)">↕</button></th>
+        <th>Company <button class="sort-button" type="button" onclick="sortTable(this, 4)">↕</button></th>
+        <th>Entitlement <button class="sort-button" type="button" onclick="sortTable(this, 5)">↕</button></th>
+        <th>Service level <button class="sort-button" type="button" onclick="sortTable(this, 6)">↕</button></th>
+    </tr>
+    </thead>
+    <tbody>
+    {#for ticket in tickets}
+    <tr style="{#if slaColors.containsKey(ticket.id)}background-color: {slaColors.get(ticket.id)}{/if}">
+        <td style="{#if slaColors.containsKey(ticket.id)}background-color: {slaColors.get(ticket.id)}{/if}"><a href="/support/tickets/{ticket.id}">{ticket.name}</a></td>
+        <td style="{#if slaColors.containsKey(ticket.id)}background-color: {slaColors.get(ticket.id)}{/if}">{messageDateLabels.get(ticket.id)}</td>
+        <td style="{#if slaColors.containsKey(ticket.id)}background-color: {slaColors.get(ticket.id)}{/if}">{ticket.status}</td>
+        <td>{#if supportAssignments.containsKey(ticket.id)}<a href="mailto:{supportAssignments.get(ticket.id)}">{supportAssignments.get(ticket.id)}</a>{#else}-{/if}</td>
+        <td>{ticket.company.name}</td>
+        <td>
+            {#if ticket.companyEntitlement == null || ticket.companyEntitlement.entitlement == null}
+            <span>-</span>
+            {#else}
+            <span>{ticket.companyEntitlement.entitlement.name}</span>
+            {/if}
+        </td>
+        <td>
+            {#if ticket.companyEntitlement == null || ticket.companyEntitlement.supportLevel == null}
+            <span>-</span>
+            {#else}
+            <span>{ticket.companyEntitlement.supportLevel.name}</span>
+            {/if}
+        </td>
+    </tr>
+    {/for}
+    </tbody>
+</table>

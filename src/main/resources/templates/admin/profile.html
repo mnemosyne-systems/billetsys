@@ -1,0 +1,61 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+{#include admin-layout}
+{#content}
+<div class="form-card">
+    <h1>Profile</h1>
+    {#if error}
+    <p style="color: red">{error}</p>
+    {/if}
+    <div style="margin-bottom: 16px;">
+        {#if user.logoBase64 != null && !user.logoBase64.isBlank}
+        <img src="{user.logoBase64}" alt="Current logo" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover;">
+        {#else}
+        <span class="user-avatar" style="width: 64px; height: 64px; color: var(--body-text);">
+            <svg viewBox="0 0 24 24" aria-hidden="true" style="stroke: currentColor; fill: none;">
+                <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4 0-7 2-7 4v2h14v-2c0-2-3-4-7-4z" />
+            </svg>
+        </span>
+        {/if}
+    </div>
+    <form method="post" action="/profile">
+        <div>
+            <label>Username
+                <input type="text" name="name" value="{user.name}" required>
+            </label>
+        </div>
+        <div>
+            <input id="logoInput" type="file" name="logo" accept="image/*" onchange="encodeLogo(this)" style="display: none;">
+            <input type="hidden" name="logoData" id="logoData">
+        </div>
+        <div class="form-actions">
+            <button type="button" class="action-button" onclick="triggerLogoUpload()">Upload logo</button>
+            <button type="submit" class="action-button">Save</button>
+        </div>
+    </form>
+</div>
+<script>
+    function triggerLogoUpload() {
+        document.getElementById('logoInput').click();
+    }
+    function encodeLogo(input) {
+        const file = input.files && input.files[0];
+        if (!file) {
+            document.getElementById('logoData').value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function() {
+            document.getElementById('logoData').value = reader.result;
+        };
+        reader.readAsDataURL(file);
+    }
+</script>
+{/content}
+{/include}

@@ -1,0 +1,56 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+{#include support-layout}
+{#content}
+<div class="form-card">
+    <h1>{title}</h1>
+    <form method="post" action="{action}">
+        <div>
+            <label>Username
+                <input type="text" name="name" value="{user.name}" required>
+            </label>
+        </div>
+        <div>
+            <label>Email
+                <input type="email" name="email" value="{user.email}" required>
+            </label>
+        </div>
+        <div>
+            <label>Type
+                <input type="text" value="User" readonly>
+                <input type="hidden" name="type" value="user">
+            </label>
+        </div>
+        <div>
+            <label>Company
+                {#if companyLocked?? && companyLocked}
+                <input type="text" value="{#for company in companies}{#if selectedCompanyId == company.id}{company.name}{/if}{/for}" readonly>
+                <input type="hidden" name="companyId" value="{selectedCompanyId}">
+                {#else}
+                <select name="companyId" required>
+                    <option value="">Select a company</option>
+                    {#for company in companies}
+                    <option value="{company.id}" {#if selectedCompanyId == company.id}selected{/if}>{company.name}</option>
+                    {/for}
+                </select>
+                {/if}
+            </label>
+        </div>
+        <div>
+            <label>Password
+                <input type="password" name="password" required>
+            </label>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="action-button">Save</button>
+        </div>
+    </form>
+</div>
+{/content}
+{/include}

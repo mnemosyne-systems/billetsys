@@ -1,0 +1,31 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+{#include admin-layout}
+{#content}
+<div class="form-card">
+    <h1>{user.name}</h1>
+    <table>
+        <tbody>
+        <tr>
+            <th>Email</th>
+            <td><a href="mailto:{user.email}">{user.email}</a></td>
+        </tr>
+        <tr>
+            <th>Type</th>
+            <td>{typeLabel}</td>
+        </tr>
+        </tbody>
+    </table>
+    <div class="form-actions">
+        <a class="secondary-button" href="/admin/users">Ok</a>
+        <a class="action-button" href="/admin/users/{user.id}/edit">Edit</a>
+    </div>
+</div>
+{/content}
+{/include}

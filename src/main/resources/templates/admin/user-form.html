@@ -1,0 +1,49 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+{#include admin-layout}
+{#content}
+<div class="form-card">
+    <h1>{title}</h1>
+    <form method="post" action="{action}">
+        <div>
+            <label>Username
+                <input type="text" name="name" value="{user.name}" required>
+            </label>
+        </div>
+        <div>
+            <label>Email
+                <input type="email" name="email" value="{user.email}" required>
+            </label>
+        </div>
+        <div>
+            <label>Type
+                <select name="type" required>
+                    <option value="admin" {#if user.type == 'admin'}selected{/if}>Admin</option>
+                    <option value="support" {#if user.type == 'support'}selected{/if}>Support</option>
+                    <option value="user" {#if user.type == 'user'}selected{/if}>User</option>
+                    <option value="tam" {#if user.type == 'tam'}selected{/if}>TAM</option>
+                </select>
+            </label>
+        </div>
+        <div>
+            <label>Password
+                <input type="password" name="password" {#if user.id == null}required{/if}>
+            </label>
+            {#if user.id != null}
+            <small>Leave blank to keep the current password.</small>
+            {/if}
+        </div>
+        <div class="form-actions">
+            <a class="secondary-button" href="/admin/users">Cancel</a>
+            <button type="submit" class="action-button">Save</button>
+        </div>
+    </form>
+</div>
+{/content}
+{/include}

@@ -1,0 +1,37 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+{#include layout}
+{#content}
+<h1>{title}</h1>
+<form method="post" action="{action}">
+    <div>
+        <label>Body
+            <textarea name="body" rows="4" cols="50" required>{message.body}</textarea>
+        </label>
+    </div>
+    <div>
+        <label>Date
+            <input type="datetime-local" name="date" value="{dateValue}" required>
+        </label>
+    </div>
+    <div>
+        <label>Ticket
+            <select name="ticketId" required>
+                <option value="">Select a ticket</option>
+                {#for ticket in tickets}
+                <option value="{ticket.id}" {#if message.ticket != null && message.ticket.id == ticket.id}selected{/if}>{ticket.name}</option>
+                {/for}
+            </select>
+        </label>
+    </div>
+    <button type="submit">Save</button>
+</form>
+<p><a href="/messages">Back to list</a></p>
+{/content}
+{/include}

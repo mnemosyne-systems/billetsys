@@ -1,0 +1,52 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+{#include support-layout}
+{#content}
+<div class="form-card full-width">
+    <h1>{#if ticketName?? && !ticketName.isBlank}{ticketName}{#else}{#if ticket.name?? && !ticket.name.isBlank}{ticket.name}{#else} {/if}{/if}</h1>
+    <form method="post" action="/user/tickets">
+        <div>
+            <label>Ticket
+                <input type="text" name="ticketName" value="{#if ticketName??}{ticketName}{/if}" readonly>
+            </label>
+        </div>
+        <input type="hidden" name="status" value="Open">
+        <div>
+            <label>Message
+                <textarea name="message" rows="4" required>{#if message??}{message}{/if}</textarea>
+            </label>
+        </div>
+        {#if companyEntitlements.size == 1}
+        {#for entry in companyEntitlements}
+        <div>
+            <label>Entitlement
+                <input type="text" value="{entry.entitlement.name} - {entry.supportLevel.name}" readonly>
+            </label>
+            <input type="hidden" name="companyEntitlementId" value="{entry.id}">
+        </div>
+        {/for}
+        {#else}
+        <div>
+            <label>Entitlement
+                <select name="companyEntitlementId" required>
+                    <option value="">Select entitlement</option>
+                    {#for entry in companyEntitlements}
+                    <option value="{entry.id}">{entry.entitlement.name} - {entry.supportLevel.name}</option>
+                    {/for}
+                </select>
+            </label>
+        </div>
+        {/if}
+        <div class="form-actions">
+            <button type="submit" class="action-button">Create</button>
+        </div>
+    </form>
+</div>
+{/content}
+{/include}

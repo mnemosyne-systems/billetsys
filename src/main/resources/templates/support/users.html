@@ -1,0 +1,57 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+{#include support-layout}
+{#content}
+<div class="support-header">
+    <h1>Users</h1>
+    <a class="action-button" href="{#if createUserUrl??}{createUserUrl}{#else}/support/users{/if}">Create</a>
+</div>
+{#if showCompanySelector}
+<div style="margin-bottom: 16px;">
+    <label>Company
+        {#if companyLocked?? && companyLocked}
+        <input type="text" value="{#for company in companies}{#if selectedCompanyId == company.id}{company.name}{/if}{/for}" readonly>
+        {#else}
+        <select name="companyId" onchange="window.location = '{#if usersBase??}{usersBase}{#else}/support/users{/if}/' + this.value">
+            {#for company in companies}
+            <option value="{company.id}" {#if selectedCompanyId == company.id}selected{/if}>{company.name}</option>
+            {/for}
+        </select>
+        {/if}
+    </label>
+</div>
+{/if}
+{#if selectedCompanyId??}
+<table>
+    <thead>
+    <tr>
+        <th>Name <button class="sort-button" type="button" onclick="sortTable(this, 0)">↕</button></th>
+        <th>Email <button class="sort-button" type="button" onclick="sortTable(this, 1)">↕</button></th>
+        <th>Type <button class="sort-button" type="button" onclick="sortTable(this, 2)">↕</button></th>
+    </tr>
+    </thead>
+    <tbody>
+    {#if users.isEmpty}
+    <tr>
+        <td colspan="4">No users found.</td>
+    </tr>
+    {#else}
+    {#for user in users}
+    <tr>
+        <td>{user.name}</td>
+        <td><a href="mailto:{user.email}">{user.email}</a></td>
+        <td>{user.type}</td>
+    </tr>
+    {/for}
+    {/if}
+    </tbody>
+</table>
+{/if}
+{/content}
+{/include}
