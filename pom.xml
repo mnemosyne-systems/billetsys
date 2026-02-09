@@ -7,6 +7,30 @@
     <artifactId>billetsys</artifactId>
     <version>0.1.0-SNAPSHOT</version>
 
+    <developers>
+        <developer>
+            <id>jesperpedersen</id>
+            <name>Jesper Pedersen</name>
+            <organization>mnemosyne systems</organization>
+            <organizationUrl>https://www.mnemosyne-systems.ai/</organizationUrl>
+        </developer>
+    </developers>
+
+    <licenses>
+        <license>
+            <name>Eclipse Public License - v 2.0</name>
+            <url>https://www.eclipse.org/legal/epl-2.0/</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/mnemosyne-systems/billetsys</url>
+        <connection>scm:git:git@github.com:mnemosyne-systems/billetsys.git</connection>
+        <developerConnection>scm:git:git@github.com:mnemosyne-systems/billetsys.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
