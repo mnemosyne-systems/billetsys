@@ -7,25 +7,49 @@
 -->
 
 {#include admin-layout}
-{#content}
-<div class="form-card">
-    <h1>{user.name}</h1>
-    <table>
-        <tbody>
-        <tr>
-            <th>Email</th>
-            <td><a href="mailto:{user.email}">{user.email}</a></td>
-        </tr>
-        <tr>
-            <th>Type</th>
-            <td>{typeLabel}</td>
-        </tr>
-        </tbody>
-    </table>
-    <div class="form-actions">
-        <a class="secondary-button" href="/admin/users">Ok</a>
-        <a class="action-button" href="/admin/users/{user.id}/edit">Edit</a>
-    </div>
-</div>
-{/content}
+    {#content}
+        <div class="form-card">
+            <h1>{user.name}</h1>
+            <table>
+                <tbody>
+                <tr>
+                    <th>Full Name</th>
+                    <td>{user.fullName ?: ''}</td>
+                </tr>
+                <tr>
+                    <th>Email</th>
+                    <td><a href="mailto:{user.email}">{user.email}</a></td>
+                </tr>
+                <tr>
+                    <th>Phone</th>
+                    <td>
+                        {#if user.phoneNumber != null && !user.phoneNumber.isBlank}
+                            <a href="tel:{user.phoneNumber}">{user.phoneNumber}</a>
+                        {/if}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Phone Extension</th>
+                    <td>{user.phoneExtension ?: ''}</td>
+                </tr>
+                <tr>
+                    <th>Country</th>
+                    <td>{#if user.country != null}{user.country.name}{/if}</td>
+                </tr>
+                <tr>
+                    <th>Time Zone</th>
+                    <td>{#if user.timezone != null}{user.timezone.name}{/if}</td>
+                </tr>
+                <tr>
+                    <th>Type</th>
+                    <td>{typeLabel}</td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="form-actions">
+                <a class="secondary-button" href="/admin/users">Ok</a>
+                <a class="action-button" href="/admin/users/{user.id}/edit">Edit</a>
+            </div>
+        </div>
+    {/content}
 {/include}

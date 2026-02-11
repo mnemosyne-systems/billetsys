@@ -7,55 +7,114 @@
 -->
 
 {#include admin-layout}
-{#content}
-<div class="form-card">
-    <h1>Profile</h1>
-    {#if error}
-    <p style="color: red">{error}</p>
-    {/if}
-    <div style="margin-bottom: 16px;">
-        {#if user.logoBase64 != null && !user.logoBase64.isBlank}
-        <img src="{user.logoBase64}" alt="Current logo" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover;">
-        {#else}
-        <span class="user-avatar" style="width: 64px; height: 64px; color: var(--body-text);">
+    {#content}
+        <div class="form-card">
+            <h1>Profile</h1>
+            {#if error}
+                <p style="color: red">{error}</p>
+            {/if}
+            <div style="margin-bottom: 16px;">
+                {#if user.logoBase64 != null && !user.logoBase64.isBlank}
+                    <img src="{user.logoBase64}" alt="Current logo" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover;">
+                {#else}
+                    <span class="user-avatar" style="width: 64px; height: 64px; color: var(--body-text);">
             <svg viewBox="0 0 24 24" aria-hidden="true" style="stroke: currentColor; fill: none;">
                 <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4 0-7 2-7 4v2h14v-2c0-2-3-4-7-4z" />
             </svg>
         </span>
-        {/if}
-    </div>
-    <form method="post" action="/profile">
-        <div>
-            <label>Username
-                <input type="text" name="name" value="{user.name}" required>
-            </label>
+                {/if}
+            </div>
+            <form method="post" action="/profile">
+                <div>
+                    <label>Username
+                        <input type="text" name="name" value="{user.name}" required>
+                    </label>
+                </div>
+                <div>
+                    <label>Email
+                        <input type="email" name="email" value="{user.email}" required>
+                    </label>
+                </div>
+                <div>
+                    <label>Company
+                        <select name="companyId">
+                            <option value="">Select company</option>
+                            {#for company in allCompanies}
+                                <option value="{company.id}" {#if userCompany != null && userCompany.id == company.id}selected{/if}>{company.name}</option>
+                            {/for}
+                        </select>
+                    </label>
+                </div>
+                <div>
+                    <label>Full Name
+                        <input type="text" name="fullName" value="{user.fullName}">
+                    </label>
+                </div>
+                <div>
+                    <label>Phone Number
+                        <input type="tel" name="phoneNumber" value="{user.phoneNumber}">
+                    </label>
+                </div>
+                <div>
+                    <label>Phone Extension
+                        <input type="text" name="phoneExtension" value="{user.phoneExtension}">
+                    </label>
+                </div>
+                <div>
+                    <label>Country
+                            {#countrySelect selectedCountry=user.country countries=countries /}
+                    </label>
+                </div>
+                <div>
+                    <label>Time Zone
+                            {#timezoneSelect selectedTimezone=user.timezone timezones=timezones /}
+                    </label>
+                </div>
+                <div>
+                    <input id="logoInput" type="file" name="logo" accept="image/*" onchange="encodeLogo(this)" style="display: none;">
+                    <input type="hidden" name="logoData" id="logoData">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="action-button" onclick="triggerLogoUpload()">Upload logo</button>
+                    <button type="submit" class="action-button">Save</button>
+                </div>
+            </form>
         </div>
-        <div>
-            <input id="logoInput" type="file" name="logo" accept="image/*" onchange="encodeLogo(this)" style="display: none;">
-            <input type="hidden" name="logoData" id="logoData">
-        </div>
-        <div class="form-actions">
-            <button type="button" class="action-button" onclick="triggerLogoUpload()">Upload logo</button>
-            <button type="submit" class="action-button">Save</button>
-        </div>
-    </form>
-</div>
-<script>
-    function triggerLogoUpload() {
-        document.getElementById('logoInput').click();
-    }
-    function encodeLogo(input) {
-        const file = input.files && input.files[0];
-        if (!file) {
-            document.getElementById('logoData').value = '';
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = function() {
-            document.getElementById('logoData').value = reader.result;
-        };
-        reader.readAsDataURL(file);
-    }
-</script>
-{/content}
+        <script>
+            function triggerLogoUpload() {
+                document.getElementById('logoInput').click();
+            }
+            function encodeLogo(input) {
+                const file = input.files && input.files[0];
+                if (!file) {
+                    document.getElementById('logoData').value = '';
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function() {
+                    document.getElementById('logoData').value = reader.result;
+                };
+                reader.readAsDataURL(file);
+            }
+            function loadTimezones() {
+                var countryId = document.getElementById('countrySelect').value;
+                var tzSelect = document.getElementById('timezoneSelect');
+                tzSelect.innerHTML = '<option value="">Select time zone</option>';
+                if (!countryId) return;
+                fetch('/timezones?countryId=' + countryId)
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        for (var i = 0; i < data.length; i++) {
+                            var opt = document.createElement('option');
+                            opt.value = data[i].id;
+                            opt.textContent = data[i].name;
+                            tzSelect.appendChild(opt);
+                        }
+                        if (data.length === 1) {
+                            tzSelect.options[1].selected = true;
+                        }
+                    });
+            }
+        </script>
+    {/content}
 {/include}

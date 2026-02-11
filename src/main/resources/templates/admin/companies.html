@@ -24,7 +24,7 @@
     {#for company in companies}
     <tr>
         <td><a href="/admin/companies/{company.id}">{company.name}</a></td>
-        <td>{company.country}</td>
+        <td>{#if company.country}{company.country.name}{/if}</td>
         <td data-sort-value="{company.id}">
             <a class="icon-link" href="/admin/companies/{company.id}/edit" title="Edit" aria-label="Edit">
                 <svg viewBox="0 0 24 24" aria-hidden="true">

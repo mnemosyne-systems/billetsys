@@ -1,0 +1,6 @@
+<select name="countryId" id="countrySelect" onchange="loadTimezones()">
+    <option value="">Select country</option>
+    {#for country in countries}
+        <option value="{country.id}" {#if selectedCountry?? && selectedCountry.id == country.id}selected{/if}>{country.name}</option>
+    {/for}
+</select>

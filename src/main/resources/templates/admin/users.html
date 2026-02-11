@@ -24,7 +24,8 @@
     <tbody>
     {#for user in users}
     <tr>
-        <td><a href="/admin/users/{user.id}">{user.name}</a></td>
+        <td><a href="/admin/users/{user.id}/edit">{user.name}</a></td>
+        {!<td><a href="/admin/users/{user.id}">{user.name}</a></td>!}
         <td><a href="mailto:{user.email}">{user.email}</a></td>
         <td>{typeLabels.get(user.id)}</td>
         <td data-sort-value="{user.id}">

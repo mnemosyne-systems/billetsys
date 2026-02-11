@@ -7,77 +7,81 @@
 -->
 
 {#include admin-layout}
-{#content}
-<div class="form-card">
-    <h1>{company.name}</h1>
-    <table>
-        <tbody>
-        <tr>
-            <th>Address1</th>
-            <td>{company.address1}</td>
-        </tr>
-        <tr>
-            <th>Address2</th>
-            <td>{company.address2}</td>
-        </tr>
-        <tr>
-            <th>City</th>
-            <td>{company.city}</td>
-        </tr>
-        <tr>
-            <th>State</th>
-            <td>{company.state}</td>
-        </tr>
-        <tr>
-            <th>Zip</th>
-            <td>{company.zip}</td>
-        </tr>
-        <tr>
-            <th>Country</th>
-            <td>{company.country}</td>
-        </tr>
-        <tr>
-            <th>Users</th>
-            <td>
-                {#if companyUsers.isEmpty}
-                <span>-</span>
-                {#else}
-                {#for user in companyUsers}
-                <div>{user.name} (<a href="mailto:{user.email}">{user.email}</a>)</div>
-                {/for}
-                {/if}
-            </td>
-        </tr>
-        <tr>
-            <th>TAMs</th>
-            <td>
-                {#if companyTams.isEmpty}
-                <span>-</span>
-                {#else}
-                {#for user in companyTams}
-                <div>{user.name} (<a href="mailto:{user.email}">{user.email}</a>)</div>
-                {/for}
-                {/if}
-            </td>
-        </tr>
-        <tr>
-            <th>Entitlements</th>
-            <td>
-                {#if companyEntitlements.isEmpty}
-                <span>-</span>
-                {#else}
-                {#for entry in companyEntitlements}
-                <div>{entry.entitlement.name} - {entry.supportLevel.name}</div>
-                {/for}
-                {/if}
-            </td>
-        </tr>
-        </tbody>
-    </table>
-    <div class="form-actions">
-        <a class="secondary-button" href="/admin/companies">Ok</a>
-        <a class="action-button" href="/admin/companies/{company.id}/edit">Edit</a>
-    </div>
-</div>
-{/content}
+    {#content}
+        <div class="form-card">
+            <h1>{company.name}</h1>
+            <table>
+                <tbody>
+                <tr>
+                    <th>Address1</th>
+                    <td>{company.address1}</td>
+                </tr>
+                <tr>
+                    <th>Address2</th>
+                    <td>{company.address2}</td>
+                </tr>
+                <tr>
+                    <th>City</th>
+                    <td>{company.city}</td>
+                </tr>
+                <tr>
+                    <th>State</th>
+                    <td>{company.state}</td>
+                </tr>
+                <tr>
+                    <th>Zip</th>
+                    <td>{company.zip}</td>
+                </tr>
+                <tr>
+                    <th>Country</th>
+                    <td>{#if company.country}{company.country.name}{/if}</td>
+                </tr>
+                <tr>
+                    <th>Time Zone</th>
+                    <td>{#if company.timezone}{company.timezone.name}{/if}</td>
+                </tr>
+                <tr>
+                    <th>Users</th>
+                    <td>
+                        {#if companyUsers.isEmpty}
+                            <span>-</span>
+                        {#else}
+                            {#for user in companyUsers}
+                                <div>{user.name} (<a href="mailto:{user.email}">{user.email}</a>)</div>
+                            {/for}
+                        {/if}
+                    </td>
+                </tr>
+                <tr>
+                    <th>TAMs</th>
+                    <td>
+                        {#if companyTams.isEmpty}
+                            <span>-</span>
+                        {#else}
+                            {#for user in companyTams}
+                                <div>{user.name} (<a href="mailto:{user.email}">{user.email}</a>)</div>
+                            {/for}
+                        {/if}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Entitlements</th>
+                    <td>
+                        {#if companyEntitlements.isEmpty}
+                            <span>-</span>
+                        {#else}
+                            {#for entry in companyEntitlements}
+                                <div>{entry.entitlement.name} - {entry.supportLevel.name}</div>
+                            {/for}
+                        {/if}
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="form-actions">
+                <a class="secondary-button" href="/admin/companies">Ok</a>
+                <a class="action-button" href="/admin/companies/{company.id}/edit">Edit</a>
+            </div>
+        </div>
+    {/content}
 {/include}

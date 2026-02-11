@@ -14,6 +14,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -35,8 +37,25 @@ public class User extends PanacheEntityBase {
     @Column(nullable = false)
     public String name;
 
+    @Column(name = "full_name")
+    public String fullName;
+
     @Column(nullable = false)
     public String email;
+
+    @Column(name = "phone_number")
+    public String phoneNumber;
+
+    @Column(name = "phone_extension")
+    public String phoneExtension;
+
+    @ManyToOne
+    @JoinColumn(name = "timezone_id")
+    public Timezone timezone;
+
+    @ManyToOne
+    @JoinColumn(name = "country_id")
+    public Country country;
 
     @Column(name = "user_type", nullable = false)
     public String type;
@@ -46,4 +65,27 @@ public class User extends PanacheEntityBase {
 
     @Column(name = "logo_base64", columnDefinition = "text")
     public String logoBase64;
+
+    /**
+     * Returns the formatted phone number with extension if available.
+     */
+    public String getFormattedPhone() {
+        if (phoneNumber == null || phoneNumber.isBlank()) {
+            return null;
+        }
+        if (phoneExtension != null && !phoneExtension.isBlank()) {
+            return phoneNumber + " ext. " + phoneExtension;
+        }
+        return phoneNumber;
+    }
+
+    /**
+     * Returns the display name (full name if available, otherwise username).
+     */
+    public String getDisplayName() {
+        if (fullName != null && !fullName.isBlank()) {
+            return fullName;
+        }
+        return name;
+    }
 }

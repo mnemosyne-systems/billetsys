@@ -10,10 +10,12 @@ package ai.mnemosyne_systems.web;
 
 import ai.mnemosyne_systems.model.Attachment;
 import ai.mnemosyne_systems.model.Company;
+import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Entitlement;
 import ai.mnemosyne_systems.model.CompanyEntitlement;
 import ai.mnemosyne_systems.model.SupportLevel;
 import ai.mnemosyne_systems.model.Ticket;
+import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Message;
 import io.quarkus.elytron.security.common.BcryptUtil;
@@ -28,28 +30,115 @@ import java.util.List;
 public class UserSeeder {
 
     void onStart(@Observes StartupEvent event) {
+        seedCountriesAndTimezones();
         seedDefaults();
         seedSupportCatalog();
         seedSampleData();
     }
 
     @Transactional
+    void seedCountriesAndTimezones() {
+        if (Country.count() > 0) {
+            return;
+        }
+
+        seedCountry("United States", "US", "America/New_York", "America/Chicago", "America/Denver",
+                "America/Los_Angeles", "America/Anchorage", "Pacific/Honolulu");
+        seedCountry("United Kingdom", "GB", "Europe/London");
+        seedCountry("Canada", "CA", "America/Toronto", "America/Vancouver", "America/Edmonton", "America/Halifax");
+        seedCountry("Australia", "AU", "Australia/Sydney", "Australia/Melbourne", "Australia/Brisbane",
+                "Australia/Perth");
+        seedCountry("Germany", "DE", "Europe/Berlin");
+        seedCountry("France", "FR", "Europe/Paris");
+        seedCountry("Japan", "JP", "Asia/Tokyo");
+        seedCountry("China", "CN", "Asia/Shanghai");
+        seedCountry("India", "IN", "Asia/Kolkata");
+        seedCountry("Brazil", "BR", "America/Sao_Paulo");
+        seedCountry("Egypt", "EG", "Africa/Cairo");
+        seedCountry("South Africa", "ZA", "Africa/Johannesburg");
+        seedCountry("Mexico", "MX", "America/Mexico_City");
+        seedCountry("Spain", "ES", "Europe/Madrid");
+        seedCountry("Italy", "IT", "Europe/Rome");
+        seedCountry("Netherlands", "NL", "Europe/Amsterdam");
+        seedCountry("Sweden", "SE", "Europe/Stockholm");
+        seedCountry("Norway", "NO", "Europe/Oslo");
+        seedCountry("Denmark", "DK", "Europe/Copenhagen");
+        seedCountry("Finland", "FI", "Europe/Helsinki");
+        seedCountry("Poland", "PL", "Europe/Warsaw");
+        seedCountry("Russia", "RU", "Europe/Moscow");
+        seedCountry("South Korea", "KR", "Asia/Seoul");
+        seedCountry("Singapore", "SG", "Asia/Singapore");
+        seedCountry("United Arab Emirates", "AE", "Asia/Dubai");
+        seedCountry("Saudi Arabia", "SA", "Asia/Riyadh");
+        seedCountry("Israel", "IL", "Asia/Jerusalem");
+        seedCountry("Turkey", "TR", "Europe/Istanbul");
+        seedCountry("Argentina", "AR", "America/Buenos_Aires");
+        seedCountry("Chile", "CL", "America/Santiago");
+        seedCountry("Colombia", "CO", "America/Bogota");
+        seedCountry("Peru", "PE", "America/Lima");
+        seedCountry("New Zealand", "NZ", "Pacific/Auckland");
+        seedCountry("Ireland", "IE", "Europe/Dublin");
+        seedCountry("Switzerland", "CH", "Europe/Zurich");
+        seedCountry("Austria", "AT", "Europe/Vienna");
+        seedCountry("Belgium", "BE", "Europe/Brussels");
+        seedCountry("Portugal", "PT", "Europe/Lisbon");
+        seedCountry("Greece", "GR", "Europe/Athens");
+        seedCountry("Czech Republic", "CZ", "Europe/Prague");
+        seedCountry("Romania", "RO", "Europe/Bucharest");
+        seedCountry("Hungary", "HU", "Europe/Budapest");
+        seedCountry("Ukraine", "UA", "Europe/Kiev");
+        seedCountry("Thailand", "TH", "Asia/Bangkok");
+        seedCountry("Vietnam", "VN", "Asia/Ho_Chi_Minh");
+        seedCountry("Indonesia", "ID", "Asia/Jakarta");
+        seedCountry("Malaysia", "MY", "Asia/Kuala_Lumpur");
+        seedCountry("Philippines", "PH", "Asia/Manila");
+        seedCountry("Pakistan", "PK", "Asia/Karachi");
+        seedCountry("Bangladesh", "BD", "Asia/Dhaka");
+    }
+
+    private void seedCountry(String name, String code, String... timezoneNames) {
+        Country country = Country.find("code", code).firstResult();
+        if (country == null) {
+            country = new Country();
+            country.name = name;
+            country.code = code;
+            country.persist();
+        }
+        for (String tzName : timezoneNames) {
+            Timezone existing = Timezone.find("name", tzName).firstResult();
+            if (existing == null) {
+                Timezone tz = new Timezone();
+                tz.name = tzName;
+                tz.country = country;
+                tz.persist();
+            }
+        }
+    }
+
+    @Transactional
     void seedDefaults() {
-        seedUser("admin", "admin@mnemosyne-systems.ai", User.TYPE_ADMIN, "admin");
-        seedUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
-        seedUser("support2", "support2@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support2");
-        seedUser("tam", "tam@mnemosyne-systems.ai", User.TYPE_TAM, "tam");
+        seedUser("admin", "System Administrator", "admin@mnemosyne-systems.ai", "+1-555-0100", null, "America/New_York",
+                "US", User.TYPE_ADMIN, "admin");
+        seedUser("support1", "Sarah Johnson", "support1@mnemosyne-systems.ai", "+1-555-0101", "101", "America/New_York",
+                "US", User.TYPE_SUPPORT, "support1");
+        seedUser("support2", "Michael Chen", "support2@mnemosyne-systems.ai", "+1-555-0102", "102",
+                "America/Los_Angeles", "US", User.TYPE_SUPPORT, "support2");
+        seedUser("tam", "Technical Account Manager", "tam@mnemosyne-systems.ai", "+1-555-0300", "300",
+                "America/Chicago", "US", User.TYPE_TAM, "tam");
         removeUser("user@mnemosyne-systems.ai");
         removeUser("support@mnemosyne-systems.ai");
     }
 
     @Transactional
     void seedSampleData() {
-        User user1 = seedUser("user1", "user1@mnemosyne-systems.ai", User.TYPE_USER, "user1");
-        User user2 = seedUser("user2", "user2@mnemosyne-systems.ai", User.TYPE_USER, "user2");
+        User user1 = seedUser("user1", "John Doe", "user1@mnemosyne-systems.ai", "+1-555-0201", null, "Europe/London",
+                "GB", User.TYPE_USER, "user1");
+        User user2 = seedUser("user2", "Jane Smith", "user2@mnemosyne-systems.ai", "+1-555-0202", null, "Europe/Paris",
+                "FR", User.TYPE_USER, "user2");
         User tam = User.find("email", "tam@mnemosyne-systems.ai").firstResult();
         if (tam == null) {
-            tam = seedUser("tam", "tam@mnemosyne-systems.ai", User.TYPE_TAM, "tam");
+            tam = seedUser("tam", "Technical Account Manager", "tam@mnemosyne-systems.ai", "+1-555-0300", "300",
+                    "America/Chicago", "US", User.TYPE_TAM, "tam");
         }
 
         Company company = Company
@@ -57,8 +146,15 @@ public class UserSeeder {
         if (company == null) {
             company = new Company();
             company.name = "A";
-            company.country = "United States of America";
+            company.country = findCountryByCode("US");
+            company.timezone = findTimezoneByName("America/New_York");
             company.persist();
+        }
+        if (company.country == null) {
+            company.country = findCountryByCode("US");
+        }
+        if (company.timezone == null) {
+            company.timezone = findTimezoneByName("America/New_York");
         }
         company.users.removeIf(existing -> User.TYPE_ADMIN.equalsIgnoreCase(existing.type)
                 || User.TYPE_SUPPORT.equalsIgnoreCase(existing.type));
@@ -107,12 +203,35 @@ public class UserSeeder {
         seedSupportLevel("High", "Escalated response window", 60, "Red", 90, "Yellow", 120, "White");
     }
 
-    private User seedUser(String username, String email, String type, String password) {
+    private Country findCountryByCode(String code) {
+        if (code == null || code.isBlank()) {
+            return null;
+        }
+        return Country.find("code", code).firstResult();
+    }
+
+    private Timezone findTimezoneByName(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        return Timezone.find("name", name).firstResult();
+    }
+
+    private User seedUser(String username, String fullName, String email, String phoneNumber, String phoneExtension,
+            String timezoneName, String countryCode, String type, String password) {
         User user = User.find("email", email).firstResult();
+        Country country = findCountryByCode(countryCode);
+        Timezone timezone = findTimezoneByName(timezoneName);
+
         if (user == null) {
             user = new User();
             user.name = username;
+            user.fullName = fullName;
             user.email = email;
+            user.phoneNumber = phoneNumber;
+            user.phoneExtension = phoneExtension;
+            user.timezone = timezone;
+            user.country = country;
             user.type = type;
             user.passwordHash = BcryptUtil.bcryptHash(password);
             user.persist();
@@ -120,6 +239,21 @@ public class UserSeeder {
         }
         if (user.name == null || user.name.isBlank()) {
             user.name = username;
+        }
+        if (user.fullName == null || user.fullName.isBlank()) {
+            user.fullName = fullName;
+        }
+        if (user.phoneNumber == null || user.phoneNumber.isBlank()) {
+            user.phoneNumber = phoneNumber;
+        }
+        if (user.phoneExtension == null || user.phoneExtension.isBlank()) {
+            user.phoneExtension = phoneExtension;
+        }
+        if (user.timezone == null) {
+            user.timezone = timezone;
+        }
+        if (user.country == null) {
+            user.country = country;
         }
         if (user.type == null || user.type.isBlank()) {
             user.type = type;

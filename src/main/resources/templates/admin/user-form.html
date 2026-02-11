@@ -7,43 +7,98 @@
 -->
 
 {#include admin-layout}
-{#content}
-<div class="form-card">
-    <h1>{title}</h1>
-    <form method="post" action="{action}">
-        <div>
-            <label>Username
-                <input type="text" name="name" value="{user.name}" required>
-            </label>
+    {#content}
+        <div class="form-card">
+            <h1>{title}</h1>
+            <form method="post" action="{action}">
+                <div>
+                    <label>Username
+                        <input type="text" name="name" value="{user.name}" required>
+                    </label>
+                </div>
+                <div>
+                    <label>Full Name
+                        <input type="text" name="fullName" value="{user.fullName}">
+                    </label>
+                </div>
+                <div>
+                    <label>Email
+                        <input type="email" name="email" value="{user.email}" required>
+                    </label>
+                </div>
+                <div>
+                    <label>Phone Number
+                        <input type="tel" name="phoneNumber" value="{user.phoneNumber}">
+                    </label>
+                </div>
+                <div>
+                    <label>Phone Extension
+                        <input type="text" name="phoneExtension" value="{user.phoneExtension}">
+                    </label>
+                </div>
+                <div>
+                    <label>Country
+                            {#countrySelect selectedCountry=user.country countries=countries /}
+                    </label>
+                </div>
+                <div>
+                    <label>Time Zone
+                            {#timezoneSelect selectedTimezone=user.timezone timezones=timezones /}
+                    </label>
+                </div>
+                <div>
+                    <label>Company
+                        <select name="companyId">
+                            <option value="">Select company</option>
+                            {#for company in allCompanies}
+                                <option value="{company.id}" {#if userCompany != null && userCompany.id == company.id}selected{/if}>{company.name}</option>
+                            {/for}
+                        </select>
+                    </label>
+                </div>
+                <div>
+                    <label>Type
+                        <select name="type" required>
+                            <option value="admin" {#if user.type == 'admin'}selected{/if}>Admin</option>
+                            <option value="support" {#if user.type == 'support'}selected{/if}>Support</option>
+                            <option value="user" {#if user.type == 'user'}selected{/if}>User</option>
+                            <option value="tam" {#if user.type == 'tam'}selected{/if}>TAM</option>
+                        </select>
+                    </label>
+                </div>
+                <div>
+                    <label>Password
+                        <input type="password" name="password" {#if user.id == null}required{/if}>
+                    </label>
+                    {#if user.id != null}
+                        <small>Leave blank to keep the current password.</small>
+                    {/if}
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="action-button">Save</button>
+                </div>
+            </form>
         </div>
-        <div>
-            <label>Email
-                <input type="email" name="email" value="{user.email}" required>
-            </label>
-        </div>
-        <div>
-            <label>Type
-                <select name="type" required>
-                    <option value="admin" {#if user.type == 'admin'}selected{/if}>Admin</option>
-                    <option value="support" {#if user.type == 'support'}selected{/if}>Support</option>
-                    <option value="user" {#if user.type == 'user'}selected{/if}>User</option>
-                    <option value="tam" {#if user.type == 'tam'}selected{/if}>TAM</option>
-                </select>
-            </label>
-        </div>
-        <div>
-            <label>Password
-                <input type="password" name="password" {#if user.id == null}required{/if}>
-            </label>
-            {#if user.id != null}
-            <small>Leave blank to keep the current password.</small>
-            {/if}
-        </div>
-        <div class="form-actions">
-            <a class="secondary-button" href="/admin/users">Cancel</a>
-            <button type="submit" class="action-button">Save</button>
-        </div>
-    </form>
-</div>
-{/content}
+        <script>
+            function loadTimezones() {
+                var countryId = document.getElementById('countrySelect').value;
+                var tzSelect = document.getElementById('timezoneSelect');
+                tzSelect.innerHTML = '<option value="">Select time zone</option>';
+                if (!countryId) return;
+                fetch('/timezones?countryId=' + countryId)
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        for (var i = 0; i < data.length; i++) {
+                            var opt = document.createElement('option');
+                            opt.value = data[i].id;
+                            opt.textContent = data[i].name;
+                            tzSelect.appendChild(opt);
+                        }
+                        if (data.length === 1) {
+                            tzSelect.options[1].selected = true;
+                        }
+                    });
+            }
+        </script>
+    {/content}
 {/include}

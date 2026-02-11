@@ -13,6 +13,8 @@ import ai.mnemosyne_systems.model.CompanyEntitlement;
 import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
+import ai.mnemosyne_systems.model.Country;
+import ai.mnemosyne_systems.model.Timezone;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
@@ -29,7 +31,6 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -169,10 +170,12 @@ public class UserResource {
         }
         User newUser = new User();
         newUser.type = User.TYPE_USER;
+        List<Country> countries = Country.list("order by name");
         return supportUserFormTemplate.data("user", newUser).data("companies", companies)
                 .data("selectedCompanyId", selectedCompany == null ? null : selectedCompany.id)
                 .data("companyLocked", selectedCompany != null && companies.size() <= 1)
                 .data("types", List.of(User.TYPE_USER)).data("action", "/tam/users").data("title", "New user")
+                .data("countries", countries).data("timezones", List.of())
                 .data("assignedCount", data.assignedTickets.size()).data("openCount", data.openTickets.size())
                 .data("ticketsBase", "/user/tickets").data("showSupportUsers", true).data("currentUser", user);
     }
@@ -181,7 +184,10 @@ public class UserResource {
     @Path("tam/users")
     @Transactional
     public Response createTamUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
-            @FormParam("email") String email, @FormParam("password") String password, @FormParam("type") String type,
+            @FormParam("fullName") String fullName, @FormParam("email") String email,
+            @FormParam("phoneNumber") String phoneNumber, @FormParam("phoneExtension") String phoneExtension,
+            @FormParam("timezoneId") Long timezoneId, @FormParam("countryId") Long countryId,
+            @FormParam("password") String password, @FormParam("type") String type,
             @FormParam("companyId") Long companyId) {
         User user = requireUser(auth);
         if (!User.TYPE_TAM.equalsIgnoreCase(user.type)) {
@@ -211,7 +217,12 @@ public class UserResource {
         String normalized = normalizeType(type, Set.of(User.TYPE_USER), "Type must be user");
         User newUser = new User();
         newUser.name = name.trim();
+        newUser.fullName = trimOrNull(fullName);
         newUser.email = email.trim();
+        newUser.phoneNumber = trimOrNull(phoneNumber);
+        newUser.phoneExtension = trimOrNull(phoneExtension);
+        newUser.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
+        newUser.country = countryId != null ? Country.findById(countryId) : null;
         newUser.type = normalized;
         newUser.passwordHash = BcryptUtil.bcryptHash(password);
         newUser.persist();
@@ -458,8 +469,11 @@ public class UserResource {
         newUser.type = User.TYPE_USER;
         newUser.name = "";
         newUser.email = "";
+        List<Country> countries = Country.list("order by name");
+        List<Company> allCompanies = Company.list("order by name");
         return adminUserFormTemplate.data("user", newUser).data("action", "/admin/users").data("title", "New user")
-                .data("currentUser", user);
+                .data("countries", countries).data("timezones", List.of()).data("allCompanies", allCompanies)
+                .data("userCompany", null).data("currentUser", user);
     }
 
     @GET
@@ -471,8 +485,15 @@ public class UserResource {
         if (editUser == null) {
             throw new NotFoundException();
         }
+        List<Country> countries = Country.list("order by name");
+        List<Timezone> timezones = editUser.country != null
+                ? Timezone.list("country = ?1 order by name", editUser.country) : List.of();
+        List<Company> allCompanies = Company.list("order by name");
+        Company userCompany = Company.find("select c from Company c join c.users u where u = ?1", editUser)
+                .firstResult();
         return adminUserFormTemplate.data("user", editUser).data("action", "/admin/users/" + id)
-                .data("title", "Edit User").data("currentUser", user);
+                .data("title", "Edit User").data("countries", countries).data("timezones", timezones)
+                .data("allCompanies", allCompanies).data("userCompany", userCompany).data("currentUser", user);
     }
 
     @GET
@@ -491,16 +512,31 @@ public class UserResource {
     @Path("admin/users")
     @Transactional
     public Response createAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
-            @FormParam("email") String email, @FormParam("type") String type, @FormParam("password") String password) {
+            @FormParam("fullName") String fullName, @FormParam("email") String email,
+            @FormParam("phoneNumber") String phoneNumber, @FormParam("phoneExtension") String phoneExtension,
+            @FormParam("timezoneId") Long timezoneId, @FormParam("countryId") Long countryId,
+            @FormParam("type") String type, @FormParam("password") String password,
+            @FormParam("companyId") Long companyId) {
         requireAdmin(auth);
         validateUserFields(name, email, type, true, password);
         User newUser = new User();
         newUser.name = name.trim();
+        newUser.fullName = trimOrNull(fullName);
         newUser.email = email.trim();
+        newUser.phoneNumber = trimOrNull(phoneNumber);
+        newUser.phoneExtension = trimOrNull(phoneExtension);
+        newUser.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
+        newUser.country = countryId != null ? Country.findById(countryId) : null;
         newUser.type = normalizeType(type, Set.of(User.TYPE_ADMIN, User.TYPE_SUPPORT, User.TYPE_USER, User.TYPE_TAM),
                 "Type must be admin, support, user, or tam");
         newUser.passwordHash = BcryptUtil.bcryptHash(password);
         newUser.persist();
+        if (companyId != null) {
+            Company company = Company.findById(companyId);
+            if (company != null) {
+                company.users.add(newUser);
+            }
+        }
         return Response.seeOther(URI.create("/admin/users")).build();
     }
 
@@ -508,8 +544,11 @@ public class UserResource {
     @Path("admin/users/{id}")
     @Transactional
     public Response updateAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @FormParam("name") String name, @FormParam("email") String email, @FormParam("type") String type,
-            @FormParam("password") String password) {
+            @FormParam("name") String name, @FormParam("fullName") String fullName, @FormParam("email") String email,
+            @FormParam("phoneNumber") String phoneNumber, @FormParam("phoneExtension") String phoneExtension,
+            @FormParam("timezoneId") Long timezoneId, @FormParam("countryId") Long countryId,
+            @FormParam("type") String type, @FormParam("password") String password,
+            @FormParam("companyId") Long companyId) {
         requireAdmin(auth);
         User editUser = User.findById(id);
         if (editUser == null) {
@@ -517,13 +556,36 @@ public class UserResource {
         }
         validateUserFields(name, email, type, false, password);
         editUser.name = name.trim();
+        editUser.fullName = trimOrNull(fullName);
         editUser.email = email.trim();
+        editUser.phoneNumber = trimOrNull(phoneNumber);
+        editUser.phoneExtension = trimOrNull(phoneExtension);
+        editUser.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
+        editUser.country = countryId != null ? Country.findById(countryId) : null;
         editUser.type = normalizeType(type, Set.of(User.TYPE_ADMIN, User.TYPE_SUPPORT, User.TYPE_USER, User.TYPE_TAM),
                 "Type must be admin, support, user, or tam");
         if (password != null && !password.isBlank()) {
             editUser.passwordHash = BcryptUtil.bcryptHash(password);
         }
+        List<Company> currentCompanies = Company.find("select c from Company c join c.users u where u = ?1", editUser)
+                .list();
+        for (Company c : currentCompanies) {
+            c.users.removeIf(u -> u.id != null && u.id.equals(editUser.id));
+        }
+        if (companyId != null) {
+            Company company = Company.findById(companyId);
+            if (company != null) {
+                company.users.add(editUser);
+            }
+        }
         return Response.seeOther(URI.create("/admin/users")).build();
+    }
+
+    private String trimOrNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     @POST

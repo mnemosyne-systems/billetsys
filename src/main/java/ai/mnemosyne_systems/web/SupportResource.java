@@ -13,6 +13,8 @@ import ai.mnemosyne_systems.model.CompanyEntitlement;
 import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
+import ai.mnemosyne_systems.model.Country;
+import ai.mnemosyne_systems.model.Timezone;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
@@ -173,19 +175,23 @@ public class SupportResource {
         }
         User newUser = new User();
         newUser.type = User.TYPE_USER;
+        List<Country> countries = Country.list("order by name");
         return supportUserFormTemplate.data("user", newUser).data("companies", companies)
                 .data("selectedCompanyId", selectedCompany == null ? null : selectedCompany.id)
                 .data("types", List.of(User.TYPE_USER, User.TYPE_TAM)).data("action", "/support/users")
-                .data("title", "New user").data("assignedCount", counts.assignedCount)
-                .data("openCount", counts.openCount).data("ticketsBase", "/support").data("showSupportUsers", true)
-                .data("currentUser", currentUser);
+                .data("title", "New user").data("countries", countries).data("timezones", List.of())
+                .data("assignedCount", counts.assignedCount).data("openCount", counts.openCount)
+                .data("ticketsBase", "/support").data("showSupportUsers", true).data("currentUser", currentUser);
     }
 
     @POST
     @Path("/users")
     @Transactional
     public Response createSupportUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
-            @FormParam("email") String email, @FormParam("password") String password, @FormParam("type") String type,
+            @FormParam("fullName") String fullName, @FormParam("email") String email,
+            @FormParam("phoneNumber") String phoneNumber, @FormParam("phoneExtension") String phoneExtension,
+            @FormParam("timezoneId") Long timezoneId, @FormParam("countryId") Long countryId,
+            @FormParam("password") String password, @FormParam("type") String type,
             @FormParam("companyId") Long companyId, @Context HttpServletRequest request) {
         requireSupport(auth);
         if (name == null || name.isBlank()) {
@@ -207,7 +213,12 @@ public class SupportResource {
         String normalized = normalizeType(type, Set.of(User.TYPE_USER), "Type must be user");
         User newUser = new User();
         newUser.name = name.trim();
+        newUser.fullName = trimOrNull(fullName);
         newUser.email = email.trim();
+        newUser.phoneNumber = trimOrNull(phoneNumber);
+        newUser.phoneExtension = trimOrNull(phoneExtension);
+        newUser.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
+        newUser.country = countryId != null ? Country.findById(countryId) : null;
         newUser.type = normalized;
         newUser.passwordHash = BcryptUtil.bcryptHash(password);
         newUser.persist();
@@ -217,6 +228,13 @@ public class SupportResource {
             company.users.add(newUser);
         }
         return Response.seeOther(URI.create("/support/users/" + company.id)).build();
+    }
+
+    private String trimOrNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     @GET

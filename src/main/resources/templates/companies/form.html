@@ -7,55 +7,81 @@
 -->
 
 {#include layout}
-{#content}
-<h1>{title}</h1>
-<form method="post" action="{action}">
-    <div>
-        <label>Name
-            <input type="text" name="name" value="{company.name}" required>
-        </label>
-    </div>
-    <div>
-        <label>Address1
-            <input type="text" name="address1" value="{company.address1}">
-        </label>
-    </div>
-    <div>
-        <label>Address2
-            <input type="text" name="address2" value="{company.address2}">
-        </label>
-    </div>
-    <div>
-        <label>Users
-            <select name="userIds" multiple size="5">
-                {#for user in users}
-                <option value="{user.id}" {#if company.users.contains(user)}selected{/if}>{user.name} ({user.email})</option>
-                {/for}
-            </select>
-        </label>
-    </div>
-    <div>
-        <label>City
-            <input type="text" name="city" value="{company.city}">
-        </label>
-    </div>
-    <div>
-        <label>State
-            <input type="text" name="state" value="{company.state}">
-        </label>
-    </div>
-    <div>
-        <label>Zip
-            <input type="text" name="zip" value="{company.zip}">
-        </label>
-    </div>
-    <div>
-        <label>Country
-            <input type="text" name="country" value="{company.country}">
-        </label>
-    </div>
-    <button type="submit">Save</button>
-</form>
-<p><a href="/companies">Back to list</a></p>
-{/content}
+    {#content}
+        <h1>{title}</h1>
+        <form method="post" action="{action}">
+            <div>
+                <label>Name
+                    <input type="text" name="name" value="{company.name}" required>
+                </label>
+            </div>
+            <div>
+                <label>Address1
+                    <input type="text" name="address1" value="{company.address1}">
+                </label>
+            </div>
+            <div>
+                <label>Address2
+                    <input type="text" name="address2" value="{company.address2}">
+                </label>
+            </div>
+            <div>
+                <label>Users
+                    <select name="userIds" multiple size="5">
+                        {#for user in users}
+                            <option value="{user.id}" {#if company.users.contains(user)}selected{/if}>{user.name} ({user.email})</option>
+                        {/for}
+                    </select>
+                </label>
+            </div>
+            <div>
+                <label>City
+                    <input type="text" name="city" value="{company.city}">
+                </label>
+            </div>
+            <div>
+                <label>State
+                    <input type="text" name="state" value="{company.state}">
+                </label>
+            </div>
+            <div>
+                <label>Zip
+                    <input type="text" name="zip" value="{company.zip}">
+                </label>
+            </div>
+            <div>
+                <label>Country
+                        {#countrySelect selectedCountry=company.country countries=countries /}
+                </label>
+            </div>
+            <div>
+                <label>Time Zone
+                        {#timezoneSelect selectedTimezone=company.timezone timezones=timezones /}
+                </label>
+            </div>
+            <button type="submit">Save</button>
+        </form>
+        <p><a href="/companies">Back to list</a></p>
+        <script>
+            function loadTimezones() {
+                var countryId = document.getElementById('countrySelect').value;
+                var tzSelect = document.getElementById('timezoneSelect');
+                tzSelect.innerHTML = '<option value="">Select time zone</option>';
+                if (!countryId) return;
+                fetch('/timezones?countryId=' + countryId)
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        for (var i = 0; i < data.length; i++) {
+                            var opt = document.createElement('option');
+                            opt.value = data[i].id;
+                            opt.textContent = data[i].name;
+                            tzSelect.appendChild(opt);
+                        }
+                        if (data.length === 1) {
+                            tzSelect.options[1].selected = true;
+                        }
+                    });
+            }
+        </script>
+    {/content}
 {/include}

@@ -9,6 +9,8 @@
 package ai.mnemosyne_systems.web;
 
 import ai.mnemosyne_systems.model.Company;
+import ai.mnemosyne_systems.model.Country;
+import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
@@ -54,10 +56,11 @@ public class CompanyResource {
     public TemplateInstance createForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
         User user = requireAdmin(auth);
         Company company = new Company();
-        company.country = "United States of America";
+        List<Country> countries = Country.list("order by name");
         return formTemplate.data("company", company)
                 .data("users", User.list("type in ?1", List.of(User.TYPE_USER, User.TYPE_TAM)))
-                .data("action", "/companies").data("title", "New company").data("currentUser", user);
+                .data("countries", countries).data("timezones", List.of()).data("action", "/companies")
+                .data("title", "New company").data("currentUser", user);
     }
 
     @GET
@@ -68,9 +71,13 @@ public class CompanyResource {
         if (company == null) {
             throw new NotFoundException();
         }
+        List<Country> countries = Country.list("order by name");
+        List<Timezone> timezones = company.country != null
+                ? Timezone.list("country = ?1 order by name", company.country) : List.of();
         return formTemplate.data("company", company)
                 .data("users", User.list("type in ?1", List.of(User.TYPE_USER, User.TYPE_TAM)))
-                .data("action", "/companies/" + id).data("title", "Edit Company").data("currentUser", user);
+                .data("countries", countries).data("timezones", timezones).data("action", "/companies/" + id)
+                .data("title", "Edit Company").data("currentUser", user);
     }
 
     @POST
@@ -78,7 +85,8 @@ public class CompanyResource {
     public Response create(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
             @FormParam("address1") String address1, @FormParam("address2") String address2,
             @FormParam("city") String city, @FormParam("state") String state, @FormParam("zip") String zip,
-            @FormParam("country") String country, @FormParam("userIds") List<Long> userIds) {
+            @FormParam("countryId") Long countryId, @FormParam("timezoneId") Long timezoneId,
+            @FormParam("userIds") List<Long> userIds) {
         requireAdmin(auth);
         if (name == null || name.isBlank()) {
             throw new BadRequestException("Name is required");
@@ -90,7 +98,8 @@ public class CompanyResource {
         company.city = city;
         company.state = state;
         company.zip = zip;
-        company.country = country;
+        company.country = countryId != null ? Country.findById(countryId) : null;
+        company.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
         company.users = resolveUsers(userIds);
         company.persist();
         return Response.seeOther(URI.create("/companies")).build();
@@ -102,8 +111,8 @@ public class CompanyResource {
     public Response update(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
             @FormParam("name") String name, @FormParam("address1") String address1,
             @FormParam("address2") String address2, @FormParam("city") String city, @FormParam("state") String state,
-            @FormParam("zip") String zip, @FormParam("country") String country,
-            @FormParam("userIds") List<Long> userIds) {
+            @FormParam("zip") String zip, @FormParam("countryId") Long countryId,
+            @FormParam("timezoneId") Long timezoneId, @FormParam("userIds") List<Long> userIds) {
         requireAdmin(auth);
         Company company = Company.findById(id);
         if (company == null) {
@@ -118,7 +127,8 @@ public class CompanyResource {
         company.city = city;
         company.state = state;
         company.zip = zip;
-        company.country = country;
+        company.country = countryId != null ? Country.findById(countryId) : null;
+        company.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
         company.users.clear();
         company.users.addAll(resolveUsers(userIds));
         return Response.seeOther(URI.create("/companies")).build();

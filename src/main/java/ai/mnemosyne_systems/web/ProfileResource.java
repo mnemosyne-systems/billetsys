@@ -8,12 +8,16 @@
 
 package ai.mnemosyne_systems.web;
 
+import ai.mnemosyne_systems.model.Country;
+import ai.mnemosyne_systems.model.Company;
+import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
@@ -26,9 +30,10 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import org.jboss.logging.Logger;
+
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
+import java.util.List;
 
 @Path("/profile")
 @Produces(MediaType.TEXT_HTML)
@@ -46,6 +51,8 @@ public class ProfileResource {
 
     @Location("admin/profile-password.html")
     Template adminPasswordTemplate;
+    @Inject
+    Logger logger;
 
     @GET
     public TemplateInstance edit(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
@@ -63,11 +70,79 @@ public class ProfileResource {
             return profileTemplate(user, "Username is required");
         }
         user.name = name.trim();
+
+        String email = value(form, "email");
+        if (email != null && !email.isBlank()) {
+            user.email = email.trim();
+        }
+
+        String fullName = value(form, "fullName");
+        user.fullName = trimOrNull(fullName);
+
+        String phoneNumber = value(form, "phoneNumber");
+        user.phoneNumber = trimOrNull(phoneNumber);
+
+        String phoneExtension = value(form, "phoneExtension");
+        user.phoneExtension = trimOrNull(phoneExtension);
+
+        String countryIdStr = value(form, "countryId");
+        if (countryIdStr != null && !countryIdStr.isBlank()) {
+            try {
+                user.country = Country.findById(Long.valueOf(countryIdStr));
+            } catch (NumberFormatException e) {
+                logger.warn("Invalid countryId on profile update: " + countryIdStr);
+                user.country = null;
+            }
+        } else {
+            user.country = null;
+        }
+
+        String timezoneIdStr = value(form, "timezoneId");
+        if (timezoneIdStr != null && !timezoneIdStr.isBlank()) {
+            try {
+                user.timezone = Timezone.findById(Long.valueOf(timezoneIdStr));
+            } catch (NumberFormatException e) {
+                logger.warn("Invalid timezoneId on profile update: " + timezoneIdStr);
+                user.timezone = null;
+            }
+        } else {
+            user.timezone = null;
+        }
+
+        if (User.TYPE_ADMIN.equalsIgnoreCase(user.type) || User.TYPE_SUPPORT.equalsIgnoreCase(user.type)) {
+            String companyIdStr = value(form, "companyId");
+            List<Company> currentCompanies = Company.find("select c from Company c join c.users u where u = ?1", user)
+                    .list();
+            for (Company c : currentCompanies) {
+                c.users.removeIf(u -> u.id != null && u.id.equals(user.id));
+            }
+            if (companyIdStr != null && !companyIdStr.isBlank()) {
+                try {
+                    Company newCompany = Company.findById(Long.valueOf(companyIdStr));
+                    if (newCompany != null) {
+                        boolean exists = newCompany.users.stream().anyMatch(u -> u.id != null && u.id.equals(user.id));
+                        if (!exists) {
+                            newCompany.users.add(user);
+                        }
+                    }
+                } catch (NumberFormatException e) {
+                    logger.warn("Invalid companyId on profile update: " + companyIdStr);
+                }
+            }
+        }
+
         String logoData = value(form, "logoData");
         if (logoData != null && !logoData.isBlank()) {
             user.logoBase64 = logoData.trim();
         }
         return Response.seeOther(URI.create("/profile")).build();
+    }
+
+    private String trimOrNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     @GET
@@ -104,8 +179,16 @@ public class ProfileResource {
     private TemplateInstance profileTemplate(User user, String error) {
         Template template = AuthHelper.isAdmin(user) ? adminProfileTemplate : supportProfileTemplate;
         String cancelUrl = AuthHelper.isAdmin(user) ? "/admin/companies" : "/support";
+        List<Country> countries = Country.list("order by name");
+        List<Timezone> timezones = user.country != null ? Timezone.list("country = ?1 order by name", user.country)
+                : List.of();
+        List<Company> userCompanies = Company
+                .find("select c from Company c join c.users u where u = ?1 order by c.name", user).list();
+        Company userCompany = userCompanies.isEmpty() ? null : userCompanies.get(0);
+        List<Company> allCompanies = Company.list("order by name");
         TemplateInstance instance = template.data("user", user).data("currentUser", user).data("error", error)
-                .data("cancelUrl", cancelUrl);
+                .data("cancelUrl", cancelUrl).data("countries", countries).data("timezones", timezones)
+                .data("userCompany", userCompany).data("allCompanies", allCompanies);
         if (!AuthHelper.isAdmin(user)) {
             SupportResource.SupportTicketCounts counts = SupportResource.loadTicketCounts(user);
             instance.data("assignedCount", counts.assignedCount).data("openCount", counts.openCount)

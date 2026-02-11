@@ -457,7 +457,7 @@ class UserAccessTest {
         }
         company = new ai.mnemosyne_systems.model.Company();
         company.name = name;
-        company.country = "United States of America";
+        company.country = ai.mnemosyne_systems.model.Country.find("code", "US").firstResult();
         company.persist();
         return company.id;
     }

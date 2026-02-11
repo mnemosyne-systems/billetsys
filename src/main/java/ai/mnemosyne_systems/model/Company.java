@@ -18,6 +18,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
@@ -50,7 +51,13 @@ public class Company extends PanacheEntityBase {
 
     public String zip;
 
-    public String country;
+    @ManyToOne
+    @JoinColumn(name = "country_id")
+    public Country country;
+
+    @ManyToOne
+    @JoinColumn(name = "timezone_id")
+    public Timezone timezone;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<Ticket> tickets = new ArrayList<>();

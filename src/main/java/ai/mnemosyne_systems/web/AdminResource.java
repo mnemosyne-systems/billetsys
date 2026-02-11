@@ -10,9 +10,11 @@ package ai.mnemosyne_systems.web;
 
 import ai.mnemosyne_systems.model.Company;
 import ai.mnemosyne_systems.model.CompanyEntitlement;
+import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Entitlement;
 import ai.mnemosyne_systems.model.SupportLevel;
 import ai.mnemosyne_systems.model.Ticket;
+import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
@@ -60,13 +62,14 @@ public class AdminResource {
     public TemplateInstance createForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
         User user = requireAdmin(auth);
         Company company = new Company();
-        company.country = "United States of America";
+        java.util.List<Country> countries = Country.list("order by name");
         return companyFormTemplate.data("company", company).data("users", User.list("type", User.TYPE_USER))
                 .data("tams", User.list("type", User.TYPE_TAM)).data("entitlements", Entitlement.listAll())
                 .data("supportLevels", SupportLevel.listAll()).data("companyEntitlements", java.util.List.of())
                 .data("selectedEntitlementLevels", java.util.Map.of()).data("selectedUserIds", java.util.List.of())
-                .data("selectedTamIds", java.util.List.of()).data("action", "/admin/companies")
-                .data("title", "New company").data("currentUser", user);
+                .data("selectedTamIds", java.util.List.of()).data("countries", countries)
+                .data("timezones", java.util.List.of()).data("action", "/admin/companies").data("title", "New company")
+                .data("currentUser", user);
     }
 
     @GET
@@ -94,12 +97,15 @@ public class AdminResource {
                 selectedEntitlementLevels.put(entry.entitlement.id, entry.supportLevel.id);
             }
         }
+        java.util.List<Country> countries = Country.list("order by name");
+        java.util.List<Timezone> timezones = company.country != null
+                ? Timezone.list("country = ?1 order by name", company.country) : java.util.List.of();
         return companyFormTemplate.data("company", company).data("users", User.list("type", User.TYPE_USER))
                 .data("tams", User.list("type", User.TYPE_TAM)).data("entitlements", Entitlement.listAll())
                 .data("supportLevels", SupportLevel.listAll()).data("companyEntitlements", companyEntitlements)
                 .data("selectedEntitlementLevels", selectedEntitlementLevels).data("selectedUserIds", selectedUserIds)
-                .data("selectedTamIds", selectedTamIds).data("action", "/admin/companies/" + id)
-                .data("title", "Edit Company").data("currentUser", user);
+                .data("selectedTamIds", selectedTamIds).data("countries", countries).data("timezones", timezones)
+                .data("action", "/admin/companies/" + id).data("title", "Edit Company").data("currentUser", user);
     }
 
     @GET
@@ -132,8 +138,8 @@ public class AdminResource {
     public Response createCompany(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
             @FormParam("address1") String address1, @FormParam("address2") String address2,
             @FormParam("city") String city, @FormParam("state") String state, @FormParam("zip") String zip,
-            @FormParam("country") String country, @FormParam("userIds") java.util.List<Long> userIds,
-            @FormParam("tamIds") java.util.List<Long> tamIds,
+            @FormParam("countryId") Long countryId, @FormParam("timezoneId") Long timezoneId,
+            @FormParam("userIds") java.util.List<Long> userIds, @FormParam("tamIds") java.util.List<Long> tamIds,
             @FormParam("entitlementIds") java.util.List<Long> entitlementIds,
             @FormParam("supportLevelIds") java.util.List<Long> supportLevelIds) {
         requireAdmin(auth);
@@ -147,7 +153,8 @@ public class AdminResource {
         company.city = city;
         company.state = state;
         company.zip = zip;
-        company.country = country;
+        company.country = countryId != null ? Country.findById(countryId) : null;
+        company.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
         company.users = resolveUsers(userIds, tamIds);
         company.persist();
         applyEntitlements(company, entitlementIds, supportLevelIds, java.util.List.of());
@@ -160,8 +167,9 @@ public class AdminResource {
     public Response updateCompany(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
             @FormParam("name") String name, @FormParam("address1") String address1,
             @FormParam("address2") String address2, @FormParam("city") String city, @FormParam("state") String state,
-            @FormParam("zip") String zip, @FormParam("country") String country,
-            @FormParam("userIds") java.util.List<Long> userIds, @FormParam("tamIds") java.util.List<Long> tamIds,
+            @FormParam("zip") String zip, @FormParam("countryId") Long countryId,
+            @FormParam("timezoneId") Long timezoneId, @FormParam("userIds") java.util.List<Long> userIds,
+            @FormParam("tamIds") java.util.List<Long> tamIds,
             @FormParam("entitlementIds") java.util.List<Long> entitlementIds,
             @FormParam("supportLevelIds") java.util.List<Long> supportLevelIds) {
         requireAdmin(auth);
@@ -178,7 +186,8 @@ public class AdminResource {
         company.city = city;
         company.state = state;
         company.zip = zip;
-        company.country = country;
+        company.country = countryId != null ? Country.findById(countryId) : null;
+        company.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
         company.users.clear();
         company.users.addAll(resolveUsers(userIds, tamIds));
         java.util.List<CompanyEntitlement> existingEntitlements = CompanyEntitlement.find("company = ?1", company)

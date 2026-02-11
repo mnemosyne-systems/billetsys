@@ -36,7 +36,7 @@
         <td>{company.city}</td>
         <td>{company.state}</td>
         <td>{company.zip}</td>
-        <td>{company.country}</td>
+        <td>{#if company.country}{company.country.name}{/if}</td>
         <td data-sort-value="{company.id}">
             <a href="/companies/{company.id}/edit">Edit</a>
             <form class="inline" method="post" action="/companies/{company.id}/delete">

@@ -10,15 +10,43 @@
 
 ```mermaid
 erDiagram
+    COUNTRY {
+        BIGINT id PK
+        STRING name
+        STRING code
+    }
+
+    TIMEZONE {
+        BIGINT id PK
+        STRING name
+        BIGINT country_id FK
+    }
+
     COMPANY {
         BIGINT id PK
         STRING name
+        BIGINT ticket_sequence
         STRING address1
         STRING address2
         STRING city
         STRING state
         STRING zip
-        STRING country
+        BIGINT country_id FK
+        BIGINT timezone_id FK
+    }
+
+    USER {
+        BIGINT id PK
+        STRING name
+        STRING full_name
+        STRING email
+        STRING phone_number
+        STRING phone_extension
+        STRING user_type
+        STRING password_hash
+        TEXT logo_base64
+        BIGINT country_id FK
+        BIGINT timezone_id FK
     }
 
     TICKET {
@@ -35,15 +63,15 @@ erDiagram
         TEXT body
         DATETIME date
         BIGINT ticket_id FK
+        BIGINT author_id FK
     }
 
-    USER {
+    ATTACHMENT {
         BIGINT id PK
         STRING name
-        STRING email
-        STRING type
-        STRING password_hash
-        TEXT logo_base64
+        STRING mime_type
+        BYTEA data
+        BIGINT message_id FK
     }
 
     ENTITLEMENT {
@@ -72,11 +100,20 @@ erDiagram
         BIGINT support_level_id FK
     }
 
+    COUNTRY ||--o{ TIMEZONE : has
+    COUNTRY ||--o{ COMPANY : locates
+    COUNTRY ||--o{ USER : locates
+    TIMEZONE ||--o{ COMPANY : assigns
+    TIMEZONE ||--o{ USER : assigns
     COMPANY ||--o{ TICKET : has
-    TICKET ||--o{ MESSAGE : has
     COMPANY }o--o{ USER : associates
-    TICKET }o--o{ USER : assigned
     COMPANY ||--o{ COMPANY_ENTITLEMENT : has
+    USER ||--o{ TICKET : requests
+    TICKET ||--o{ MESSAGE : has
+    TICKET }o--o{ USER : "support assigned"
+    TICKET }o--o{ USER : "tam assigned"
+    MESSAGE ||--o{ ATTACHMENT : has
+    MESSAGE }o--|| USER : authored
     ENTITLEMENT ||--o{ COMPANY_ENTITLEMENT : includes
     SUPPORT_LEVEL ||--o{ COMPANY_ENTITLEMENT : levels
     COMPANY_ENTITLEMENT ||--o{ TICKET : applies
