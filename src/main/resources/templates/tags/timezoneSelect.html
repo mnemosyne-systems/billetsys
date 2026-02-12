@@ -1,4 +1,6 @@
-<select name="timezoneId" id="timezoneSelect">
+{@java.lang.String customId = "timezoneSelect"}
+{@java.lang.String customName = "timezoneId"}
+<select name="{customName}" id="{customId}">
     <option value="">Select time zone</option>
     {#for tz in timezones}
         <option value="{tz.id}" {#if selectedTimezone?? && selectedTimezone.id == tz.id}selected{/if}>{tz.name}</option>

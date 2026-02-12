@@ -13,6 +13,7 @@
             <form method="post" action="{action}" onsubmit="selectAll('selectedUsers'); selectAll('selectedTams'); syncEntitlementHidden()">
                 <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start;">
                     <div>
+                        <h4>Company</h4>
                         <div>
                             <label>Name
                                 <input type="text" name="name" value="{company.name}" required>
@@ -44,6 +45,11 @@
                             </label>
                         </div>
                         <div>
+                            <label>Phone Number
+                                <input type="text" name="phoneNumber" value="{company.phoneNumber}">
+                            </label>
+                        </div>
+                        <div>
                             <label>Country
                                     {#countrySelect selectedCountry=company.country countries=countries /}
                             </label>
@@ -53,8 +59,7 @@
                                     {#timezoneSelect selectedTimezone=company.timezone timezones=timezones /}
                             </label>
                         </div>
-                    </div>
-                    <div style="display: grid; gap: 24px;">
+                    <div style="display: grid; gap: 24px; margin-top: 15px">
                         <div>
                             <label style="font-weight: 600;">Entitlements</label>
                             <div style="display: grid; gap: 12px;">
@@ -113,7 +118,8 @@
                                     <select id="selectedUsers" name="userIds" multiple size="10" style="width: 100%;">
                                         {#for user in users}
                                             {#if selectedUserIds.contains(user.id)}
-                                                <option value="{user.id}">{user.name} ({user.email})</option>
+                                                <option value="{user.id}" {#if primaryContact != null &&
+                                                user.id == primaryContact.id} disabled {/if}>{user.name} ({user.email})</option>
                                             {/if}
                                         {/for}
                                     </select>
@@ -150,12 +156,82 @@
                         </div>
                     </div>
                 </div>
+                    <div>
+                        <h4>Primary Contact</h4>
+                        {#if primaryContact.id == null}
+                            <div>
+                                <label> Username
+                                    <input type="text" name="primaryContactUsername" value="{primaryContact.name}" required>
+                                </label>
+                            </div>
+                            <div>
+                                <label>Full Name
+                                    <input type="text" name="primaryContactFullName" value="{primaryContact.fullName}">
+                                </label>
+                            </div>
+                            <div>
+                                <label> Email
+                                    <input type="text" name="primaryContactEmail" value="{primaryContact.email}" required>
+                                </label>
+                            </div>
+                            <div>
+                                <label>Social
+                                    <input type="text" name="primaryContactSocial" value="{primaryContact.social}">
+                                </label>
+                            </div>
+                            <div>
+                                <label> Phone Number
+                                    <input type="text" name="primaryContactPhoneNumber"
+                                           value="{primaryContact.phoneNumber}">
+                                </label>
+                            </div>
+                            <div>
+                                <label> Phone Number Extension
+                                    <input type="text" name="primaryPhoneNumberExtension"
+                                           value="{primaryContact.phoneExtension}">
+                                </label>
+                            </div>
+                            <div>
+                                <label> Country
+                                        {#countrySelect customId="primaryContactCountry" customName="primaryContactCountry"
+                                        selectedCountry=primaryContact.country countries=countries /}
+                                </label>
+                            </div>
+                            <div>
+                                <label>Time Zone
+                                        {#timezoneSelect customName="primaryContactTimeZone" customId="primaryContactTimeZone"
+                                        selectedTimezone=primaryContact.timezone timezones=timezones /}
+                                </label>
+                            </div>
+                            <div>
+                                <label>
+                                    Password
+                                    <input type="password" name="primaryContactPassword" {#if primaryContact.id == null}required{/if}>
+                                    {#if primaryContact.id != null}
+                                        <small>Leave blank to keep the current password.</small>
+                                    {/if}
+                                </label>
+                            </div>
+                        {#else}
+                            <label>Select from users
+                            <select style="width: 100%;" name="primaryContact">
+                                {#for user in users}
+                                    {#if selectedUserIds.contains(user.id)}
+                                        <option value="{user.id}" {#if user.id == primaryContact.id} selected {/if}>{user.name} ({user.email})</option>
+                                    {/if}
+                                {/for}
+                            </select>
+                            </label>
+                        {/if}
+                    </div>
+                </div>
                 <div class="form-actions">
                     <a class="secondary-button" href="/companies">Cancel</a>
                     <button type="submit" class="action-button">Save</button>
                 </div>
             </form>
         </div>
+
         <script>
             function moveSelected(sourceId, targetId) {
                 const source = document.getElementById(sourceId);
@@ -174,6 +250,7 @@
                     return;
                 }
                 Array.from(select.options).forEach(option => {
+                    option.disabled = false;
                     option.selected = true;
                 });
             }
@@ -237,9 +314,10 @@
                 });
             }
 
-            function loadTimezones() {
-                var countryId = document.getElementById('countrySelect').value;
-                var tzSelect = document.getElementById('timezoneSelect');
+            function loadTimezones(select) {
+                const target = select.id;
+                var countryId = document.getElementById(select.id).value;
+                var tzSelect = target === 'primaryContactCountry' ? document.getElementById('primaryContactTimeZone') : document.getElementById('timezoneSelect');
                 tzSelect.innerHTML = '<option value="">Select time zone</option>';
                 if (!countryId) return;
                 fetch('/timezones?countryId=' + countryId)
