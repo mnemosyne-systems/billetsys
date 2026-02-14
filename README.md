@@ -1,11 +1,11 @@
-# billetsys: A Modern Support Ticket solution
+# billetsys: Modern Support Ticket solution
 
 `billetsys` is a modern support ticket solution that aims to be easy for all roles to
 navigate and get their work done quicker.
 
 ## Features
 
-* Support ticket systems with 4 roles (User, TAM, Support, Admin)
+* Support ticket system with 4 roles (User, TAM, Support, Admin)
 
 ## Technologies
 
