@@ -49,7 +49,7 @@ public class AuthResource {
                 "auth", 3600, false);
         String redirect;
         if (AuthHelper.isAdmin(user)) {
-            redirect = "/admin/companies";
+            redirect = "/companies";
         } else if (AuthHelper.isSupport(user)) {
             redirect = "/support";
         } else {

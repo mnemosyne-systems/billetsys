@@ -43,13 +43,13 @@ public class ProfileResource {
     @Location("support/profile.html")
     Template supportProfileTemplate;
 
-    @Location("admin/profile.html")
+    @Location("profile/profile.html")
     Template adminProfileTemplate;
 
     @Location("support/profile-password.html")
     Template supportPasswordTemplate;
 
-    @Location("admin/profile-password.html")
+    @Location("profile/profile-password.html")
     Template adminPasswordTemplate;
     @Inject
     Logger logger;
@@ -178,7 +178,7 @@ public class ProfileResource {
 
     private TemplateInstance profileTemplate(User user, String error) {
         Template template = AuthHelper.isAdmin(user) ? adminProfileTemplate : supportProfileTemplate;
-        String cancelUrl = AuthHelper.isAdmin(user) ? "/admin/companies" : "/support";
+        String cancelUrl = AuthHelper.isAdmin(user) ? "/companies" : "/support";
         List<Country> countries = Country.list("order by name");
         List<Timezone> timezones = user.country != null ? Timezone.list("country = ?1 order by name", user.country)
                 : List.of();

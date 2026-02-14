@@ -30,16 +30,16 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
 
-@Path("/admin/entitlements")
+@Path("/entitlements")
 @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 @Produces(MediaType.TEXT_HTML)
 @Blocking
-public class AdminEntitlementResource {
+public class EntitlementResource {
 
-    @Location("admin/entitlements.html")
+    @Location("entitlement/entitlements.html")
     Template entitlementsTemplate;
 
-    @Location("admin/entitlement-form.html")
+    @Location("entitlement/entitlement-form.html")
     Template entitlementFormTemplate;
 
     @GET
@@ -55,7 +55,7 @@ public class AdminEntitlementResource {
         Entitlement entitlement = new Entitlement();
         entitlement.description = "";
         entitlement.price = 0;
-        return entitlementFormTemplate.data("entitlement", entitlement).data("action", "/admin/entitlements")
+        return entitlementFormTemplate.data("entitlement", entitlement).data("action", "/entitlements")
                 .data("title", "New entitlement").data("currentUser", user);
     }
 
@@ -67,7 +67,7 @@ public class AdminEntitlementResource {
         if (entitlement == null) {
             throw new NotFoundException();
         }
-        return entitlementFormTemplate.data("entitlement", entitlement).data("action", "/admin/entitlements/" + id)
+        return entitlementFormTemplate.data("entitlement", entitlement).data("action", "/entitlements/" + id)
                 .data("title", "Edit entitlement").data("currentUser", user);
     }
 
@@ -83,7 +83,7 @@ public class AdminEntitlementResource {
         entitlement.description = description.trim();
         entitlement.price = price;
         entitlement.persist();
-        return Response.seeOther(URI.create("/admin/entitlements")).build();
+        return Response.seeOther(URI.create("/entitlements")).build();
     }
 
     @POST
@@ -101,7 +101,7 @@ public class AdminEntitlementResource {
         entitlement.name = name.trim();
         entitlement.description = description.trim();
         entitlement.price = price;
-        return Response.seeOther(URI.create("/admin/entitlements")).build();
+        return Response.seeOther(URI.create("/entitlements")).build();
     }
 
     @POST
@@ -114,7 +114,7 @@ public class AdminEntitlementResource {
             throw new NotFoundException();
         }
         entitlement.delete();
-        return Response.seeOther(URI.create("/admin/entitlements")).build();
+        return Response.seeOther(URI.create("/entitlements")).build();
     }
 
     private void validate(String name, String description, Integer price) {

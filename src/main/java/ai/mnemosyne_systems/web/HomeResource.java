@@ -34,7 +34,7 @@ public class HomeResource {
     public Object index(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @QueryParam("error") String error) {
         User user = AuthHelper.findUser(auth);
         if (AuthHelper.isAdmin(user)) {
-            return Response.seeOther(URI.create("/admin/companies")).build();
+            return Response.seeOther(URI.create("/companies")).build();
         }
         if (AuthHelper.isSupport(user)) {
             return Response.seeOther(URI.create("/support")).build();

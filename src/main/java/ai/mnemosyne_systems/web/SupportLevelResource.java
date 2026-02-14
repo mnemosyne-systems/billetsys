@@ -30,16 +30,16 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
 
-@Path("/admin/support-levels")
+@Path("/support-levels")
 @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 @Produces(MediaType.TEXT_HTML)
 @Blocking
-public class AdminSupportLevelResource {
+public class SupportLevelResource {
 
-    @Location("admin/support-levels.html")
+    @Location("support-level/support-levels.html")
     Template supportLevelsTemplate;
 
-    @Location("admin/support-level-form.html")
+    @Location("support-level/support-level-form.html")
     Template supportLevelFormTemplate;
 
     @GET
@@ -60,7 +60,7 @@ public class AdminSupportLevelResource {
         level.escalateColor = "Yellow";
         level.normal = 720;
         level.normalColor = "White";
-        return supportLevelFormTemplate.data("supportLevel", level).data("action", "/admin/support-levels")
+        return supportLevelFormTemplate.data("supportLevel", level).data("action", "/support-levels")
                 .data("title", "New support level").data("currentUser", user);
     }
 
@@ -72,7 +72,7 @@ public class AdminSupportLevelResource {
         if (level == null) {
             throw new NotFoundException();
         }
-        return supportLevelFormTemplate.data("supportLevel", level).data("action", "/admin/support-levels/" + id)
+        return supportLevelFormTemplate.data("supportLevel", level).data("action", "/support-levels/" + id)
                 .data("title", "Edit support level").data("currentUser", user);
     }
 
@@ -96,7 +96,7 @@ public class AdminSupportLevelResource {
         level.normal = normal;
         level.normalColor = normalColor.trim();
         level.persist();
-        return Response.seeOther(URI.create("/admin/support-levels")).build();
+        return Response.seeOther(URI.create("/support-levels")).build();
     }
 
     @POST
@@ -121,7 +121,7 @@ public class AdminSupportLevelResource {
         level.escalateColor = escalateColor.trim();
         level.normal = normal;
         level.normalColor = normalColor.trim();
-        return Response.seeOther(URI.create("/admin/support-levels")).build();
+        return Response.seeOther(URI.create("/support-levels")).build();
     }
 
     @POST
@@ -134,7 +134,7 @@ public class AdminSupportLevelResource {
             throw new NotFoundException();
         }
         level.delete();
-        return Response.seeOther(URI.create("/admin/support-levels")).build();
+        return Response.seeOther(URI.create("/support-levels")).build();
     }
 
     private void validate(String name, String description, Integer critical, String criticalColor, Integer escalate,

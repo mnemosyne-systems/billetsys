@@ -10,7 +10,7 @@
 {#content}
 <div class="support-header">
     <h1>Companies</h1>
-    <a class="action-button" href="/admin/companies/create">Create</a>
+    <a class="action-button" href="/companies/create">Create</a>
 </div>
 <table>
     <thead>
@@ -23,16 +23,16 @@
     <tbody>
     {#for company in companies}
     <tr>
-        <td><a href="/admin/companies/{company.id}">{company.name}</a></td>
+        <td><a href="/companies/{company.id}">{company.name}</a></td>
         <td>{#if company.country}{company.country.name}{/if}</td>
         <td data-sort-value="{company.id}">
-            <a class="icon-link" href="/admin/companies/{company.id}/edit" title="Edit" aria-label="Edit">
+            <a class="icon-link" href="/companies/{company.id}/edit" title="Edit" aria-label="Edit">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" />
                     <path d="M14.06 4.94l3.75 3.75" />
                 </svg>
             </a>
-            <form class="inline" method="post" action="/admin/companies/{company.id}/delete">
+            <form class="inline" method="post" action="/companies/{company.id}/delete">
                 <button class="icon-button" type="submit" title="Remove" aria-label="Remove">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M3 6h18" />

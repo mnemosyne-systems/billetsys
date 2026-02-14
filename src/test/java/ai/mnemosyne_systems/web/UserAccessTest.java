@@ -37,31 +37,31 @@ class UserAccessTest {
         ensureCompanyIfMissing("Test Co");
         String cookie = login("admin", "admin");
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/admin/users").then().statusCode(200)
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/users").then().statusCode(200)
                 .body(Matchers.containsString("Users"));
 
         ai.mnemosyne_systems.model.User adminUser = ai.mnemosyne_systems.model.User
                 .find("email", "admin@mnemosyne-systems.ai").firstResult();
         Long adminId = adminUser == null ? null : adminUser.id;
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/admin/users/" + adminId).then().statusCode(200)
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/users/" + adminId).then().statusCode(200)
                 .body(Matchers.containsString("Edit"));
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/admin/companies").then().statusCode(200)
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/companies").then().statusCode(200)
                 .body(Matchers.containsString("Companies")).body(Matchers.containsString("Name"))
                 .body(Matchers.containsString("Country"));
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/admin/users/create").then().statusCode(200)
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/users/create").then().statusCode(200)
                 .body(Matchers.containsString("New user")).body(Matchers.containsString("value=\"user\""))
                 .body(Matchers.containsString("name=\"name\" value=\"\""))
                 .body(Matchers.containsString("name=\"email\" value=\"\""));
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/admin/entitlements").then().statusCode(200)
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/entitlements").then().statusCode(200)
                 .body(Matchers.containsString("Entitlements"));
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/admin/support-levels").then().statusCode(200)
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/support-levels").then().statusCode(200)
                 .body(Matchers.containsString("Support Levels"));
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/admin/companies/create").then().statusCode(200)
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/companies/create").then().statusCode(200)
                 .body(Matchers.containsString("Entitlement")).body(Matchers.containsString("Service level"));
 
         Long companyId = createCompany(cookie, "Cycle Co");
@@ -211,13 +211,13 @@ class UserAccessTest {
         ensureUser("admin2", "admin2@mnemosyne-systems.ai", User.TYPE_ADMIN, "admin2");
         String cookie = login("admin2", "admin2");
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/admin/entitlements").then().statusCode(200)
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/entitlements").then().statusCode(200)
                 .body(Matchers.containsString("Entitlements"));
 
         String entitlementName = "Test Entitlement";
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .contentType(ContentType.URLENC).formParam("name", entitlementName)
-                .formParam("description", "Test description").formParam("price", 123).post("/admin/entitlements").then()
+                .formParam("description", "Test description").formParam("price", 123).post("/entitlements").then()
                 .statusCode(303);
         Entitlement entitlement = Entitlement.find("name", entitlementName).firstResult();
         Assertions.assertNotNull(entitlement);
@@ -225,12 +225,12 @@ class UserAccessTest {
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .contentType(ContentType.URLENC).formParam("name", "Updated Entitlement")
                 .formParam("description", "Updated description").formParam("price", 456)
-                .post("/admin/entitlements/" + entitlement.id).then().statusCode(303);
+                .post("/entitlements/" + entitlement.id).then().statusCode(303);
         Entitlement updatedEntitlement = refreshedEntitlement(entitlement.id);
         Assertions.assertEquals("Updated Entitlement", updatedEntitlement.name);
 
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .post("/admin/entitlements/" + entitlement.id + "/delete").then().statusCode(303);
+                .post("/entitlements/" + entitlement.id + "/delete").then().statusCode(303);
         Assertions.assertNull(refreshedEntitlement(entitlement.id));
 
         String levelName = "Test Level";
@@ -238,7 +238,7 @@ class UserAccessTest {
                 .contentType(ContentType.URLENC).formParam("name", levelName)
                 .formParam("description", "Level description").formParam("critical", 30)
                 .formParam("criticalColor", "Red").formParam("escalate", 60).formParam("escalateColor", "Yellow")
-                .formParam("normal", 120).formParam("normalColor", "White").post("/admin/support-levels").then()
+                .formParam("normal", 120).formParam("normalColor", "White").post("/support-levels").then()
                 .statusCode(303);
         SupportLevel level = SupportLevel.find("name", levelName).firstResult();
         Assertions.assertNotNull(level);
@@ -247,12 +247,12 @@ class UserAccessTest {
                 .contentType(ContentType.URLENC).formParam("name", "Updated Level")
                 .formParam("description", "Updated level").formParam("critical", 45).formParam("criticalColor", "Red")
                 .formParam("escalate", 90).formParam("escalateColor", "Yellow").formParam("normal", 180)
-                .formParam("normalColor", "White").post("/admin/support-levels/" + level.id).then().statusCode(303);
+                .formParam("normalColor", "White").post("/support-levels/" + level.id).then().statusCode(303);
         SupportLevel updatedLevel = refreshedSupportLevel(level.id);
         Assertions.assertEquals("Updated Level", updatedLevel.name);
 
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .post("/admin/support-levels/" + level.id + "/delete").then().statusCode(303);
+                .post("/support-levels/" + level.id + "/delete").then().statusCode(303);
         Assertions.assertNull(refreshedSupportLevel(level.id));
 
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
@@ -649,7 +649,7 @@ class UserAccessTest {
     @Transactional
     Long createCompany(String cookie, String name) {
         String location = RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .contentType(ContentType.URLENC).formParam("name", name).post("/admin/companies").then().statusCode(303)
+                .contentType(ContentType.URLENC).formParam("name", name).post("/companies").then().statusCode(303)
                 .extract().header("Location");
         ai.mnemosyne_systems.model.Company company = ai.mnemosyne_systems.model.Company.find("name", name)
                 .firstResult();
@@ -659,6 +659,6 @@ class UserAccessTest {
     @Transactional
     void deleteCompany(String cookie, Long companyId) {
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .post("/admin/companies/" + companyId + "/delete").then().statusCode(303);
+                .post("/companies/" + companyId + "/delete").then().statusCode(303);
     }
 }

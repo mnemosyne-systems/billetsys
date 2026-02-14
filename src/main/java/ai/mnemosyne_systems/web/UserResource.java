@@ -67,13 +67,13 @@ public class UserResource {
     @Location("user/ticket-edit.html")
     Template ticketEditTemplate;
 
-    @Location("admin/users.html")
+    @Location("user/users.html")
     Template adminUsersTemplate;
 
-    @Location("admin/user-form.html")
+    @Location("user/user-form.html")
     Template adminUserFormTemplate;
 
-    @Location("admin/user-view.html")
+    @Location("user/user-view.html")
     Template adminUserViewTemplate;
 
     @Location("support/users.html")
@@ -81,13 +81,6 @@ public class UserResource {
 
     @Location("support/user-form.html")
     Template supportUserFormTemplate;
-
-    @GET
-    @Path("admin")
-    public Response adminRoot(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
-        return Response.seeOther(URI.create("/admin/companies")).build();
-    }
 
     @GET
     @Path("user")
@@ -450,7 +443,7 @@ public class UserResource {
     }
 
     @GET
-    @Path("admin/users")
+    @Path("users")
     public TemplateInstance listAdminUsers(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
         User user = requireAdmin(auth);
         List<User> users = User.listAll();
@@ -462,7 +455,7 @@ public class UserResource {
     }
 
     @GET
-    @Path("admin/users/create")
+    @Path("users/create")
     public TemplateInstance createAdminUserForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
         User user = requireAdmin(auth);
         User newUser = new User();
@@ -471,13 +464,13 @@ public class UserResource {
         newUser.email = "";
         List<Country> countries = Country.list("order by name");
         List<Company> allCompanies = Company.list("order by name");
-        return adminUserFormTemplate.data("user", newUser).data("action", "/admin/users").data("title", "New user")
+        return adminUserFormTemplate.data("user", newUser).data("action", "/users").data("title", "New user")
                 .data("countries", countries).data("timezones", List.of()).data("allCompanies", allCompanies)
                 .data("userCompany", null).data("currentUser", user);
     }
 
     @GET
-    @Path("admin/users/{id}/edit")
+    @Path("users/{id}/edit")
     public TemplateInstance editAdminUserForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
             @PathParam("id") Long id) {
         User user = requireAdmin(auth);
@@ -491,13 +484,13 @@ public class UserResource {
         List<Company> allCompanies = Company.list("order by name");
         Company userCompany = Company.find("select c from Company c join c.users u where u = ?1", editUser)
                 .firstResult();
-        return adminUserFormTemplate.data("user", editUser).data("action", "/admin/users/" + id)
-                .data("title", "Edit User").data("countries", countries).data("timezones", timezones)
-                .data("allCompanies", allCompanies).data("userCompany", userCompany).data("currentUser", user);
+        return adminUserFormTemplate.data("user", editUser).data("action", "/users/" + id).data("title", "Edit User")
+                .data("countries", countries).data("timezones", timezones).data("allCompanies", allCompanies)
+                .data("userCompany", userCompany).data("currentUser", user);
     }
 
     @GET
-    @Path("admin/users/{id}")
+    @Path("users/{id}")
     public TemplateInstance viewAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
         User user = requireAdmin(auth);
         User viewUser = User.findById(id);
@@ -509,7 +502,7 @@ public class UserResource {
     }
 
     @POST
-    @Path("admin/users")
+    @Path("users")
     @Transactional
     public Response createAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
             @FormParam("fullName") String fullName, @FormParam("email") String email,
@@ -537,11 +530,11 @@ public class UserResource {
                 company.users.add(newUser);
             }
         }
-        return Response.seeOther(URI.create("/admin/users")).build();
+        return Response.seeOther(URI.create("/users")).build();
     }
 
     @POST
-    @Path("admin/users/{id}")
+    @Path("users/{id}")
     @Transactional
     public Response updateAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
             @FormParam("name") String name, @FormParam("fullName") String fullName, @FormParam("email") String email,
@@ -578,7 +571,7 @@ public class UserResource {
                 company.users.add(editUser);
             }
         }
-        return Response.seeOther(URI.create("/admin/users")).build();
+        return Response.seeOther(URI.create("/users")).build();
     }
 
     private String trimOrNull(String value) {
@@ -589,7 +582,7 @@ public class UserResource {
     }
 
     @POST
-    @Path("admin/users/{id}/delete")
+    @Path("users/{id}/delete")
     @Transactional
     public Response deleteAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
         requireAdmin(auth);
@@ -598,7 +591,7 @@ public class UserResource {
             throw new NotFoundException();
         }
         deleteUser.delete();
-        return Response.seeOther(URI.create("/admin/users")).build();
+        return Response.seeOther(URI.create("/users")).build();
     }
 
     private void validateUserFields(String name, String email, String type, boolean requirePassword, String password) {
