@@ -419,6 +419,12 @@ public class SupportResource {
         message.author = user;
         AttachmentHelper.attachToMessage(message, AttachmentHelper.readAttachments(input, "attachments"));
         message.persist();
+        if (ticket.supportUsers.stream().noneMatch(existing -> existing.id != null && existing.id.equals(user.id))) {
+            ticket.supportUsers.add(user);
+        }
+        if (ticket.status == null || ticket.status.isBlank() || "Open".equalsIgnoreCase(ticket.status)) {
+            ticket.status = "Assigned";
+        }
         return Response.seeOther(URI.create("/tickets/" + id)).build();
     }
 

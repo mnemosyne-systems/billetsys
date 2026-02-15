@@ -126,6 +126,14 @@ class UserAccessTest {
                 .body(Matchers.not(Matchers.containsString("Cancel")))
                 .body(Matchers.not(Matchers.containsString("Back")));
 
+        ai.mnemosyne_systems.model.Ticket unassignedTicket = ensureUnassignedOpenTicket(companyId);
+        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
+                .multiPart("body", "Auto assign on support reply")
+                .post("/support/tickets/" + unassignedTicket.id + "/messages").then().statusCode(303);
+        Ticket autoAssignedTicket = refreshedTicket(unassignedTicket.id);
+        Assertions.assertEquals("Assigned", autoAssignedTicket.status);
+        Assertions.assertTrue(ticketHasSupportUser(unassignedTicket.id, supportUser.id));
+
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .contentType(ContentType.URLENC).formParam("status", "Assigned")
                 .formParam("companyId", supportTicket.company.id)
@@ -513,6 +521,15 @@ class UserAccessTest {
         ticket.supportUsers
                 .add(ai.mnemosyne_systems.model.User.find("email", "support1@mnemosyne-systems.ai").firstResult());
         ticket.tamUsers.add(ai.mnemosyne_systems.model.User.find("email", "tam@mnemosyne-systems.ai").firstResult());
+        ticket.persist();
+        return ticket;
+    }
+
+    @Transactional
+    ai.mnemosyne_systems.model.Ticket ensureUnassignedOpenTicket(Long companyId) {
+        ai.mnemosyne_systems.model.Ticket ticket = ensureTicket(companyId);
+        ticket.supportUsers.clear();
+        ticket.status = "Open";
         ticket.persist();
         return ticket;
     }
