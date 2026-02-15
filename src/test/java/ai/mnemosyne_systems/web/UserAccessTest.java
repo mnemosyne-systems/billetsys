@@ -260,15 +260,14 @@ class UserAccessTest {
         String entitlementName = "Test Entitlement";
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .contentType(ContentType.URLENC).formParam("name", entitlementName)
-                .formParam("description", "Test description").formParam("price", 123).post("/entitlements").then()
-                .statusCode(303);
+                .formParam("description", "Test description").post("/entitlements").then().statusCode(303);
         Entitlement entitlement = Entitlement.find("name", entitlementName).firstResult();
         Assertions.assertNotNull(entitlement);
 
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .contentType(ContentType.URLENC).formParam("name", "Updated Entitlement")
-                .formParam("description", "Updated description").formParam("price", 456)
-                .post("/entitlements/" + entitlement.id).then().statusCode(303);
+                .formParam("description", "Updated description").post("/entitlements/" + entitlement.id).then()
+                .statusCode(303);
         Entitlement updatedEntitlement = refreshedEntitlement(entitlement.id);
         Assertions.assertEquals("Updated Entitlement", updatedEntitlement.name);
 
@@ -323,7 +322,7 @@ class UserAccessTest {
         String cookie = login("support3", "support3");
         Long companyId = ensureCompany("Support CRUD Co");
         Company company = Company.findById(companyId);
-        Entitlement entitlement = ensureEntitlement("Starter", "Email support", 99);
+        Entitlement entitlement = ensureEntitlement("Starter", "Email support");
         SupportLevel level = ensureSupportLevel("Normal", "Default response window", 60, "Red", 120, "Yellow", 720,
                 "White");
         CompanyEntitlement entry = ensureCompanyEntitlement(company, entitlement, level);
@@ -640,13 +639,12 @@ class UserAccessTest {
     }
 
     @Transactional
-    Entitlement ensureEntitlement(String name, String description, int price) {
+    Entitlement ensureEntitlement(String name, String description) {
         Entitlement entitlement = Entitlement.find("name", name).firstResult();
         if (entitlement == null) {
             entitlement = new Entitlement();
             entitlement.name = name;
             entitlement.description = description;
-            entitlement.price = price;
             entitlement.persist();
         }
         return entitlement;

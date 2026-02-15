@@ -81,7 +81,6 @@ erDiagram
         BIGINT id PK
         STRING name
         STRING description
-        INT price
     }
 
     SUPPORT_LEVEL {

@@ -31,7 +31,4 @@ public class Entitlement extends PanacheEntityBase {
 
     @Column(nullable = false)
     public String description;
-
-    @Column(nullable = false)
-    public Integer price;
 }

@@ -264,14 +264,14 @@ ON CONFLICT (email) DO NOTHING;
 -- =====================
 -- ENTITLEMENTS
 -- =====================
-INSERT INTO entitlements (id, name, description, price)
-VALUES (nextval('entitlement_seq'), 'Starter', 'Email support with 2 business day response', 99);
+INSERT INTO entitlements (id, name, description)
+VALUES (nextval('entitlement_seq'), 'Starter', 'Email support with 2 business day response');
 
-INSERT INTO entitlements (id, name, description, price)
-VALUES (nextval('entitlement_seq'), 'Business', 'Priority support with 1 business day response', 249);
+INSERT INTO entitlements (id, name, description)
+VALUES (nextval('entitlement_seq'), 'Business', 'Priority support with 1 business day response');
 
-INSERT INTO entitlements (id, name, description, price)
-VALUES (nextval('entitlement_seq'), 'Enterprise', '24/7 support with SLA and dedicated TAM', 499);
+INSERT INTO entitlements (id, name, description)
+VALUES (nextval('entitlement_seq'), 'Enterprise', '24/7 support with SLA and dedicated TAM');
 
 -- =====================
 -- SUPPORT LEVELS

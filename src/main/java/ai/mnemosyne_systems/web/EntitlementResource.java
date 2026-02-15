@@ -54,7 +54,6 @@ public class EntitlementResource {
         User user = requireAdmin(auth);
         Entitlement entitlement = new Entitlement();
         entitlement.description = "";
-        entitlement.price = 0;
         return entitlementFormTemplate.data("entitlement", entitlement).data("action", "/entitlements")
                 .data("title", "New entitlement").data("currentUser", user);
     }
@@ -75,13 +74,12 @@ public class EntitlementResource {
     @Path("")
     @Transactional
     public Response createEntitlement(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
-            @FormParam("description") String description, @FormParam("price") Integer price) {
+            @FormParam("description") String description) {
         requireAdmin(auth);
-        validate(name, description, price);
+        validate(name, description);
         Entitlement entitlement = new Entitlement();
         entitlement.name = name.trim();
         entitlement.description = description.trim();
-        entitlement.price = price;
         entitlement.persist();
         return Response.seeOther(URI.create("/entitlements")).build();
     }
@@ -90,17 +88,15 @@ public class EntitlementResource {
     @Path("{id}")
     @Transactional
     public Response updateEntitlement(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @FormParam("name") String name, @FormParam("description") String description,
-            @FormParam("price") Integer price) {
+            @FormParam("name") String name, @FormParam("description") String description) {
         requireAdmin(auth);
         Entitlement entitlement = Entitlement.findById(id);
         if (entitlement == null) {
             throw new NotFoundException();
         }
-        validate(name, description, price);
+        validate(name, description);
         entitlement.name = name.trim();
         entitlement.description = description.trim();
-        entitlement.price = price;
         return Response.seeOther(URI.create("/entitlements")).build();
     }
 
@@ -117,18 +113,12 @@ public class EntitlementResource {
         return Response.seeOther(URI.create("/entitlements")).build();
     }
 
-    private void validate(String name, String description, Integer price) {
+    private void validate(String name, String description) {
         if (name == null || name.isBlank()) {
             throw new BadRequestException("Name is required");
         }
         if (description == null || description.isBlank()) {
             throw new BadRequestException("Description is required");
-        }
-        if (price == null) {
-            throw new BadRequestException("Price is required");
-        }
-        if (price < 0) {
-            throw new BadRequestException("Price must be 0 or greater");
         }
     }
 

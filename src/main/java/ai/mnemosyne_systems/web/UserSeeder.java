@@ -195,9 +195,9 @@ public class UserSeeder {
 
     @Transactional
     void seedSupportCatalog() {
-        seedEntitlement("Starter", "Email support with 2 business day response", 99);
-        seedEntitlement("Business", "Priority support with 1 business day response", 249);
-        seedEntitlement("Enterprise", "24/7 support with SLA and dedicated TAM", 499);
+        seedEntitlement("Starter", "Email support with 2 business day response");
+        seedEntitlement("Business", "Priority support with 1 business day response");
+        seedEntitlement("Enterprise", "24/7 support with SLA and dedicated TAM");
 
         seedSupportLevel("Low", "Standard response window", 60, "Red", 720, "Yellow", 1440, "White");
         seedSupportLevel("Normal", "Default response window", 60, "Red", 120, "Yellow", 720, "White");
@@ -398,7 +398,7 @@ public class UserSeeder {
         }
     }
 
-    private void seedEntitlement(String name, String description, int price) {
+    private void seedEntitlement(String name, String description) {
         Entitlement entitlement = Entitlement.find("name", name).firstResult();
         if (entitlement != null) {
             return;
@@ -406,7 +406,6 @@ public class UserSeeder {
         entitlement = new Entitlement();
         entitlement.name = name;
         entitlement.description = description;
-        entitlement.price = price;
         entitlement.persist();
     }
 
