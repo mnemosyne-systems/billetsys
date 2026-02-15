@@ -37,6 +37,10 @@
                     <td>{#if company.country}{company.country.name}{/if}</td>
                 </tr>
                 <tr>
+                    <th>Phone Number</th>
+                    <td>{#if company.phoneNumber}{company.phoneNumber}{/if}</td>
+                </tr>
+                <tr>
                     <th>Time Zone</th>
                     <td>{#if company.timezone}{company.timezone.name}{/if}</td>
                 </tr>
@@ -47,7 +51,7 @@
                             <span>-</span>
                         {#else}
                             {#for user in companyUsers}
-                                <div>{user.name} (<a href="mailto:{user.email}">{user.email}</a>)</div>
+                                <div> <a href="/users/{user.id}/edit">{user.name} </a> (<a href="mailto:{user.email}">{user.email}</a>)</div>
                             {/for}
                         {/if}
                     </td>
@@ -76,10 +80,32 @@
                         {/if}
                     </td>
                 </tr>
+
+                <tr>
+                    <td colspan="2" style="height: 20px; border: none;"></td>
+                </tr>
+                <tr>
+                    <th colspan="2" style="background-color: white; border-style: none;"><h2>Primary Contact</h2></th>
+                </tr>
+                <tr>
+                    <th>Email</th>
+                    <td>{#if company.primaryContact}<a href="mailto:{company.primaryContact.email}">{company.primaryContact.email} </a>{/if}</td>
+                </tr>
+                <tr>
+                    <th>Phone Number</th>
+                    <td>{#if company.primaryContact}{company.primaryContact.phoneNumber}{/if}</td>
+                </tr>
+                <tr>
+                    <th>Phone Number Extension</th>
+                    <td>{#if company.primaryContact}{company.primaryContact.phoneExtension}{/if}</td>
+                </tr>
+                <tr>
+                    <th>Country</th>
+                    <td>{#if company.primaryContact && company.primaryContact.country}{company.primaryContact.country.name}{/if}</td>
+                </tr>
                 </tbody>
             </table>
             <div class="form-actions">
-                <a class="secondary-button" href="/companies">Ok</a>
                 <a class="action-button" href="/companies/{company.id}/edit">Edit</a>
             </div>
         </div>

@@ -299,14 +299,16 @@ class UserAccessTest {
 
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .contentType(ContentType.URLENC).formParam("name", "Coverage Co")
-                .formParam("country", "United States of America").post("/companies").then().statusCode(303);
+                .formParam("country", "United States of America").formParam("primaryContactUsername", "username")
+                .formParam("primaryContactEmail", "user@@email").formParam("primaryContactPassword", "password")
+                .post("/companies").then().statusCode(303);
         Company company = Company.find("name", "Coverage Co").firstResult();
         Assertions.assertNotNull(company);
 
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .contentType(ContentType.URLENC).formParam("name", "Coverage Co Updated")
-                .formParam("country", "United States of America").post("/companies/" + company.id).then()
-                .statusCode(303);
+                .formParam("country", "United States of America").formParam("primaryContact", company.primaryContact.id)
+                .post("/companies/" + company.id).then().statusCode(303);
         Company updatedCompany = refreshedCompany(company.id);
         Assertions.assertEquals("Coverage Co Updated", updatedCompany.name);
 
@@ -729,8 +731,9 @@ class UserAccessTest {
     @Transactional
     Long createCompany(String cookie, String name) {
         String location = RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .contentType(ContentType.URLENC).formParam("name", name).post("/companies").then().statusCode(303)
-                .extract().header("Location");
+                .contentType(ContentType.URLENC).formParam("name", name).formParam("primaryContactUsername", "username")
+                .formParam("primaryContactEmail", "user@@testing.com").formParam("primaryContactPassword", "pass")
+                .post("/companies").then().statusCode(303).extract().header("Location");
         ai.mnemosyne_systems.model.Company company = ai.mnemosyne_systems.model.Company.find("name", name)
                 .firstResult();
         return company == null ? null : company.id;

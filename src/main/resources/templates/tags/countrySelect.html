@@ -1,4 +1,6 @@
-<select name="countryId" id="countrySelect" onchange="loadTimezones()">
+{@java.lang.String customId = "countrySelect"}
+{@java.lang.String customName = "countryId"}
+<select name="{customName}" id="{customId}" onchange="loadTimezones(this)">
     <option value="">Select country</option>
     {#for country in countries}
         <option value="{country.id}" {#if selectedCountry?? && selectedCountry.id == country.id}selected{/if}>{country.name}</option>
