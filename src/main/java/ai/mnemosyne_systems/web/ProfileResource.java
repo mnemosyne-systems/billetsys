@@ -76,6 +76,9 @@ public class ProfileResource {
             user.email = email.trim();
         }
 
+        String social = value(form, "social");
+        user.social = trimOrNull(social);
+
         String fullName = value(form, "fullName");
         user.fullName = trimOrNull(fullName);
 

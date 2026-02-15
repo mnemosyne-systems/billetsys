@@ -17,8 +17,9 @@
     <tr>
         <th>Name <button class="sort-button" type="button" onclick="sortTable(this, 0)">↕</button></th>
         <th>Email <button class="sort-button" type="button" onclick="sortTable(this, 1)">↕</button></th>
-        <th>Type <button class="sort-button" type="button" onclick="sortTable(this, 2)">↕</button></th>
-        <th>Actions <button class="sort-button" type="button" onclick="sortTable(this, 3)">↕</button></th>
+        <th>Social <button class="sort-button" type="button" onclick="sortTable(this, 2)">↕</button></th>
+        <th>Type <button class="sort-button" type="button" onclick="sortTable(this, 3)">↕</button></th>
+        <th>Actions <button class="sort-button" type="button" onclick="sortTable(this, 4)">↕</button></th>
     </tr>
     </thead>
     <tbody>
@@ -27,6 +28,7 @@
         <td><a href="/users/{user.id}/edit">{user.name}</a></td>
         {!<td><a href="/users/{user.id}">{user.name}</a></td>!}
         <td><a href="mailto:{user.email}">{user.email}</a></td>
+        <td>{user.social ?: ''}</td>
         <td>{typeLabels.get(user.id)}</td>
         <td data-sort-value="{user.id}">
             <a class="icon-link" href="/users/{user.id}/edit" title="Edit" aria-label="Edit">

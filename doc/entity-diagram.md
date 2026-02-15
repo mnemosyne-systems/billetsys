@@ -40,6 +40,7 @@ erDiagram
         STRING name
         STRING full_name
         STRING email
+        STRING social
         STRING phone_number
         STRING phone_extension
         STRING user_type

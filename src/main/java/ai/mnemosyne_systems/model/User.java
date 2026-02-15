@@ -43,6 +43,9 @@ public class User extends PanacheEntityBase {
     @Column(nullable = false)
     public String email;
 
+    @Column
+    public String social;
+
     @Column(name = "phone_number")
     public String phoneNumber;
 

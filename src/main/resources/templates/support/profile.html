@@ -36,6 +36,11 @@
                     </label>
                 </div>
                 <div>
+                    <label>Social
+                        <input type="text" name="social" value="{user.social}">
+                    </label>
+                </div>
+                <div>
                     <label>Company
                         {#if user.type == 'user' || user.type == 'tam'}
                             <input type="text" value="{#if userCompany != null}{userCompany.name}{/if}" readonly>

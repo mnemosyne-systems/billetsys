@@ -21,6 +21,10 @@
                     <td><a href="mailto:{user.email}">{user.email}</a></td>
                 </tr>
                 <tr>
+                    <th>Social</th>
+                    <td>{user.social ?: ''}</td>
+                </tr>
+                <tr>
                     <th>Phone</th>
                     <td>
                         {#if user.phoneNumber != null && !user.phoneNumber.isBlank}

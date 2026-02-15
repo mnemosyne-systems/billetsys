@@ -178,10 +178,10 @@ public class UserResource {
     @Transactional
     public Response createTamUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
             @FormParam("fullName") String fullName, @FormParam("email") String email,
-            @FormParam("phoneNumber") String phoneNumber, @FormParam("phoneExtension") String phoneExtension,
-            @FormParam("timezoneId") Long timezoneId, @FormParam("countryId") Long countryId,
-            @FormParam("password") String password, @FormParam("type") String type,
-            @FormParam("companyId") Long companyId) {
+            @FormParam("social") String social, @FormParam("phoneNumber") String phoneNumber,
+            @FormParam("phoneExtension") String phoneExtension, @FormParam("timezoneId") Long timezoneId,
+            @FormParam("countryId") Long countryId, @FormParam("password") String password,
+            @FormParam("type") String type, @FormParam("companyId") Long companyId) {
         User user = requireUser(auth);
         if (!User.TYPE_TAM.equalsIgnoreCase(user.type)) {
             throw new WebApplicationException(Response.seeOther(URI.create("/user")).build());
@@ -212,6 +212,7 @@ public class UserResource {
         newUser.name = name.trim();
         newUser.fullName = trimOrNull(fullName);
         newUser.email = email.trim();
+        newUser.social = trimOrNull(social);
         newUser.phoneNumber = trimOrNull(phoneNumber);
         newUser.phoneExtension = trimOrNull(phoneExtension);
         newUser.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
@@ -506,16 +507,17 @@ public class UserResource {
     @Transactional
     public Response createAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
             @FormParam("fullName") String fullName, @FormParam("email") String email,
-            @FormParam("phoneNumber") String phoneNumber, @FormParam("phoneExtension") String phoneExtension,
-            @FormParam("timezoneId") Long timezoneId, @FormParam("countryId") Long countryId,
-            @FormParam("type") String type, @FormParam("password") String password,
-            @FormParam("companyId") Long companyId) {
+            @FormParam("social") String social, @FormParam("phoneNumber") String phoneNumber,
+            @FormParam("phoneExtension") String phoneExtension, @FormParam("timezoneId") Long timezoneId,
+            @FormParam("countryId") Long countryId, @FormParam("type") String type,
+            @FormParam("password") String password, @FormParam("companyId") Long companyId) {
         requireAdmin(auth);
         validateUserFields(name, email, type, true, password);
         User newUser = new User();
         newUser.name = name.trim();
         newUser.fullName = trimOrNull(fullName);
         newUser.email = email.trim();
+        newUser.social = trimOrNull(social);
         newUser.phoneNumber = trimOrNull(phoneNumber);
         newUser.phoneExtension = trimOrNull(phoneExtension);
         newUser.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
@@ -538,10 +540,10 @@ public class UserResource {
     @Transactional
     public Response updateAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
             @FormParam("name") String name, @FormParam("fullName") String fullName, @FormParam("email") String email,
-            @FormParam("phoneNumber") String phoneNumber, @FormParam("phoneExtension") String phoneExtension,
-            @FormParam("timezoneId") Long timezoneId, @FormParam("countryId") Long countryId,
-            @FormParam("type") String type, @FormParam("password") String password,
-            @FormParam("companyId") Long companyId) {
+            @FormParam("social") String social, @FormParam("phoneNumber") String phoneNumber,
+            @FormParam("phoneExtension") String phoneExtension, @FormParam("timezoneId") Long timezoneId,
+            @FormParam("countryId") Long countryId, @FormParam("type") String type,
+            @FormParam("password") String password, @FormParam("companyId") Long companyId) {
         requireAdmin(auth);
         User editUser = User.findById(id);
         if (editUser == null) {
@@ -551,6 +553,7 @@ public class UserResource {
         editUser.name = name.trim();
         editUser.fullName = trimOrNull(fullName);
         editUser.email = email.trim();
+        editUser.social = trimOrNull(social);
         editUser.phoneNumber = trimOrNull(phoneNumber);
         editUser.phoneExtension = trimOrNull(phoneExtension);
         editUser.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;

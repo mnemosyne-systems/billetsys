@@ -189,10 +189,11 @@ public class SupportResource {
     @Transactional
     public Response createSupportUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
             @FormParam("fullName") String fullName, @FormParam("email") String email,
-            @FormParam("phoneNumber") String phoneNumber, @FormParam("phoneExtension") String phoneExtension,
-            @FormParam("timezoneId") Long timezoneId, @FormParam("countryId") Long countryId,
-            @FormParam("password") String password, @FormParam("type") String type,
-            @FormParam("companyId") Long companyId, @Context HttpServletRequest request) {
+            @FormParam("social") String social, @FormParam("phoneNumber") String phoneNumber,
+            @FormParam("phoneExtension") String phoneExtension, @FormParam("timezoneId") Long timezoneId,
+            @FormParam("countryId") Long countryId, @FormParam("password") String password,
+            @FormParam("type") String type, @FormParam("companyId") Long companyId,
+            @Context HttpServletRequest request) {
         requireSupport(auth);
         if (name == null || name.isBlank()) {
             throw new BadRequestException("Username is required");
@@ -215,6 +216,7 @@ public class SupportResource {
         newUser.name = name.trim();
         newUser.fullName = trimOrNull(fullName);
         newUser.email = email.trim();
+        newUser.social = trimOrNull(social);
         newUser.phoneNumber = trimOrNull(phoneNumber);
         newUser.phoneExtension = trimOrNull(phoneExtension);
         newUser.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
