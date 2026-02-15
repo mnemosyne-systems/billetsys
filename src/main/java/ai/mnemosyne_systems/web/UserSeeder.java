@@ -169,15 +169,15 @@ public class UserSeeder {
         Ticket a4 = seedTicket(Ticket.formatName(company, 4), company, user2, enterpriseHigh);
         company.ticketSequence = 4L;
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
-        seedMessageAt(a1, "Sample ticket created.", now.minusMinutes(150));
+        seedMessageAt(a1, "Sample ticket created.", now.minusMinutes(300));
         seedMessageAt(a2, "Sample ticket created.", now.minusMinutes(30));
-        seedMessageAt(a3, "Sample ticket created.", now.minusMinutes(80));
+        seedMessageAt(a3, "Sample ticket created.", now.minusMinutes(230));
         seedMessageAt(a4, "Sample ticket created.", now.minusMinutes(100));
         Message attachmentMessage = Message.find("ticket = ?1 and body = ?2", a1, "Sample ticket created.")
                 .firstResult();
         seedAttachment(attachmentMessage, "sample.txt", "text/plain",
                 "Sample attachment\nLine two".getBytes(StandardCharsets.UTF_8));
-        seedMessageAt(a1, "Sample attachments added.", now.minusMinutes(120));
+        seedMessageAt(a1, "Sample attachments added.", now.minusMinutes(295));
         Message attachmentMessageTwo = Message.find("ticket = ?1 and body = ?2", a1, "Sample attachments added.")
                 .firstResult();
         seedAttachment(attachmentMessageTwo, "sample-one.txt", "text/plain",

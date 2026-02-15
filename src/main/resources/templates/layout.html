@@ -125,6 +125,19 @@
         .profile-menu {
             position: relative;
         }
+        .ticket-alarm {
+            display: none;
+            margin-left: 6px;
+            animation: ticket-alarm-blink 1s step-end infinite;
+        }
+        .ticket-alarm.is-visible {
+            display: inline-block;
+        }
+        @keyframes ticket-alarm-blink {
+            50% {
+                opacity: 0.2;
+            }
+        }
         main {
             padding: 20px;
         }
@@ -420,6 +433,7 @@
             {#if currentUser != null && (currentUser.type == 'tam' || currentUser.type == 'user')}
             <a href="/user/tickets">
                 Tickets ({#if assignedCount??}{assignedCount}{#else}0{/if}/{#if openCount??}{openCount}{#else}0{/if})
+                <span class="ticket-alarm" data-ticket-alarm aria-label="Alarm" title="SLA alarm">🚨</span>
             </a>
             {#else}
             <a href="/">Home</a>
@@ -903,6 +917,23 @@
         });
     }
 
+    function setupTicketAlarm() {
+        const icons = document.querySelectorAll('[data-ticket-alarm]');
+        if (!icons.length) {
+            return;
+        }
+        fetch('/tickets/alarm/status', { credentials: 'same-origin' })
+            .then(response => response.ok ? response.text() : 'false')
+            .then(value => {
+                if (String(value).trim().toLowerCase() !== 'true') {
+                    return;
+                }
+                icons.forEach(icon => icon.classList.add('is-visible'));
+            })
+            .catch(() => {
+            });
+    }
+
     function highlightCodeBlocks(root) {
         if (typeof hljs === 'undefined') {
             return;
@@ -918,6 +949,8 @@
     setupMarkdownEditors();
     setupMarkdownOutputs();
     highlightCodeBlocks(document);
+    setupTicketAlarm();
+    setInterval(setupTicketAlarm, 60000);
     </script>
 </body>
 </html>

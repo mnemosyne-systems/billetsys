@@ -33,12 +33,16 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 @Path("/tickets")
 @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -131,6 +135,15 @@ public class TicketResource {
             return userResource.ticketDetail(auth, id);
         }
         return Response.seeOther(URI.create("/")).build();
+    }
+
+    @GET
+    @Path("/alarm/status")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response alarmStatus(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
+        User user = AuthHelper.findUser(auth);
+        boolean alarm = hasAlarm(user);
+        return Response.ok(Boolean.toString(alarm)).build();
     }
 
     @POST
@@ -241,6 +254,103 @@ public class TicketResource {
             throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
         }
         return user;
+    }
+
+    private boolean hasAlarm(User user) {
+        if (user == null) {
+            return false;
+        }
+        List<Ticket> tickets = ticketsForAlarm(user);
+        if (tickets.isEmpty()) {
+            return false;
+        }
+        Map<Long, LocalDateTime> latestMessageDates = latestMessageDates(tickets);
+        LocalDateTime now = LocalDateTime.now();
+        for (Ticket ticket : tickets) {
+            if (ticket == null || ticket.id == null || ticket.companyEntitlement == null
+                    || ticket.companyEntitlement.supportLevel == null) {
+                continue;
+            }
+            LocalDateTime created = latestMessageDates.get(ticket.id);
+            if (created == null) {
+                continue;
+            }
+            long minutes = Duration.between(created, now).toMinutes();
+            if (minutes < 0) {
+                minutes = 0;
+            }
+            Integer normal = ticket.companyEntitlement.supportLevel.normal;
+            Integer escalate = ticket.companyEntitlement.supportLevel.escalate;
+            if (normal == null || escalate == null) {
+                continue;
+            }
+            long overNormal = minutes - normal.longValue();
+            if (overNormal >= escalate.longValue()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<Ticket> ticketsForAlarm(User user) {
+        if (AuthHelper.isSupport(user)) {
+            List<Ticket> assigned = Ticket.find(
+                    "select distinct t from Ticket t join t.supportUsers u where u = ?1 and (t.status is null or lower(t.status) <> 'closed')",
+                    user).list();
+            List<Ticket> open = Ticket.find(
+                    "select distinct t from Ticket t where t.supportUsers is empty and (t.status is null or lower(t.status) <> 'closed')")
+                    .list();
+            return combineTickets(assigned, open);
+        }
+        if (User.TYPE_TAM.equalsIgnoreCase(user.type)) {
+            return Ticket.find(
+                    "select distinct t from Ticket t left join t.tamUsers tu left join t.company c left join c.users cu where (tu = ?1 or cu = ?1) and (t.status is null or lower(t.status) <> 'closed')",
+                    user).list();
+        }
+        if (User.TYPE_USER.equalsIgnoreCase(user.type)) {
+            return Ticket.find("requester = ?1 and (status is null or lower(status) <> 'closed')", user).list();
+        }
+        return List.of();
+    }
+
+    private List<Ticket> combineTickets(List<Ticket> first, List<Ticket> second) {
+        List<Ticket> combined = new ArrayList<>();
+        Set<Long> seen = new HashSet<>();
+        for (Ticket ticket : first) {
+            if (ticket != null && ticket.id != null && seen.add(ticket.id)) {
+                combined.add(ticket);
+            }
+        }
+        for (Ticket ticket : second) {
+            if (ticket != null && ticket.id != null && seen.add(ticket.id)) {
+                combined.add(ticket);
+            }
+        }
+        return combined;
+    }
+
+    private Map<Long, LocalDateTime> latestMessageDates(List<Ticket> tickets) {
+        Set<Long> ticketIds = new HashSet<>();
+        for (Ticket ticket : tickets) {
+            if (ticket != null && ticket.id != null) {
+                ticketIds.add(ticket.id);
+            }
+        }
+        Map<Long, LocalDateTime> result = new LinkedHashMap<>();
+        if (ticketIds.isEmpty()) {
+            return result;
+        }
+        List<Message> messages = Message.find("order by date desc").list();
+        for (Message message : messages) {
+            if (message.ticket == null || message.ticket.id == null || !ticketIds.contains(message.ticket.id)) {
+                continue;
+            }
+            result.putIfAbsent(message.ticket.id, message.date);
+            if (result.size() == ticketIds.size()) {
+                break;
+            }
+        }
+        return result;
     }
 
     private String formatDate(LocalDateTime date) {
