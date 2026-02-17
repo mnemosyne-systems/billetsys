@@ -99,7 +99,7 @@
                                     <select id="availableUsers" multiple size="10" style="width: 100%;">
                                         {#for user in users}
                                             {#if !selectedUserIds.contains(user.id)}
-                                                <option value="{user.id}">{user.name} ({user.email})</option>
+                                                <option value="{user.id}">{user.name}</option>
                                             {/if}
                                         {/for}
                                     </select>
@@ -127,7 +127,7 @@
                                     <select id="availableTams" multiple size="10" style="width: 100%;">
                                         {#for tam in tams}
                                             {#if !selectedTamIds.contains(tam.id)}
-                                                <option value="{tam.id}">{tam.name} ({tam.email})</option>
+                                                <option value="{tam.id}">{tam.name}</option>
                                             {/if}
                                         {/for}
                                     </select>
