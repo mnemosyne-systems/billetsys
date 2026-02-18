@@ -37,5 +37,5 @@ public class CompanyEntitlement extends PanacheEntityBase {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "support_level_id", nullable = false)
-    public SupportLevel supportLevel;
+    public Level supportLevel;
 }

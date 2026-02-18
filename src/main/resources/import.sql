@@ -274,7 +274,7 @@ INSERT INTO entitlements (id, name, description)
 VALUES (nextval('entitlement_seq'), 'Enterprise', '24/7 support with SLA and dedicated TAM');
 
 -- =====================
--- SUPPORT LEVELS
+-- LEVELS
 -- =====================
 INSERT INTO support_levels (id, name, description, level, color, from_day, from_time, to_day, to_time, country_id, timezone_id)
 VALUES (nextval('support_level_seq'), 'Critical', 'Critical response level', 60, 'Red',
@@ -295,7 +295,7 @@ VALUES (nextval('support_level_seq'), 'Normal', 'Normal response level', 1440, '
         (SELECT id FROM timezones WHERE name = 'America/New_York'));
 
 -- =====================
--- ENTITLEMENT SUPPORT LEVELS
+-- ENTITLEMENT LEVELS
 -- =====================
 INSERT INTO entitlement_support_levels (entitlement_id, support_level_id)
 SELECT e.id, s.id

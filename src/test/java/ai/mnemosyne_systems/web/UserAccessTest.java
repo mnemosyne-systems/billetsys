@@ -14,7 +14,7 @@ import ai.mnemosyne_systems.model.Company;
 import ai.mnemosyne_systems.model.CompanyEntitlement;
 import ai.mnemosyne_systems.model.Entitlement;
 import ai.mnemosyne_systems.model.Message;
-import ai.mnemosyne_systems.model.SupportLevel;
+import ai.mnemosyne_systems.model.Level;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
 import io.quarkus.elytron.security.common.BcryptUtil;
@@ -59,11 +59,11 @@ class UserAccessTest {
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/entitlements").then().statusCode(200)
                 .body(Matchers.containsString("Entitlements"));
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/support-levels").then().statusCode(200)
-                .body(Matchers.containsString("Support Levels"));
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/levels").then().statusCode(200)
+                .body(Matchers.containsString("Levels"));
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/companies/create").then().statusCode(200)
-                .body(Matchers.containsString("Entitlement")).body(Matchers.containsString("Service level"));
+                .body(Matchers.containsString("Entitlement")).body(Matchers.containsString("Level"));
 
         Long companyId = createCompany(cookie, "Cycle Co");
         deleteCompany(cookie, companyId);
@@ -116,7 +116,7 @@ class UserAccessTest {
         Long ticketId = supportTicket == null ? null : supportTicket.id;
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/tickets/" + ticketId + "/edit").then()
                 .statusCode(200).body(Matchers.containsString("Company")).body(Matchers.containsString("Entitlement"))
-                .body(Matchers.containsString("Service level")).body(Matchers.containsString("Starter"))
+                .body(Matchers.containsString("Level")).body(Matchers.containsString("Starter"))
                 .body(Matchers.containsString("Normal")).body(Matchers.containsString("Messages"))
                 .body(Matchers.containsString("Sample ticket created."));
 
@@ -125,7 +125,7 @@ class UserAccessTest {
                 .body(Matchers.containsString("/support/support-users/")).body(Matchers.containsString("support1"))
                 .body(Matchers.containsString("Ticket")).body(Matchers.containsString("Support users"))
                 .body(Matchers.containsString("Company")).body(Matchers.containsString("Entitlement"))
-                .body(Matchers.containsString("Service Level")).body(Matchers.containsString("TAMs"))
+                .body(Matchers.containsString("Level")).body(Matchers.containsString("TAMs"))
                 .body(Matchers.containsString("/support/tam-users/")).body(Matchers.containsString("tam"))
                 .body(Matchers.containsString("Category")).body(Matchers.containsString("External issue"))
                 .body(Matchers.not(Matchers.containsString("Cancel")))
@@ -192,7 +192,7 @@ class UserAccessTest {
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/tickets/" + ticketId).then()
                 .statusCode(200).body(Matchers.containsString(userTicketName)).body(Matchers.containsString("Ticket"))
                 .body(Matchers.containsString("Support users")).body(Matchers.containsString("Company"))
-                .body(Matchers.containsString("Entitlement")).body(Matchers.containsString("Service Level"))
+                .body(Matchers.containsString("Entitlement")).body(Matchers.containsString("Level"))
                 .body(Matchers.containsString("value=\"Assigned\"")).body(Matchers.containsString("TAMs"))
                 .body(Matchers.containsString("Category")).body(Matchers.containsString("External issue"))
                 .body(Matchers.containsString("Reply")).body(Matchers.not(Matchers.containsString("Back")));
@@ -235,7 +235,7 @@ class UserAccessTest {
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/tickets/" + ticketId).then()
                 .statusCode(200).body(Matchers.containsString(tamTicketName)).body(Matchers.containsString("Ticket"))
                 .body(Matchers.containsString("Support users")).body(Matchers.containsString("Company"))
-                .body(Matchers.containsString("Entitlement")).body(Matchers.containsString("Service Level"))
+                .body(Matchers.containsString("Entitlement")).body(Matchers.containsString("Level"))
                 .body(Matchers.containsString("/user/support-users/")).body(Matchers.containsString("support1"))
                 .body(Matchers.containsString("/user/tam-users/")).body(Matchers.containsString("tam"))
                 .body(Matchers.containsString("Reply")).body(Matchers.not(Matchers.containsString("Back")));
@@ -279,20 +279,20 @@ class UserAccessTest {
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .contentType(ContentType.URLENC).formParam("name", levelName)
                 .formParam("description", "Level description").formParam("level", 30).formParam("color", "Red")
-                .post("/support-levels").then().statusCode(303);
-        SupportLevel level = SupportLevel.find("name", levelName).firstResult();
+                .post("/levels").then().statusCode(303);
+        Level level = Level.find("name", levelName).firstResult();
         Assertions.assertNotNull(level);
 
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .contentType(ContentType.URLENC).formParam("name", "Updated Level")
                 .formParam("description", "Updated level").formParam("level", 45).formParam("color", "Yellow")
-                .post("/support-levels/" + level.id).then().statusCode(303);
-        SupportLevel updatedLevel = refreshedSupportLevel(level.id);
+                .post("/levels/" + level.id).then().statusCode(303);
+        Level updatedLevel = refreshedLevel(level.id);
         Assertions.assertEquals("Updated Level", updatedLevel.name);
 
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .post("/support-levels/" + level.id + "/delete").then().statusCode(303);
-        Assertions.assertNull(refreshedSupportLevel(level.id));
+                .post("/levels/" + level.id + "/delete").then().statusCode(303);
+        Assertions.assertNull(refreshedLevel(level.id));
 
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .contentType(ContentType.URLENC).formParam("name", "Coverage Co")
@@ -322,7 +322,7 @@ class UserAccessTest {
         Long companyId = ensureCompany("Support CRUD Co");
         Company company = Company.findById(companyId);
         Entitlement entitlement = ensureEntitlement("Starter", "Email support");
-        SupportLevel level = ensureSupportLevel("Normal", "Normal response level", 1440, "White");
+        Level level = ensureLevel("Normal", "Normal response level", 1440, "White");
         CompanyEntitlement entry = ensureCompanyEntitlement(company, entitlement, level);
 
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
@@ -519,8 +519,7 @@ class UserAccessTest {
                 .find("email", "user@mnemosyne-systems.ai").firstResult();
         ai.mnemosyne_systems.model.Entitlement entitlement = ai.mnemosyne_systems.model.Entitlement
                 .find("name", "Starter").firstResult();
-        ai.mnemosyne_systems.model.SupportLevel level = ai.mnemosyne_systems.model.SupportLevel.find("name", "Normal")
-                .firstResult();
+        ai.mnemosyne_systems.model.Level level = ai.mnemosyne_systems.model.Level.find("name", "Normal").firstResult();
         ai.mnemosyne_systems.model.CompanyEntitlement entry = new ai.mnemosyne_systems.model.CompanyEntitlement();
         entry.company = company;
         entry.entitlement = entitlement;
@@ -648,10 +647,10 @@ class UserAccessTest {
     }
 
     @Transactional
-    SupportLevel ensureSupportLevel(String name, String description, int levelValue, String color) {
-        SupportLevel level = SupportLevel.find("name", name).firstResult();
+    Level ensureLevel(String name, String description, int levelValue, String color) {
+        Level level = Level.find("name", name).firstResult();
         if (level == null) {
-            level = new SupportLevel();
+            level = new Level();
             level.name = name;
             level.persist();
         }
@@ -662,7 +661,7 @@ class UserAccessTest {
     }
 
     @Transactional
-    CompanyEntitlement ensureCompanyEntitlement(Company company, Entitlement entitlement, SupportLevel level) {
+    CompanyEntitlement ensureCompanyEntitlement(Company company, Entitlement entitlement, Level level) {
         CompanyEntitlement entry = CompanyEntitlement
                 .find("company = ?1 and entitlement = ?2 and supportLevel = ?3", company, entitlement, level)
                 .firstResult();
@@ -696,9 +695,9 @@ class UserAccessTest {
     }
 
     @Transactional
-    SupportLevel refreshedSupportLevel(Long id) {
+    Level refreshedLevel(Long id) {
         Panache.getEntityManager().clear();
-        return SupportLevel.findById(id);
+        return Level.findById(id);
     }
 
     @Transactional

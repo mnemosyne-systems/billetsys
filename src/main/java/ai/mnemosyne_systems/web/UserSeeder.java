@@ -14,7 +14,7 @@ import ai.mnemosyne_systems.model.Company;
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Entitlement;
 import ai.mnemosyne_systems.model.CompanyEntitlement;
-import ai.mnemosyne_systems.model.SupportLevel;
+import ai.mnemosyne_systems.model.Level;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
@@ -207,12 +207,12 @@ public class UserSeeder {
         seedEntitlement("Business", "Priority support with 1 business day response");
         seedEntitlement("Enterprise", "24/7 support with SLA and dedicated TAM");
 
-        seedSupportLevel("Critical", "Critical response level", 60, "Red");
-        seedSupportLevel("Eslacate", "Escalation response level", 120, "Yellow");
-        seedSupportLevel("Normal", "Normal response level", 1440, "White");
-        assignSupportLevelsToEntitlement("Starter", "Critical", "Eslacate", "Normal");
-        assignSupportLevelsToEntitlement("Business", "Critical", "Eslacate", "Normal");
-        assignSupportLevelsToEntitlement("Enterprise", "Critical", "Eslacate", "Normal");
+        seedLevel("Critical", "Critical response level", 60, "Red");
+        seedLevel("Eslacate", "Escalation response level", 120, "Yellow");
+        seedLevel("Normal", "Normal response level", 1440, "White");
+        assignLevelsToEntitlement("Starter", "Critical", "Eslacate", "Normal");
+        assignLevelsToEntitlement("Business", "Critical", "Eslacate", "Normal");
+        assignLevelsToEntitlement("Enterprise", "Critical", "Eslacate", "Normal");
 
         seedCategory("Feature", false);
         seedCategory("Bug", false);
@@ -381,7 +381,7 @@ public class UserSeeder {
 
     private CompanyEntitlement ensureCompanyEntitlement(Company company, String entitlementName, String levelName) {
         Entitlement entitlement = Entitlement.find("name", entitlementName).firstResult();
-        SupportLevel level = SupportLevel.find("name", levelName).firstResult();
+        Level level = Level.find("name", levelName).firstResult();
         if (entitlement == null || level == null) {
             return null;
         }
@@ -420,17 +420,17 @@ public class UserSeeder {
         entitlement.persist();
     }
 
-    private void assignSupportLevelsToEntitlement(String entitlementName, String... supportLevelNames) {
+    private void assignLevelsToEntitlement(String entitlementName, String... supportLevelNames) {
         Entitlement entitlement = Entitlement.find("name", entitlementName).firstResult();
         if (entitlement == null || supportLevelNames == null || supportLevelNames.length == 0) {
             return;
         }
-        java.util.LinkedHashSet<SupportLevel> levels = new java.util.LinkedHashSet<>();
+        java.util.LinkedHashSet<Level> levels = new java.util.LinkedHashSet<>();
         for (String levelName : supportLevelNames) {
             if (levelName == null || levelName.isBlank()) {
                 continue;
             }
-            SupportLevel level = SupportLevel.find("name", levelName).firstResult();
+            Level level = Level.find("name", levelName).firstResult();
             if (level != null) {
                 levels.add(level);
             }
@@ -438,8 +438,8 @@ public class UserSeeder {
         entitlement.supportLevels = new java.util.ArrayList<>(levels);
     }
 
-    private void seedSupportLevel(String name, String description, int levelValue, String color) {
-        SupportLevel level = SupportLevel.find("name", name).firstResult();
+    private void seedLevel(String name, String description, int levelValue, String color) {
+        Level level = Level.find("name", name).firstResult();
         Country country = findCountryByCode("US");
         Timezone timezone = findTimezoneByName("America/New_York");
         if (level != null) {
@@ -447,30 +447,30 @@ public class UserSeeder {
             level.level = levelValue;
             level.color = color;
             if (level.fromDay == null) {
-                level.fromDay = SupportLevel.DayOption.MONDAY.getCode();
+                level.fromDay = Level.DayOption.MONDAY.getCode();
             }
             if (level.fromTime == null) {
-                level.fromTime = SupportLevel.HourOption.H00.getCode();
+                level.fromTime = Level.HourOption.H00.getCode();
             }
             if (level.toDay == null) {
-                level.toDay = SupportLevel.DayOption.SUNDAY.getCode();
+                level.toDay = Level.DayOption.SUNDAY.getCode();
             }
             if (level.toTime == null) {
-                level.toTime = SupportLevel.HourOption.H23.getCode();
+                level.toTime = Level.HourOption.H23.getCode();
             }
             level.country = country;
             level.timezone = timezone;
             return;
         }
-        level = new SupportLevel();
+        level = new Level();
         level.name = name;
         level.description = description;
         level.level = levelValue;
         level.color = color;
-        level.fromDay = SupportLevel.DayOption.MONDAY.getCode();
-        level.fromTime = SupportLevel.HourOption.H00.getCode();
-        level.toDay = SupportLevel.DayOption.SUNDAY.getCode();
-        level.toTime = SupportLevel.HourOption.H23.getCode();
+        level.fromDay = Level.DayOption.MONDAY.getCode();
+        level.fromTime = Level.HourOption.H00.getCode();
+        level.toDay = Level.DayOption.SUNDAY.getCode();
+        level.toTime = Level.HourOption.H23.getCode();
         level.country = country;
         level.timezone = timezone;
         level.persist();

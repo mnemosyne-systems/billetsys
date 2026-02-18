@@ -12,7 +12,7 @@ import ai.mnemosyne_systems.model.Company;
 import ai.mnemosyne_systems.model.CompanyEntitlement;
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Entitlement;
-import ai.mnemosyne_systems.model.SupportLevel;
+import ai.mnemosyne_systems.model.Level;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
@@ -70,7 +70,7 @@ public class CompanyResource {
         List<Country> countries = Country.list("order by name");
         return companyFormTemplate.data("company", company).data("users", User.list("type", User.TYPE_USER))
                 .data("tams", User.list("type", User.TYPE_TAM)).data("entitlements", Entitlement.listAll())
-                .data("supportLevels", SupportLevel.listAll()).data("companyEntitlements", java.util.List.of())
+                .data("supportLevels", Level.listAll()).data("companyEntitlements", java.util.List.of())
                 .data("selectedEntitlementLevels", java.util.Map.of()).data("selectedUserIds", java.util.List.of())
                 .data("selectedTamIds", java.util.List.of()).data("countries", countries)
                 .data("timezones", java.util.List.of()).data("action", "/companies").data("title", "New company")
@@ -111,7 +111,7 @@ public class CompanyResource {
                 ? Timezone.list("country = ?1 order by name", company.country) : java.util.List.of();
         return companyFormTemplate.data("company", company).data("users", User.list("type", User.TYPE_USER))
                 .data("tams", User.list("type", User.TYPE_TAM)).data("entitlements", Entitlement.listAll())
-                .data("supportLevels", SupportLevel.listAll()).data("companyEntitlements", companyEntitlements)
+                .data("supportLevels", Level.listAll()).data("companyEntitlements", companyEntitlements)
                 .data("selectedEntitlementLevels", selectedEntitlementLevels).data("selectedUserIds", selectedUserIds)
                 .data("selectedTamIds", selectedTamIds).data("countries", countries).data("timezones", timezones)
                 .data("action", "/companies/" + id).data("title", "Edit Company").data("currentUser", user)
@@ -153,8 +153,7 @@ public class CompanyResource {
             @FormParam("countryId") Long countryId, @FormParam("timezoneId") Long timezoneId,
             @FormParam("userIds") java.util.List<Long> userIds, @FormParam("tamIds") java.util.List<Long> tamIds,
             @FormParam("entitlementIds") java.util.List<Long> entitlementIds,
-            @FormParam("supportLevelIds") java.util.List<Long> supportLevelIds,
-            @FormParam("phoneNumber") String phoneNumber,
+            @FormParam("levelIds") java.util.List<Long> levelIds, @FormParam("phoneNumber") String phoneNumber,
             @FormParam("primaryContactUsername") String primaryContactUsername,
             @FormParam("primaryContactPhoneNumber") String primaryContactPhoneNumber,
             @FormParam("primaryPhoneNumberExtension") String primaryPhoneNumberExtension,
@@ -188,7 +187,7 @@ public class CompanyResource {
         company.phoneNumber = phoneNumber;
         company.primaryContact = primaryContact;
         company.persist();
-        applyEntitlements(company, entitlementIds, supportLevelIds, java.util.List.of());
+        applyEntitlements(company, entitlementIds, levelIds, java.util.List.of());
         return Response.seeOther(URI.create("/companies")).build();
     }
 
@@ -202,8 +201,8 @@ public class CompanyResource {
             @FormParam("timezoneId") Long timezoneId, @FormParam("userIds") java.util.List<Long> userIds,
             @FormParam("tamIds") java.util.List<Long> tamIds,
             @FormParam("entitlementIds") java.util.List<Long> entitlementIds,
-            @FormParam("supportLevelIds") java.util.List<Long> supportLevelIds,
-            @FormParam("phoneNumber") String phoneNumber, @FormParam("primaryContact") Long primaryContactId) {
+            @FormParam("levelIds") java.util.List<Long> levelIds, @FormParam("phoneNumber") String phoneNumber,
+            @FormParam("primaryContact") Long primaryContactId) {
         requireAdmin(auth);
         Company company = Company.findById(id);
         if (company == null) {
@@ -242,7 +241,7 @@ public class CompanyResource {
         company.users.addAll(resolveUsers(userIdsModified, tamIds));
         java.util.List<CompanyEntitlement> existingEntitlements = CompanyEntitlement.find("company = ?1", company)
                 .list();
-        java.util.Set<String> selectedEntitlementPairs = applyEntitlements(company, entitlementIds, supportLevelIds,
+        java.util.Set<String> selectedEntitlementPairs = applyEntitlements(company, entitlementIds, levelIds,
                 existingEntitlements);
         for (CompanyEntitlement entry : existingEntitlements) {
             if (entry.entitlement == null || entry.supportLevel == null) {
@@ -320,9 +319,9 @@ public class CompanyResource {
     }
 
     private java.util.Set<String> applyEntitlements(Company company, java.util.List<Long> entitlementIds,
-            java.util.List<Long> supportLevelIds, java.util.List<CompanyEntitlement> existingEntitlements) {
+            java.util.List<Long> levelIds, java.util.List<CompanyEntitlement> existingEntitlements) {
         java.util.Set<String> selectedEntitlementPairs = new java.util.HashSet<>();
-        if (entitlementIds == null || supportLevelIds == null) {
+        if (entitlementIds == null || levelIds == null) {
             return selectedEntitlementPairs;
         }
         java.util.Map<String, CompanyEntitlement> byEntitlementPair = new java.util.HashMap<>();
@@ -331,15 +330,15 @@ public class CompanyResource {
                 byEntitlementPair.put(entry.entitlement.id + ":" + entry.supportLevel.id, entry);
             }
         }
-        int count = Math.min(entitlementIds.size(), supportLevelIds.size());
+        int count = Math.min(entitlementIds.size(), levelIds.size());
         for (int index = 0; index < count; index++) {
             Long entitlementId = entitlementIds.get(index);
-            Long supportLevelId = supportLevelIds.get(index);
+            Long supportLevelId = levelIds.get(index);
             if (entitlementId == null || supportLevelId == null) {
                 continue;
             }
             Entitlement entitlement = Entitlement.findById(entitlementId);
-            SupportLevel supportLevel = SupportLevel.findById(supportLevelId);
+            Level supportLevel = Level.findById(supportLevelId);
             if (entitlement == null || supportLevel == null) {
                 continue;
             }

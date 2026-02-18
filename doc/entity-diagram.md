@@ -84,7 +84,7 @@ erDiagram
         STRING description
     }
 
-    SUPPORT_LEVEL {
+    LEVEL {
         BIGINT id PK
         STRING name
         STRING description
@@ -111,7 +111,7 @@ erDiagram
         BIGINT support_level_id FK
     }
 
-    ENTITLEMENT_SUPPORT_LEVEL {
+    ENTITLEMENT_LEVEL {
         BIGINT entitlement_id PK, FK
         BIGINT support_level_id PK, FK
     }
@@ -121,7 +121,7 @@ erDiagram
     COUNTRY ||--o{ USER : locates
     TIMEZONE ||--o{ COMPANY : assigns
     TIMEZONE ||--o{ USER : assigns
-    TIMEZONE ||--o{ SUPPORT_LEVEL : assigns
+    TIMEZONE ||--o{ LEVEL : assigns
     COMPANY ||--o{ TICKET : has
     COMPANY }o--o{ USER : associates
     COMPANY }o--|| PRIMARY_CONTACT : has
@@ -133,10 +133,10 @@ erDiagram
     MESSAGE ||--o{ ATTACHMENT : has
     MESSAGE }o--|| USER : authored
     ENTITLEMENT ||--o{ COMPANY_ENTITLEMENT : includes
-    ENTITLEMENT ||--o{ ENTITLEMENT_SUPPORT_LEVEL : maps
-    COUNTRY ||--o{ SUPPORT_LEVEL : locates
-    SUPPORT_LEVEL ||--o{ COMPANY_ENTITLEMENT : levels
-    SUPPORT_LEVEL ||--o{ ENTITLEMENT_SUPPORT_LEVEL : maps
+    ENTITLEMENT ||--o{ ENTITLEMENT_LEVEL : maps
+    COUNTRY ||--o{ LEVEL : locates
+    LEVEL ||--o{ COMPANY_ENTITLEMENT : levels
+    LEVEL ||--o{ ENTITLEMENT_LEVEL : maps
     COMPANY_ENTITLEMENT ||--o{ TICKET : applies
     CATEGORY ||--o{ TICKET : categorizes
 ```

@@ -41,24 +41,24 @@
         </div>
         <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: start;">
             <div>
-                <label>Available Support Levels</label>
-                <select id="available-support-levels" multiple size="8" style="width: 100%;">
+                <label>Available Levels</label>
+                <select id="available-levels" multiple size="8" style="width: 100%;">
                     {#for level in supportLevels}
-                    {#if !selectedSupportLevelIds.contains(level.id)}
+                    {#if !selectedLevelIds.contains(level.id)}
                     <option value="{level.id}">{level.name}</option>
                     {/if}
                     {/for}
                 </select>
             </div>
             <div style="display: grid; gap: 8px; margin-top: 26px;">
-                <button type="button" class="secondary-button" aria-label="Add support level" onclick="moveSelected('available-support-levels', 'assigned-support-levels')">→</button>
-                <button type="button" class="secondary-button" aria-label="Remove support level" onclick="moveSelected('assigned-support-levels', 'available-support-levels')">←</button>
+                <button type="button" class="secondary-button" aria-label="Add level" onclick="moveSelected('available-levels', 'assigned-levels')">→</button>
+                <button type="button" class="secondary-button" aria-label="Remove level" onclick="moveSelected('assigned-levels', 'available-levels')">←</button>
             </div>
             <div>
-                <label>Assigned Support Levels</label>
-                <select id="assigned-support-levels" name="supportLevelIds" multiple size="8" style="width: 100%;">
+                <label>Assigned Levels</label>
+                <select id="assigned-levels" name="levelIds" multiple size="8" style="width: 100%;">
                     {#for level in supportLevels}
-                    {#if selectedSupportLevelIds.contains(level.id)}
+                    {#if selectedLevelIds.contains(level.id)}
                     <option value="{level.id}" selected>{level.name}</option>
                     {/if}
                     {/for}
@@ -86,7 +86,7 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         const form = document.querySelector("form");
-        const assigned = document.getElementById("assigned-support-levels");
+        const assigned = document.getElementById("assigned-levels");
         if (!form || !assigned) {
             return;
         }

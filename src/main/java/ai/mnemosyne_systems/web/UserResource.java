@@ -842,7 +842,7 @@ public class UserResource {
         return data;
     }
 
-    private String resolveSlaColor(ai.mnemosyne_systems.model.SupportLevel level, long minutes) {
+    private String resolveSlaColor(ai.mnemosyne_systems.model.Level level, long minutes) {
         if (level == null || level.level == null || level.color == null || level.color.isBlank()) {
             return null;
         }

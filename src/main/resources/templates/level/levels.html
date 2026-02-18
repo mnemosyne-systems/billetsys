@@ -9,14 +9,15 @@
 {#include admin-layout}
 {#content}
 <div class="support-header">
-    <h1>Support Levels</h1>
-    <a class="action-button" href="/support-levels/create">Create</a>
+    <h1>Levels</h1>
+    <a class="action-button" href="/levels/create">Create</a>
 </div>
 <table>
     <thead>
     <tr>
         <th>Name <button class="sort-button" type="button" onclick="sortTable(this, 0)">↕</button></th>
         <th>Description</th>
+        <th>Color</th>
         <th>From</th>
         <th>To</th>
         <th>Country</th>
@@ -24,10 +25,11 @@
     </tr>
     </thead>
     <tbody>
-    {#for level in supportLevels}
+    {#for level in levels}
     <tr>
-        <td><a href="/support-levels/{level.id}/edit">{level.name}</a></td>
+        <td><a href="/levels/{level.id}/edit">{level.name}</a></td>
         <td>{descriptionPreviews.get(level.id)}</td>
+        <td><span style="display:inline-block;width:12px;height:12px;border:1px solid #999;vertical-align:middle;margin-right:6px;background:{level.color};"></span>{colorDisplays.get(level.id)}</td>
         <td>{fromValues.get(level.id)}</td>
         <td>{toValues.get(level.id)}</td>
         <td>{countryNames.get(level.id)}</td>

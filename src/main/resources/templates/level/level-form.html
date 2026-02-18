@@ -1,0 +1,164 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+{#include admin-layout}
+{#content}
+<div class="form-card full-width">
+    <h1>{title}</h1>
+    <form method="post" action="{action}">
+        <label>Name
+            <input type="text" name="name" value="{level.name}" required>
+        </label>
+        <div>
+            <label class="markdown-label" for="level-description">Description</label>
+            <div class="markdown-editor" data-markdown-editor>
+                <div class="markdown-toolbar" data-md-toolbar>
+                    <button type="button" data-md-action="bold" aria-label="Bold"><strong>B</strong></button>
+                    <button type="button" data-md-action="italic" aria-label="Italic"><em>I</em></button>
+                    <button type="button" data-md-action="heading" aria-label="Heading">H</button>
+                    <button type="button" data-md-action="list" aria-label="List">List</button>
+                    <button type="button" data-md-action="quote" aria-label="Quote">Quote</button>
+                    <button type="button" data-md-action="code" aria-label="Code"><code>{}</code></button>
+                    <button type="button" data-md-action="code-block" aria-label="Code block">Code</button>
+                    <button type="button" data-md-action="link" aria-label="Link">Link</button>
+                </div>
+                <div class="markdown-panels">
+                    <div class="markdown-panel">
+                        <div class="markdown-panel-header">Write</div>
+                        <textarea id="level-description" name="description" rows="6" required data-md-input>{level.description}</textarea>
+                    </div>
+                    <div class="markdown-panel">
+                        <div class="markdown-panel-header">Preview</div>
+                        <div class="markdown-preview" data-md-preview></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <label>Level
+            <input type="number" name="level" min="0" value="{level.level}" required>
+        </label>
+        <div>
+            <label class="markdown-label">Color</label>
+            <div style="position: relative;">
+                <input type="hidden" name="color" id="level-color-value" value="{level.color}">
+                <button type="button" id="level-color-toggle" class="secondary-button"
+                        style="width: 100%; display: flex; justify-content: space-between; align-items: center; font-family: inherit; font-size: 14px; font-weight: 400; padding: 8px 10px;">
+                    <span style="display: inline-flex; align-items: center; gap: 8px;">
+                        <span id="level-color-current-swatch"
+                              style="display:inline-block;width:12px;height:12px;border:1px solid #999;background:{level.color};"></span>
+                        <span id="level-color-current-text">({level.color})</span>
+                    </span>
+                    <span aria-hidden="true">▾</span>
+                </button>
+                <div id="level-color-menu"
+                     style="display:none; position:absolute; left:0; right:0; z-index:20; max-height:220px; overflow:auto; background:#fff; border:1px solid #d3dbe6; border-radius:8px; margin-top:6px; box-shadow:0 10px 24px rgba(15,23,42,.12);">
+                    {#for colorOption in colorOptions}
+                    <button type="button" data-level-color="{colorOption.value}"
+                            style="width:100%; border:0; background:#fff; text-align:left; padding:8px 10px; display:flex; align-items:center; gap:8px; cursor:pointer; font-family:inherit; font-size:14px; font-weight:400;">
+                        <span style="display:inline-block;width:12px;height:12px;border:1px solid #999;background:{colorOption.value};"></span>
+                        <span>{colorOption.display}</span>
+                    </button>
+                    {/for}
+                </div>
+            </div>
+        </div>
+        <div>
+            <label>From</label>
+            <div style="display: flex; gap: 12px; align-items: end;">
+                <select name="fromDay" required aria-label="From day" style="flex: 1;">
+                    {#for day in dayOptions}
+                    <option value="{day.code}" {#if level.fromDay == day.code}selected{/if}>{day.label}</option>
+                    {/for}
+                </select>
+                <select name="fromTime" required aria-label="From time" style="min-width: 180px;">
+                    {#for hour in hourOptions}
+                    <option value="{hour.code}" {#if level.fromTime == hour.code}selected{/if}>{hour.label}</option>
+                    {/for}
+                </select>
+            </div>
+        </div>
+        <div>
+            <label>To</label>
+            <div style="display: flex; gap: 12px; align-items: end;">
+                <select name="toDay" required aria-label="To day" style="flex: 1;">
+                    {#for day in dayOptions}
+                    <option value="{day.code}" {#if level.toDay == day.code}selected{/if}>{day.label}</option>
+                    {/for}
+                </select>
+                <select name="toTime" required aria-label="To time" style="min-width: 180px;">
+                    {#for hour in hourOptions}
+                    <option value="{hour.code}" {#if level.toTime == hour.code}selected{/if}>{hour.label}</option>
+                    {/for}
+                </select>
+            </div>
+        </div>
+        <label>Country
+            <select name="countryId">
+                <option value="">Select country</option>
+                {#for country in countries}
+                <option value="{country.id}" {#if level.country != null && level.country.id == country.id}selected{/if}>{country.name}</option>
+                {/for}
+            </select>
+        </label>
+        <label>Timezone
+            <select name="timezoneId">
+                <option value="">Select timezone</option>
+                {#for timezone in timezones}
+                <option value="{timezone.id}" {#if level.timezone != null && level.timezone.id == timezone.id}selected{/if}>{timezone.name}</option>
+                {/for}
+            </select>
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="action-button">Save</button>
+        </div>
+    </form>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const toggle = document.getElementById("level-color-toggle");
+        const menu = document.getElementById("level-color-menu");
+        const value = document.getElementById("level-color-value");
+        const swatch = document.getElementById("level-color-current-swatch");
+        const text = document.getElementById("level-color-current-text");
+        if (!toggle || !menu || !value || !swatch || !text) {
+            return;
+        }
+        const closeMenu = () => {
+            menu.style.display = "none";
+        };
+        const openMenu = () => {
+            menu.style.display = "block";
+        };
+        toggle.addEventListener("click", () => {
+            if (menu.style.display === "block") {
+                closeMenu();
+            } else {
+                openMenu();
+            }
+        });
+        menu.querySelectorAll("button[data-level-color]").forEach((option) => {
+            option.addEventListener("click", () => {
+                const color = option.getAttribute("data-level-color");
+                if (!color) {
+                    return;
+                }
+                value.value = color;
+                swatch.style.background = color;
+                text.textContent = "(" + color + ")";
+                closeMenu();
+            });
+        });
+        document.addEventListener("click", (event) => {
+            if (!menu.contains(event.target) && !toggle.contains(event.target)) {
+                closeMenu();
+            }
+        });
+    });
+</script>
+{/content}
+{/include}

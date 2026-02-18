@@ -84,9 +84,8 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label style="font-weight: 600;">Service level</label>
+                                        <label style="font-weight: 600;">Level</label>
                                         <select id="supportLevelPicker">
-                                            <option value="">Select service level</option>
                                             {#for level in supportLevels}
                                                 <option value="{level.id}">{level.name}</option>
                                             {/for}
@@ -307,7 +306,7 @@
                     container.appendChild(entitlementInput);
                     const levelInput = document.createElement('input');
                     levelInput.type = 'hidden';
-                    levelInput.name = 'supportLevelIds';
+                    levelInput.name = 'levelIds';
                     levelInput.value = levelId;
                     container.appendChild(levelInput);
                 });

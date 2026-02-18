@@ -9,7 +9,7 @@
 package ai.mnemosyne_systems.web;
 
 import ai.mnemosyne_systems.model.Entitlement;
-import ai.mnemosyne_systems.model.SupportLevel;
+import ai.mnemosyne_systems.model.Level;
 import ai.mnemosyne_systems.model.User;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
@@ -72,7 +72,7 @@ public class EntitlementResource {
         entitlement.description = "";
         entitlement.supportLevels = java.util.List.of();
         return entitlementFormTemplate.data("entitlement", entitlement).data("action", "/entitlements")
-                .data("supportLevels", SupportLevel.listAll()).data("selectedSupportLevelIds", java.util.Set.of())
+                .data("supportLevels", Level.listAll()).data("selectedLevelIds", java.util.Set.of())
                 .data("title", "New entitlement").data("currentUser", user);
     }
 
@@ -89,7 +89,7 @@ public class EntitlementResource {
         Map<Long, String> fromValues = new LinkedHashMap<>();
         Map<Long, String> toValues = new LinkedHashMap<>();
         if (entitlement.supportLevels != null) {
-            for (SupportLevel level : entitlement.supportLevels) {
+            for (Level level : entitlement.supportLevels) {
                 if (level != null && level.id != null) {
                     fromValues.put(level.id, formatDayTime(level.fromDay, level.fromTime));
                     toValues.put(level.id, formatDayTime(level.toDay, level.toTime));
@@ -109,16 +109,16 @@ public class EntitlementResource {
         if (entitlement == null) {
             throw new NotFoundException();
         }
-        java.util.Set<Long> selectedSupportLevelIds = new java.util.LinkedHashSet<>();
+        java.util.Set<Long> selectedLevelIds = new java.util.LinkedHashSet<>();
         if (entitlement.supportLevels != null) {
-            for (SupportLevel level : entitlement.supportLevels) {
+            for (Level level : entitlement.supportLevels) {
                 if (level != null && level.id != null) {
-                    selectedSupportLevelIds.add(level.id);
+                    selectedLevelIds.add(level.id);
                 }
             }
         }
         return entitlementFormTemplate.data("entitlement", entitlement).data("action", "/entitlements/" + id)
-                .data("supportLevels", SupportLevel.listAll()).data("selectedSupportLevelIds", selectedSupportLevelIds)
+                .data("supportLevels", Level.listAll()).data("selectedLevelIds", selectedLevelIds)
                 .data("title", "Edit entitlement").data("currentUser", user);
     }
 
@@ -126,13 +126,13 @@ public class EntitlementResource {
     @Path("")
     @Transactional
     public Response createEntitlement(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
-            @FormParam("description") String description, @FormParam("supportLevelIds") List<Long> supportLevelIds) {
+            @FormParam("description") String description, @FormParam("levelIds") List<Long> levelIds) {
         requireAdmin(auth);
         validate(name, description);
         Entitlement entitlement = new Entitlement();
         entitlement.name = name.trim();
         entitlement.description = description.trim();
-        entitlement.supportLevels = resolveSupportLevels(supportLevelIds);
+        entitlement.supportLevels = resolveLevels(levelIds);
         entitlement.persist();
         return Response.seeOther(URI.create("/entitlements")).build();
     }
@@ -142,7 +142,7 @@ public class EntitlementResource {
     @Transactional
     public Response updateEntitlement(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
             @FormParam("name") String name, @FormParam("description") String description,
-            @FormParam("supportLevelIds") List<Long> supportLevelIds) {
+            @FormParam("levelIds") List<Long> levelIds) {
         requireAdmin(auth);
         Entitlement entitlement = Entitlement
                 .find("select e from Entitlement e left join fetch e.supportLevels where e.id = ?1", id).firstResult();
@@ -152,7 +152,7 @@ public class EntitlementResource {
         validate(name, description);
         entitlement.name = name.trim();
         entitlement.description = description.trim();
-        entitlement.supportLevels = resolveSupportLevels(supportLevelIds);
+        entitlement.supportLevels = resolveLevels(levelIds);
         return Response.seeOther(URI.create("/entitlements")).build();
     }
 
@@ -178,11 +178,11 @@ public class EntitlementResource {
         }
     }
 
-    private List<SupportLevel> resolveSupportLevels(List<Long> supportLevelIds) {
-        if (supportLevelIds == null || supportLevelIds.isEmpty()) {
+    private List<Level> resolveLevels(List<Long> levelIds) {
+        if (levelIds == null || levelIds.isEmpty()) {
             return java.util.List.of();
         }
-        return SupportLevel.list("id in ?1", supportLevelIds);
+        return Level.list("id in ?1", levelIds);
     }
 
     private String firstLinePlainText(String description) {
@@ -206,7 +206,7 @@ public class EntitlementResource {
         if (code == null) {
             return "";
         }
-        for (SupportLevel.DayOption option : SupportLevel.DayOption.values()) {
+        for (Level.DayOption option : Level.DayOption.values()) {
             if (option.getCode() == code) {
                 return option.getLabel();
             }
@@ -218,7 +218,7 @@ public class EntitlementResource {
         if (code == null) {
             return "";
         }
-        for (SupportLevel.HourOption option : SupportLevel.HourOption.values()) {
+        for (Level.HourOption option : Level.HourOption.values()) {
             if (option.getCode() == code) {
                 return option.getLabel();
             }

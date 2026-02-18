@@ -38,5 +38,5 @@ public class Entitlement extends PanacheEntityBase {
 
     @ManyToMany
     @JoinTable(name = "entitlement_support_levels", joinColumns = @JoinColumn(name = "entitlement_id"), inverseJoinColumns = @JoinColumn(name = "support_level_id"))
-    public List<SupportLevel> supportLevels;
+    public List<Level> supportLevels;
 }

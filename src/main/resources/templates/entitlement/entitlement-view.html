@@ -18,14 +18,14 @@
         </tr>
         </tbody>
     </table>
-    <h2 style="margin-top: 18px;">Support Levels</h2>
+    <h2 style="margin-top: 18px;">Levels</h2>
     <table>
         <thead>
         <tr>
             <th>Name</th>
             <th>Description</th>
             <th>Level</th>
-            <th>Color</th>
+            <th>Color (Name)</th>
             <th>From</th>
             <th>To</th>
             <th>Country</th>
@@ -43,7 +43,7 @@
             <td>{level.name}</td>
             <td>{level.description}</td>
             <td>{level.level}</td>
-            <td>{level.color}</td>
+            <td><span style="display:inline-block;width:12px;height:12px;border:1px solid #999;vertical-align:middle;margin-right:6px;background:{level.color};"></span>({level.color})</td>
             <td>{fromValues.get(level.id)}</td>
             <td>{toValues.get(level.id)}</td>
             <td>{#if level.country != null}{level.country.name}{/if}</td>
