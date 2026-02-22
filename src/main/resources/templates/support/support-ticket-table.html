@@ -22,7 +22,7 @@
     <tbody>
     {#for ticket in tickets}
     <tr style="{#if slaColors.containsKey(ticket.id)}background-color: {slaColors.get(ticket.id)}{/if}">
-        <td style="{#if slaColors.containsKey(ticket.id)}background-color: {slaColors.get(ticket.id)}{/if}"><a href="/tickets/{ticket.id}">{ticket.name}</a></td>
+        <td style="{#if slaColors.containsKey(ticket.id)}background-color: {slaColors.get(ticket.id)}{/if}"><a href="/tickets/{ticket.id}">{ticket.name}</a>{#if messageDirectionArrows.containsKey(ticket.id)} <span style="font-size: 1.35em; line-height: 1;">{messageDirectionArrows.get(ticket.id)}</span>{/if}</td>
         <td style="{#if slaColors.containsKey(ticket.id)}background-color: {slaColors.get(ticket.id)}{/if}">{messageDateLabels.get(ticket.id)}</td>
         <td style="{#if slaColors.containsKey(ticket.id)}background-color: {slaColors.get(ticket.id)}{/if}">{ticket.status}</td>
         <td>{#if ticket.category != null}{ticket.category.name}{#else}-{/if}</td>

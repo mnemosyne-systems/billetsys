@@ -96,7 +96,8 @@ public class SupportResource {
         return ticketsTemplate.data("tickets", data.assignedTickets).data("pageTitle", "Tickets")
                 .data("assignedCount", data.assignedTickets.size()).data("openCount", data.openTickets.size())
                 .data("messageDates", data.messageDates).data("messageDateLabels", data.messageDateLabels)
-                .data("slaColors", data.slaColors).data("supportAssignments", data.supportAssignments)
+                .data("messageDirectionArrows", data.messageDirectionArrows).data("slaColors", data.slaColors)
+                .data("supportAssignments", data.supportAssignments)
                 .data("supportAssignmentNames", data.supportAssignmentNames)
                 .data("supportAssignmentIds", data.supportAssignmentIds)
                 .data("assignedTicketIds", data.assignedTicketIds).data("ticketsBase", "/support")
@@ -112,7 +113,8 @@ public class SupportResource {
         return ticketsTemplate.data("tickets", data.openTickets).data("pageTitle", "Open tickets")
                 .data("assignedCount", data.assignedTickets.size()).data("openCount", data.openTickets.size())
                 .data("messageDates", data.messageDates).data("messageDateLabels", data.messageDateLabels)
-                .data("slaColors", data.slaColors).data("supportAssignments", data.supportAssignments)
+                .data("messageDirectionArrows", data.messageDirectionArrows).data("slaColors", data.slaColors)
+                .data("supportAssignments", data.supportAssignments)
                 .data("supportAssignmentNames", data.supportAssignmentNames)
                 .data("supportAssignmentIds", data.supportAssignmentIds)
                 .data("assignedTicketIds", data.assignedTicketIds).data("ticketsBase", "/support")
@@ -128,7 +130,8 @@ public class SupportResource {
         return ticketsTemplate.data("tickets", data.closedTickets).data("pageTitle", "Closed tickets")
                 .data("assignedCount", data.assignedTickets.size()).data("openCount", data.openTickets.size())
                 .data("messageDates", data.messageDates).data("messageDateLabels", data.messageDateLabels)
-                .data("slaColors", data.slaColors).data("supportAssignments", data.supportAssignments)
+                .data("messageDirectionArrows", data.messageDirectionArrows).data("slaColors", data.slaColors)
+                .data("supportAssignments", data.supportAssignments)
                 .data("supportAssignmentNames", data.supportAssignmentNames)
                 .data("supportAssignmentIds", data.supportAssignmentIds)
                 .data("assignedTicketIds", data.assignedTicketIds).data("ticketsBase", "/support")
@@ -767,6 +770,7 @@ public class SupportResource {
         List<Ticket> tickets = Ticket.listAll();
         Map<Long, LocalDateTime> messageDates = new LinkedHashMap<>();
         Map<Long, String> messageDateLabels = new LinkedHashMap<>();
+        Map<Long, String> messageDirectionArrows = new LinkedHashMap<>();
         List<Message> messages = Message.find("order by date desc").list();
         for (Message message : messages) {
             if (message.ticket != null && !messageDates.containsKey(message.ticket.id)) {
@@ -774,6 +778,7 @@ public class SupportResource {
                 if (message.date != null) {
                     messageDateLabels.put(message.ticket.id, formatDate(message.date));
                 }
+                messageDirectionArrows.put(message.ticket.id, messageDirectionArrow(message.author));
             }
         }
         for (Ticket ticket : tickets) {
@@ -856,6 +861,7 @@ public class SupportResource {
         data.closedTickets = closedTickets;
         data.messageDates = messageDates;
         data.messageDateLabels = messageDateLabels;
+        data.messageDirectionArrows = messageDirectionArrows;
         data.slaColors = slaColors;
         data.supportAssignments = supportAssignments;
         data.supportAssignmentNames = supportAssignmentNames;
@@ -913,6 +919,13 @@ public class SupportResource {
         return normalized;
     }
 
+    private String messageDirectionArrow(User author) {
+        if (author != null && User.TYPE_SUPPORT.equalsIgnoreCase(author.type)) {
+            return "\u2190";
+        }
+        return "\u2192";
+    }
+
     static class SupportTicketCounts {
         final int assignedCount;
         final int openCount;
@@ -929,6 +942,7 @@ public class SupportResource {
         private List<Ticket> closedTickets;
         private Map<Long, LocalDateTime> messageDates;
         private Map<Long, String> messageDateLabels;
+        private Map<Long, String> messageDirectionArrows;
         private Map<Long, String> slaColors;
         private Map<Long, String> supportAssignments;
         private Map<Long, String> supportAssignmentNames;
