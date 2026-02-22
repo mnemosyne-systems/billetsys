@@ -283,68 +283,70 @@
             margin-bottom: 6px;
         }
         .markdown-editor {
-            border: 1px solid var(--card-border);
+            border: 1px solid #d0d7de;
             border-radius: 6px;
-            background: var(--card-bg);
+            background: #ffffff;
             overflow: hidden;
         }
         .markdown-toolbar {
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            padding: 8px;
-            background: #f6f6f6;
-            border-bottom: 1px solid var(--card-border);
+            flex-wrap: nowrap;
+            gap: 6px;
+            padding: 8px 10px;
+            background: #f6f8fa;
+            border-bottom: 1px solid #d8dee4;
+            overflow-x: auto;
+            align-items: center;
         }
         .markdown-toolbar button,
         .markdown-toolbar select {
-            border: 1px solid var(--card-border);
+            border: 1px solid #d0d7de;
             background: #ffffff;
-            border-radius: 4px;
-            padding: 2px 6px;
+            border-radius: 6px;
+            padding: 4px 8px;
+            min-height: 28px;
             cursor: pointer;
             font-weight: 600;
             font-size: 12px;
             line-height: 1.2;
         }
+        .markdown-toolbar button:hover,
+        .markdown-toolbar select:hover {
+            background: #f3f4f6;
+        }
         .markdown-panels {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            display: block;
         }
         .markdown-panel {
-            display: flex;
+            display: none;
             flex-direction: column;
             min-height: 160px;
         }
-        .markdown-panel + .markdown-panel {
-            border-left: 1px solid var(--card-border);
-        }
+        .markdown-editor.is-write .markdown-panel[data-md-tab-panel="write"] { display: flex; }
+        .markdown-editor.is-preview .markdown-panel[data-md-tab-panel="preview"] { display: flex; }
         .markdown-panel-header {
-            padding: 6px 8px;
-            font-weight: 600;
-            background: #fafafa;
-            border-bottom: 1px solid var(--card-border);
+            display: none;
         }
         .markdown-editor textarea {
             border: none;
-            padding: 8px;
+            padding: 10px;
             min-height: 140px;
             font-family: inherit;
             font-size: 14px;
             resize: vertical;
         }
         .markdown-preview {
-            padding: 8px;
+            padding: 10px;
             min-height: 140px;
             overflow: auto;
         }
         .markdown-preview code {
-            background: #f2f2f2;
+            background: #f6f8fa;
             padding: 2px 4px;
             border-radius: 4px;
         }
         .markdown-preview pre {
-            background: #f2f2f2;
+            background: #f6f8fa;
             padding: 6px;
             border-radius: 4px;
             overflow: auto;
@@ -374,14 +376,24 @@
             margin: 0 0 6px 0;
             font-size: 14px;
         }
-        @media (max-width: 720px) {
-            .markdown-panels {
-                grid-template-columns: 1fr;
-            }
-            .markdown-panel + .markdown-panel {
-                border-left: none;
-                border-top: 1px solid var(--card-border);
-            }
+        .markdown-tabs {
+            margin-left: auto;
+            display: inline-flex;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #ffffff;
+        }
+        .markdown-tabs button {
+            border: none;
+            border-right: 1px solid #d0d7de;
+            background: #ffffff;
+            min-width: 74px;
+        }
+        .markdown-tabs button:last-child { border-right: none; }
+        .markdown-tabs button.is-active {
+            background: #ddf4ff;
+            color: #0969da;
         }
         .session-warning {
             position: fixed;
@@ -826,7 +838,14 @@
                 prefixLines('# ', 'Heading');
                 break;
             case 'list':
+            case 'unordered-list':
                 prefixLines('- ', 'List item');
+                break;
+            case 'ordered-list':
+                prefixLines('1. ', 'List item');
+                break;
+            case 'task-list':
+                prefixLines('- [ ] ', 'Task');
                 break;
             case 'quote':
                 prefixLines('> ', 'Quote');
@@ -866,9 +885,57 @@
                 preview.innerHTML = renderMarkdown(input.value);
                 highlightCodeBlocks(preview);
             };
+            const labels = {
+                bold: 'Bold',
+                italic: 'Italic',
+                heading: 'Heading',
+                list: 'Unordered list',
+                'unordered-list': 'Unordered list',
+                'ordered-list': 'Ordered list',
+                'task-list': 'Task list',
+                quote: 'Quote',
+                code: 'Inline code',
+                link: 'Link'
+            };
+            const icons = {
+                bold: '&#x1D401;',
+                italic: '&#x1D43C;',
+                heading: '#',
+                list: '&#8226;',
+                'unordered-list': '&#8226;',
+                'ordered-list': '1.',
+                'task-list': '&#9745;',
+                quote: '&#10077;',
+                code: '&lt;/&gt;',
+                link: '&#128279;'
+            };
             input.addEventListener('input', render);
             render();
             if (toolbar) {
+                const listButton = toolbar.querySelector('[data-md-action="list"]');
+                if (listButton) {
+                    listButton.setAttribute('data-md-action', 'unordered-list');
+                }
+                const unorderedButton = toolbar.querySelector('[data-md-action="unordered-list"]');
+                if (unorderedButton) {
+                    if (!toolbar.querySelector('[data-md-action="ordered-list"]')) {
+                        const ordered = document.createElement('button');
+                        ordered.type = 'button';
+                        ordered.setAttribute('data-md-action', 'ordered-list');
+                        unorderedButton.insertAdjacentElement('afterend', ordered);
+                    }
+                    if (!toolbar.querySelector('[data-md-action="task-list"]')) {
+                        const task = document.createElement('button');
+                        task.type = 'button';
+                        task.setAttribute('data-md-action', 'task-list');
+                        const orderedButton = toolbar.querySelector('[data-md-action="ordered-list"]');
+                        if (orderedButton) {
+                            orderedButton.insertAdjacentElement('afterend', task);
+                        } else {
+                            unorderedButton.insertAdjacentElement('afterend', task);
+                        }
+                    }
+                }
                 const codeBlockButton = toolbar.querySelector('[data-md-action="code-block"]');
                 if (codeBlockButton) {
                     const select = document.createElement('select');
@@ -885,6 +952,44 @@
                         + '<option value="python">Python</option>'
                         + '<option value="rust">Rust</option>';
                     codeBlockButton.replaceWith(select);
+                }
+                toolbar.querySelectorAll('[data-md-action]').forEach(button => {
+                    const action = button.getAttribute('data-md-action');
+                    if (icons[action]) {
+                        button.innerHTML = icons[action];
+                    }
+                    if (labels[action]) {
+                        button.setAttribute('aria-label', labels[action]);
+                        button.setAttribute('title', labels[action]);
+                    }
+                });
+                const panels = editor.querySelectorAll('.markdown-panel');
+                if (panels.length >= 2) {
+                    panels[0].setAttribute('data-md-tab-panel', 'write');
+                    panels[1].setAttribute('data-md-tab-panel', 'preview');
+                    const tabs = document.createElement('div');
+                    tabs.className = 'markdown-tabs';
+                    const writeTab = document.createElement('button');
+                    writeTab.type = 'button';
+                    writeTab.textContent = 'Write';
+                    const previewTab = document.createElement('button');
+                    previewTab.type = 'button';
+                    previewTab.textContent = 'Preview';
+                    const setTab = tab => {
+                        editor.classList.toggle('is-preview', tab === 'preview');
+                        editor.classList.toggle('is-write', tab !== 'preview');
+                        writeTab.classList.toggle('is-active', tab !== 'preview');
+                        previewTab.classList.toggle('is-active', tab === 'preview');
+                    };
+                    writeTab.addEventListener('click', () => setTab('write'));
+                    previewTab.addEventListener('click', () => {
+                        render();
+                        setTab('preview');
+                    });
+                    tabs.appendChild(writeTab);
+                    tabs.appendChild(previewTab);
+                    toolbar.appendChild(tabs);
+                    setTab('write');
                 }
                 toolbar.addEventListener('click', event => {
                     const button = event.target.closest('[data-md-action]');
