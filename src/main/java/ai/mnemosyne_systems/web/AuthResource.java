@@ -20,7 +20,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
-import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -32,19 +31,19 @@ public class AuthResource {
 
     @GET
     public Response loginPage() {
-        return Response.seeOther(URI.create("/")).build();
+        return seeOther("/").build();
     }
 
     @POST
     public Response login(@FormParam("username") String username, @FormParam("password") String password) {
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
-            return Response.seeOther(errorRedirect("Username and password are required")).build();
+            return seeOther(errorRedirect("Username and password are required")).build();
         }
         User user = User.find("name", username.trim()).firstResult();
         if (user == null || user.passwordHash == null || !BcryptUtil.matches(password, user.passwordHash)) {
-            return Response.seeOther(errorRedirect("Invalid credentials")).build();
+            return seeOther(errorRedirect("Invalid credentials")).build();
         }
-        String cookieValue = AuthHelper.SESSION_NONCE + ":" + user.id;
+        String cookieValue = AuthHelper.createSessionCookieValue(user);
         NewCookie cookie = new NewCookie(AuthHelper.AUTH_COOKIE, cookieValue, "/", null, NewCookie.DEFAULT_VERSION,
                 "auth", 3600, false);
         String redirect;
@@ -55,11 +54,15 @@ public class AuthResource {
         } else {
             redirect = "/user";
         }
-        return Response.seeOther(URI.create(redirect)).cookie(cookie).build();
+        return seeOther(redirect).cookie(cookie).build();
     }
 
-    private URI errorRedirect(String message) {
+    private String errorRedirect(String message) {
         String encoded = URLEncoder.encode(message, StandardCharsets.UTF_8);
-        return URI.create("/?error=" + encoded);
+        return "/?error=" + encoded;
+    }
+
+    private Response.ResponseBuilder seeOther(String location) {
+        return Response.status(Response.Status.SEE_OTHER).header("Location", location);
     }
 }

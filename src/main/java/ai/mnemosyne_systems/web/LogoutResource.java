@@ -9,13 +9,13 @@
 package ai.mnemosyne_systems.web;
 
 import io.smallrye.common.annotation.Blocking;
+import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
-import java.net.URI;
 
 @Path("/logout")
 @Produces(MediaType.TEXT_HTML)
@@ -23,9 +23,13 @@ import java.net.URI;
 public class LogoutResource {
 
     @GET
-    public Response logout() {
+    public Response logout(@CookieParam(AuthHelper.AUTH_COOKIE) String authCookieValue) {
+        AuthHelper.clearSession(authCookieValue);
         NewCookie expired = new NewCookie(AuthHelper.AUTH_COOKIE, "", "/", null, NewCookie.DEFAULT_VERSION, "auth", 0,
                 false);
-        return Response.seeOther(URI.create("/")).cookie(expired).build();
+        NewCookie expiredJSessionId = new NewCookie("JSESSIONID", "", "/", null, NewCookie.DEFAULT_VERSION, "session",
+                0, false);
+        return Response.status(Response.Status.SEE_OTHER).header("Location", "/").cookie(expired)
+                .cookie(expiredJSessionId).build();
     }
 }

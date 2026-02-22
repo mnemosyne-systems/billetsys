@@ -6,6 +6,9 @@ navigate and get their work done quicker.
 ## Features
 
 * Support ticket system with 4 roles (User, TAM, Support, Admin)
+* Transport Layer Security v1.3 (TLS) support
+* Email integration
+* Markdown editor
 
 ## Technologies
 

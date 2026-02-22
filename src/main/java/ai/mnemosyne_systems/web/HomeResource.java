@@ -20,7 +20,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.net.URI;
 
 @Path("/")
 @Produces(MediaType.TEXT_HTML)
@@ -34,13 +33,13 @@ public class HomeResource {
     public Object index(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @QueryParam("error") String error) {
         User user = AuthHelper.findUser(auth);
         if (AuthHelper.isAdmin(user)) {
-            return Response.seeOther(URI.create("/companies")).build();
+            return Response.status(Response.Status.SEE_OTHER).header("Location", "/companies").build();
         }
         if (AuthHelper.isSupport(user)) {
-            return Response.seeOther(URI.create("/support")).build();
+            return Response.status(Response.Status.SEE_OTHER).header("Location", "/support").build();
         }
         if (AuthHelper.isUser(user)) {
-            return Response.seeOther(URI.create("/user")).build();
+            return Response.status(Response.Status.SEE_OTHER).header("Location", "/user").build();
         }
         TemplateInstance instance = login.data("error", error);
         return instance;
