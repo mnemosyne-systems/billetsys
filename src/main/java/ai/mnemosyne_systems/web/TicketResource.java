@@ -66,6 +66,9 @@ public class TicketResource {
     @Inject
     UserResource userResource;
 
+    @Inject
+    TicketEmailService ticketEmailService;
+
     @GET
     public TemplateInstance list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
         User user = requireSupport(auth);
@@ -220,6 +223,7 @@ public class TicketResource {
         if (entitlement == null) {
             throw new BadRequestException("Entitlement is required");
         }
+        String previousStatus = ticketEmailService.computeEffectiveStatus(ticket, ticket.status);
         ticket.status = status;
         ticket.company = company;
         ticket.requester = user;
@@ -227,6 +231,9 @@ public class TicketResource {
         ticket.category = categoryId != null ? Category.findById(categoryId) : null;
         ticket.externalIssueLink = externalIssueLink != null && !externalIssueLink.isBlank() ? externalIssueLink.trim()
                 : null;
+        if (!sameStatus(previousStatus, ticket.status)) {
+            ticketEmailService.notifyStatusChange(ticket, previousStatus, user);
+        }
         return Response.seeOther(URI.create("/tickets")).build();
     }
 
@@ -374,5 +381,11 @@ public class TicketResource {
     private String formatDate(LocalDateTime date) {
         String formatted = DATE_FORMATTER.format(date);
         return formatted.replace("AM", "am").replace("PM", "pm");
+    }
+
+    private boolean sameStatus(String left, String right) {
+        String normalizedLeft = left == null ? "" : left.trim();
+        String normalizedRight = right == null ? "" : right.trim();
+        return normalizedLeft.equalsIgnoreCase(normalizedRight);
     }
 }

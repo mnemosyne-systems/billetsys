@@ -21,6 +21,7 @@ import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
@@ -84,6 +85,9 @@ public class SupportResource {
 
     @Location("support/user-form.html")
     Template supportUserFormTemplate;
+
+    @Inject
+    TicketEmailService ticketEmailService;
 
     @GET
     public TemplateInstance listTickets(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
@@ -446,6 +450,7 @@ public class SupportResource {
         if (ticket == null) {
             throw new NotFoundException();
         }
+        String previousStatus = ticketEmailService.computeEffectiveStatus(ticket, ticket.status);
         Message message = new Message();
         message.body = body;
         message.date = LocalDateTime.now();
@@ -459,6 +464,10 @@ public class SupportResource {
         if (ticket.status == null || ticket.status.isBlank() || "Open".equalsIgnoreCase(ticket.status)) {
             ticket.status = "Assigned";
         }
+        if (!sameStatus(previousStatus, ticket.status)) {
+            ticketEmailService.notifyStatusChange(ticket, previousStatus, user);
+        }
+        ticketEmailService.notifyMessageChange(ticket, message, user);
         return Response.seeOther(URI.create("/tickets/" + id)).build();
     }
 
@@ -513,6 +522,7 @@ public class SupportResource {
         message.author = user;
         AttachmentHelper.attachToMessage(message, AttachmentHelper.readAttachments(input, "attachments"));
         message.persist();
+        ticketEmailService.notifyMessageChange(ticket, message, user);
         return Response.seeOther(URI.create("/support")).build();
     }
 
@@ -546,6 +556,7 @@ public class SupportResource {
         if (entitlement == null) {
             throw new BadRequestException("Entitlement is required");
         }
+        String previousStatus = ticketEmailService.computeEffectiveStatus(ticket, ticket.status);
         ticket.status = status;
         ticket.company = company;
         ticket.companyEntitlement = entitlement;
@@ -560,6 +571,9 @@ public class SupportResource {
             }
         }
         assignCompanyTams(ticket);
+        if (!sameStatus(previousStatus, ticket.status)) {
+            ticketEmailService.notifyStatusChange(ticket, previousStatus, user);
+        }
         return Response.seeOther(URI.create("/tickets/" + id)).build();
     }
 
@@ -573,6 +587,7 @@ public class SupportResource {
         if (ticket == null) {
             throw new NotFoundException();
         }
+        String previousStatus = ticketEmailService.computeEffectiveStatus(ticket, ticket.status);
         if (ticket.supportUsers.stream().noneMatch(existing -> existing.id != null && existing.id.equals(user.id))) {
             ticket.supportUsers.add(user);
         }
@@ -580,6 +595,9 @@ public class SupportResource {
             ticket.status = "Assigned";
         }
         assignCompanyTams(ticket);
+        if (!sameStatus(previousStatus, ticket.status)) {
+            ticketEmailService.notifyStatusChange(ticket, previousStatus, user);
+        }
         return Response.seeOther(URI.create("/tickets/" + id)).build();
     }
 
@@ -659,6 +677,12 @@ public class SupportResource {
     private String formatDate(LocalDateTime date) {
         String formatted = DATE_FORMATTER.format(date);
         return formatted.replace("AM", "am").replace("PM", "pm");
+    }
+
+    private boolean sameStatus(String left, String right) {
+        String normalizedLeft = left == null ? "" : left.trim();
+        String normalizedRight = right == null ? "" : right.trim();
+        return normalizedLeft.equalsIgnoreCase(normalizedRight);
     }
 
     private String resolveSlaColor(ai.mnemosyne_systems.model.Level level, long minutes) {

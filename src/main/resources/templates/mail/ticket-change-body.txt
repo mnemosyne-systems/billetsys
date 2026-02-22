@@ -1,0 +1,10 @@
+Ticket: {ticket.name}
+Type: {eventType}
+Actor: {actorName}
+Status: {currentStatus}
+Previous status: {previousStatus}
+{#if message != null}
+
+Message:
+{message.body}
+{/if}

@@ -1,0 +1,13 @@
+<html>
+<body>
+  <p><strong>Ticket:</strong> {ticket.name}</p>
+  <p><strong>Type:</strong> {eventType}</p>
+  <p><strong>Actor:</strong> {actorName}</p>
+  <p><strong>Status:</strong> {currentStatus}</p>
+  <p><strong>Previous status:</strong> {previousStatus}</p>
+  {#if message != null}
+  <p><strong>Message:</strong></p>
+  <pre>{message.body}</pre>
+  {/if}
+</body>
+</html>

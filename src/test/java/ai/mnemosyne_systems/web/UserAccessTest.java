@@ -19,9 +19,12 @@ import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.quarkus.hibernate.orm.panache.Panache;
+import io.quarkus.mailer.Mail;
+import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -31,6 +34,9 @@ import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 class UserAccessTest {
+
+    @Inject
+    MockMailbox mailbox;
 
     @Test
     void adminCanAccessAdminUsers() {
@@ -473,6 +479,118 @@ class UserAccessTest {
         Assertions.assertTrue(tamCompany.users.stream().anyMatch(entry -> entry.id.equals(tamCreated.id)));
     }
 
+    @Test
+    void sendsEmailsForTicketMessageAndStatusChanges() {
+        mailbox.clear();
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
+        ensureUser("tam", "tam@mnemosyne-systems.ai", User.TYPE_TAM, "tam");
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        Long companyId = ensureCompany("Email Notify Co");
+        ensureCompanyUsers(companyId, "tam@mnemosyne-systems.ai", "user@mnemosyne-systems.ai");
+        Ticket ticket = ensureUnassignedOpenTicket(companyId);
+        String supportCookie = login("support1", "support1");
+
+        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie)
+                .multiPart("body", "Email notification reply " + System.nanoTime())
+                .multiPart("attachments", "notify.txt", "notify".getBytes(StandardCharsets.UTF_8), "text/plain")
+                .post("/support/tickets/" + ticket.id + "/messages").then().statusCode(303);
+
+        List<Mail> userMessages = mailbox.getMessagesSentTo("user@mnemosyne-systems.ai");
+        Assertions.assertFalse(userMessages.isEmpty());
+        Mail firstMail = userMessages.get(userMessages.size() - 1);
+        Assertions.assertTrue(firstMail.getSubject().contains("[" + ticket.name + "]"));
+        Assertions.assertTrue(firstMail.getText().contains("Message"));
+        Assertions.assertEquals(1, firstMail.getAttachments().size());
+
+        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie)
+                .contentType(ContentType.URLENC).formParam("status", "Closed").formParam("companyId", ticket.company.id)
+                .formParam("companyEntitlementId", ticket.companyEntitlement.id).post("/support/tickets/" + ticket.id)
+                .then().statusCode(303);
+
+        List<Mail> tamMessages = mailbox.getMessagesSentTo("tam@mnemosyne-systems.ai");
+        Assertions.assertFalse(tamMessages.isEmpty());
+        Mail statusMail = tamMessages.get(tamMessages.size() - 1);
+        Assertions.assertTrue(statusMail.getText().contains("Status"));
+        Assertions.assertTrue(statusMail.getText().contains("Closed"));
+    }
+
+    @Test
+    void incomingEmailWithTicketSubjectAddsMessageAndAttachments() {
+        mailbox.clear();
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        ensureUser("tam", "tam@mnemosyne-systems.ai", User.TYPE_TAM, "tam");
+        Long companyId = ensureCompany("Incoming Existing Co");
+        ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai", "tam@mnemosyne-systems.ai");
+        Ticket ticket = ensureTicket(companyId);
+        String body = "Incoming body " + System.nanoTime();
+
+        RestAssured.given().contentType("multipart/form-data").multiPart("from", "user@mnemosyne-systems.ai")
+                .multiPart("subject", "[" + ticket.name + "] Re: update").multiPart("body", body)
+                .multiPart("attachments", "incoming.txt", "incoming".getBytes(StandardCharsets.UTF_8), "text/plain")
+                .post("/mail/incoming").then().statusCode(200);
+
+        Message saved = findMessageByBody(body);
+        Assertions.assertNotNull(saved);
+        Assertions.assertEquals(ticket.id, saved.ticket.id);
+        List<Attachment> attachments = Attachment.find("message = ?1", saved).list();
+        Assertions.assertEquals(1, attachments.size());
+
+        List<Mail> userMessages = mailbox.getMessagesSentTo("user@mnemosyne-systems.ai");
+        Assertions.assertFalse(userMessages.isEmpty());
+        Assertions.assertTrue(userMessages.get(userMessages.size() - 1).getSubject().contains("[" + ticket.name + "]"));
+    }
+
+    @Test
+    void incomingEmailWithoutTicketSubjectCreatesTicket() {
+        mailbox.clear();
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        Long companyId = ensureCompany("Incoming New Co");
+        ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai");
+        ensureTicket(companyId);
+        String body = "Create ticket from incoming mail " + System.nanoTime();
+
+        RestAssured.given().contentType("multipart/form-data").multiPart("from", "user@mnemosyne-systems.ai")
+                .multiPart("subject", "Need support now").multiPart("body", body).post("/mail/incoming").then()
+                .statusCode(200);
+
+        Message saved = findMessageByBody(body);
+        Assertions.assertNotNull(saved);
+        Assertions.assertNotNull(saved.ticket);
+        Assertions.assertNotNull(saved.ticket.name);
+        Assertions.assertTrue(saved.ticket.name.contains("-"));
+    }
+
+    @Test
+    void incomingEmailIgnoresUnknownOrMismatchedFrom() {
+        mailbox.clear();
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        ensureUser("other", "other@mnemosyne-systems.ai", User.TYPE_USER, "other");
+        ensureUser("orphan", "orphan@mnemosyne-systems.ai", User.TYPE_USER, "orphan");
+        Long companyA = ensureCompany("Incoming Match Co");
+        Long companyB = ensureCompany("Incoming Other Co");
+        ensureCompanyUsers(companyA, "user@mnemosyne-systems.ai");
+        ensureCompanyUsers(companyB, "other@mnemosyne-systems.ai");
+        Ticket ticket = ensureTicket(companyA);
+        String unknownBody = "Unknown user incoming " + System.nanoTime();
+        String mismatchBody = "Mismatched user incoming " + System.nanoTime();
+        String orphanBody = "Orphan user incoming " + System.nanoTime();
+
+        RestAssured.given().contentType("multipart/form-data").multiPart("from", "missing@mnemosyne-systems.ai")
+                .multiPart("subject", "[" + ticket.name + "] Not allowed").multiPart("body", unknownBody)
+                .post("/mail/incoming").then().statusCode(202);
+        Assertions.assertNull(findMessageByBody(unknownBody));
+
+        RestAssured.given().contentType("multipart/form-data").multiPart("from", "other@mnemosyne-systems.ai")
+                .multiPart("subject", "[" + ticket.name + "] Not allowed").multiPart("body", mismatchBody)
+                .post("/mail/incoming").then().statusCode(202);
+        Assertions.assertNull(findMessageByBody(mismatchBody));
+
+        RestAssured.given().contentType("multipart/form-data").multiPart("from", "orphan@mnemosyne-systems.ai")
+                .multiPart("subject", "Create ticket").multiPart("body", orphanBody).post("/mail/incoming").then()
+                .statusCode(202);
+        Assertions.assertNull(findMessageByBody(orphanBody));
+    }
+
     @Transactional
     void ensureUser(String name, String email, String type, String password) {
         User user = User.find("email", email).firstResult();
@@ -718,6 +836,12 @@ class UserAccessTest {
     Message refreshedMessage(Long id) {
         Panache.getEntityManager().clear();
         return Message.findById(id);
+    }
+
+    @Transactional
+    Message findMessageByBody(String body) {
+        Panache.getEntityManager().clear();
+        return Message.find("body", body).firstResult();
     }
 
     @Transactional

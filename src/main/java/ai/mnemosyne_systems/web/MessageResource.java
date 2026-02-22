@@ -15,6 +15,7 @@ import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -50,6 +51,9 @@ public class MessageResource {
 
     @Location("messages/form.html")
     Template formTemplate;
+
+    @Inject
+    TicketEmailService ticketEmailService;
 
     @GET
     public TemplateInstance list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
@@ -93,6 +97,7 @@ public class MessageResource {
         Message message = buildMessage(null, user, body, date, ticketId);
         AttachmentHelper.attachToMessage(message, AttachmentHelper.readAttachments(input, "attachments"));
         message.persist();
+        ticketEmailService.notifyMessageChange(message.ticket, message, user);
         return Response.seeOther(URI.create("/messages")).build();
     }
 
@@ -112,6 +117,7 @@ public class MessageResource {
         }
         buildMessage(message, user, body, date, ticketId);
         AttachmentHelper.attachToMessage(message, AttachmentHelper.readAttachments(input, "attachments"));
+        ticketEmailService.notifyMessageChange(message.ticket, message, user);
         return Response.seeOther(URI.create("/messages")).build();
     }
 

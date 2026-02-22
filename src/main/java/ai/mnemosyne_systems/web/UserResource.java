@@ -21,6 +21,7 @@ import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -92,6 +93,9 @@ public class UserResource {
 
     @Location("support/user-profile-view.html")
     Template userProfileViewTemplate;
+
+    @Inject
+    TicketEmailService ticketEmailService;
 
     @GET
     @Path("user")
@@ -342,6 +346,7 @@ public class UserResource {
         message.author = user;
         AttachmentHelper.attachToMessage(message, AttachmentHelper.readAttachments(input, "attachments"));
         message.persist();
+        ticketEmailService.notifyMessageChange(ticket, message, user);
         return Response.seeOther(URI.create("/user/tickets")).build();
     }
 
@@ -539,6 +544,7 @@ public class UserResource {
         message.author = user;
         AttachmentHelper.attachToMessage(message, AttachmentHelper.readAttachments(input, "attachments"));
         message.persist();
+        ticketEmailService.notifyMessageChange(ticket, message, user);
         return Response.seeOther(URI.create("/tickets/" + id)).build();
     }
 
@@ -568,7 +574,11 @@ public class UserResource {
                 || normalized.equals("Closed"))) {
             throw new BadRequestException("Status must be Assigned, In Progress, Resolved, or Closed");
         }
+        String previousStatus = ticketEmailService.computeEffectiveStatus(ticket, ticket.status);
         ticket.status = normalized;
+        if (!sameStatus(previousStatus, ticket.status)) {
+            ticketEmailService.notifyStatusChange(ticket, previousStatus, user);
+        }
         return Response.seeOther(URI.create("/tickets/" + id)).build();
     }
 
@@ -1047,6 +1057,12 @@ public class UserResource {
                 .ofPattern("MMMM d yyyy, h.mma", java.util.Locale.ENGLISH);
         String formatted = formatter.format(date);
         return formatted.replace("AM", "am").replace("PM", "pm");
+    }
+
+    private boolean sameStatus(String left, String right) {
+        String normalizedLeft = left == null ? "" : left.trim();
+        String normalizedRight = right == null ? "" : right.trim();
+        return normalizedLeft.equalsIgnoreCase(normalizedRight);
     }
 
     private String normalizeType(String type, Set<String> allowedTypes, String errorMessage) {
