@@ -25,10 +25,10 @@ public class LogoutResource {
     @GET
     public Response logout(@CookieParam(AuthHelper.AUTH_COOKIE) String authCookieValue) {
         AuthHelper.clearSession(authCookieValue);
-        NewCookie expired = new NewCookie(AuthHelper.AUTH_COOKIE, "", "/", null, NewCookie.DEFAULT_VERSION, "auth", 0,
-                false);
-        NewCookie expiredJSessionId = new NewCookie("JSESSIONID", "", "/", null, NewCookie.DEFAULT_VERSION, "session",
-                0, false);
+        NewCookie expired = new NewCookie.Builder(AuthHelper.AUTH_COOKIE).value("").path("/").comment("auth").maxAge(0)
+                .secure(false).build();
+        NewCookie expiredJSessionId = new NewCookie.Builder("JSESSIONID").value("").path("/").comment("session")
+                .maxAge(0).secure(false).build();
         return Response.status(Response.Status.SEE_OTHER).header("Location", "/").cookie(expired)
                 .cookie(expiredJSessionId).build();
     }

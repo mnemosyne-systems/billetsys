@@ -192,10 +192,6 @@ class UserAccessTest {
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/tickets/closed").then().statusCode(200)
                 .body(Matchers.containsString("Closed tickets")).body(Matchers.containsString("Create"));
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/rss/tam").then().statusCode(200)
-                .contentType(Matchers.containsString("application/rss+xml")).body(Matchers.containsString("<rss"))
-                .body(Matchers.containsString("TAM tickets feed"));
-
         Long ticketId = userTicket == null ? null : userTicket.id;
         User supportUser = User.find("email", "support1@mnemosyne-systems.ai").firstResult();
         User tamUser = User.find("email", "tam@mnemosyne-systems.ai").firstResult();
@@ -239,6 +235,10 @@ class UserAccessTest {
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/tickets/closed").then().statusCode(200)
                 .body(Matchers.containsString("Closed tickets")).body(Matchers.containsString("Create"));
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/rss/tam").then().statusCode(200)
+                .contentType(Matchers.containsString("application/rss+xml")).body(Matchers.containsString("<rss"))
+                .body(Matchers.containsString("TAM tickets feed"));
 
         Long ticketId = tamTicket == null ? null : tamTicket.id;
         User supportUser = User.find("email", "support1@mnemosyne-systems.ai").firstResult();
@@ -499,7 +499,7 @@ class UserAccessTest {
                 .multiPart("attachments", "notify.txt", "notify".getBytes(StandardCharsets.UTF_8), "text/plain")
                 .post("/support/tickets/" + ticket.id + "/messages").then().statusCode(303);
 
-        List<Mail> userMessages = mailbox.getMessagesSentTo("user@mnemosyne-systems.ai");
+        List<Mail> userMessages = mailbox.getMailsSentTo("user@mnemosyne-systems.ai");
         Assertions.assertFalse(userMessages.isEmpty());
         Mail firstMail = userMessages.get(userMessages.size() - 1);
         Assertions.assertTrue(firstMail.getSubject().contains("[" + ticket.name + "]"));
@@ -511,7 +511,7 @@ class UserAccessTest {
                 .formParam("companyEntitlementId", ticket.companyEntitlement.id).post("/support/tickets/" + ticket.id)
                 .then().statusCode(303);
 
-        List<Mail> tamMessages = mailbox.getMessagesSentTo("tam@mnemosyne-systems.ai");
+        List<Mail> tamMessages = mailbox.getMailsSentTo("tam@mnemosyne-systems.ai");
         Assertions.assertFalse(tamMessages.isEmpty());
         Mail statusMail = tamMessages.get(tamMessages.size() - 1);
         Assertions.assertTrue(statusMail.getText().contains("Status"));
@@ -539,7 +539,7 @@ class UserAccessTest {
         List<Attachment> attachments = Attachment.find("message = ?1", saved).list();
         Assertions.assertEquals(1, attachments.size());
 
-        List<Mail> userMessages = mailbox.getMessagesSentTo("user@mnemosyne-systems.ai");
+        List<Mail> userMessages = mailbox.getMailsSentTo("user@mnemosyne-systems.ai");
         Assertions.assertFalse(userMessages.isEmpty());
         Assertions.assertTrue(userMessages.get(userMessages.size() - 1).getSubject().contains("[" + ticket.name + "]"));
     }

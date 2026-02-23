@@ -44,8 +44,8 @@ public class AuthResource {
             return seeOther(errorRedirect("Invalid credentials")).build();
         }
         String cookieValue = AuthHelper.createSessionCookieValue(user);
-        NewCookie cookie = new NewCookie(AuthHelper.AUTH_COOKIE, cookieValue, "/", null, NewCookie.DEFAULT_VERSION,
-                "auth", 3600, false);
+        NewCookie cookie = new NewCookie.Builder(AuthHelper.AUTH_COOKIE).value(cookieValue).path("/").comment("auth")
+                .maxAge(3600).secure(false).build();
         String redirect;
         if (AuthHelper.isAdmin(user)) {
             redirect = "/companies";
