@@ -171,7 +171,7 @@ public class UserSeeder {
         addUserIfMissing(company, tam);
         addUserIfMissing(company, primaryContact);
 
-        ensureCompanyEntitlement(company, "Enterprise", "Eslacate");
+        ensureCompanyEntitlement(company, "Enterprise", "Escalate");
         ensureCompanyEntitlement(company, "Enterprise", "Normal");
         CompanyEntitlement enterpriseCritical = ensureCompanyEntitlement(company, "Enterprise", "Critical");
         Ticket a1 = seedTicket(Ticket.formatName(company, 1), company, user1, enterpriseCritical);
@@ -241,11 +241,11 @@ public class UserSeeder {
         seedEntitlement("Enterprise", "24/7 support with SLA and dedicated TAM");
 
         seedLevel("Critical", "Critical response level", 60, "Red");
-        seedLevel("Eslacate", "Escalation response level", 120, "Yellow");
+        seedLevel("Escalate", "Escalation response level", 120, "Yellow");
         seedLevel("Normal", "Normal response level", 1440, "White");
-        assignLevelsToEntitlement("Starter", "Critical", "Eslacate", "Normal");
-        assignLevelsToEntitlement("Business", "Critical", "Eslacate", "Normal");
-        assignLevelsToEntitlement("Enterprise", "Critical", "Eslacate", "Normal");
+        assignLevelsToEntitlement("Starter", "Critical", "Escalate", "Normal");
+        assignLevelsToEntitlement("Business", "Critical", "Escalate", "Normal");
+        assignLevelsToEntitlement("Enterprise", "Critical", "Escalate", "Normal");
 
         seedCategory("Feature", false);
         seedCategory("Bug", false);

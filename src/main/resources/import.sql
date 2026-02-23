@@ -283,7 +283,7 @@ VALUES (nextval('support_level_seq'), 'Critical', 'Critical response level', 60,
         (SELECT id FROM timezones WHERE name = 'America/New_York'));
 
 INSERT INTO support_levels (id, name, description, level, color, from_day, from_time, to_day, to_time, country_id, timezone_id)
-VALUES (nextval('support_level_seq'), 'Eslacate', 'Escalation response level', 120, 'Yellow',
+VALUES (nextval('support_level_seq'), 'Escalate', 'Escalation response level', 120, 'Yellow',
         1, 0, 7, 23,
         (SELECT id FROM countries WHERE code = 'US'),
         (SELECT id FROM timezones WHERE name = 'America/New_York'));
@@ -304,7 +304,7 @@ WHERE e.name = 'Starter' AND s.name = 'Critical';
 INSERT INTO entitlement_support_levels (entitlement_id, support_level_id)
 SELECT e.id, s.id
 FROM entitlements e, support_levels s
-WHERE e.name = 'Starter' AND s.name = 'Eslacate';
+WHERE e.name = 'Starter' AND s.name = 'Escalate';
 INSERT INTO entitlement_support_levels (entitlement_id, support_level_id)
 SELECT e.id, s.id
 FROM entitlements e, support_levels s
@@ -316,7 +316,7 @@ WHERE e.name = 'Business' AND s.name = 'Critical';
 INSERT INTO entitlement_support_levels (entitlement_id, support_level_id)
 SELECT e.id, s.id
 FROM entitlements e, support_levels s
-WHERE e.name = 'Business' AND s.name = 'Eslacate';
+WHERE e.name = 'Business' AND s.name = 'Escalate';
 INSERT INTO entitlement_support_levels (entitlement_id, support_level_id)
 SELECT e.id, s.id
 FROM entitlements e, support_levels s
@@ -328,7 +328,7 @@ WHERE e.name = 'Enterprise' AND s.name = 'Critical';
 INSERT INTO entitlement_support_levels (entitlement_id, support_level_id)
 SELECT e.id, s.id
 FROM entitlements e, support_levels s
-WHERE e.name = 'Enterprise' AND s.name = 'Eslacate';
+WHERE e.name = 'Enterprise' AND s.name = 'Escalate';
 INSERT INTO entitlement_support_levels (entitlement_id, support_level_id)
 SELECT e.id, s.id
 FROM entitlements e, support_levels s
