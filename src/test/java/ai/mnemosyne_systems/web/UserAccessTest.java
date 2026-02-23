@@ -192,6 +192,10 @@ class UserAccessTest {
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/tickets/closed").then().statusCode(200)
                 .body(Matchers.containsString("Closed tickets")).body(Matchers.containsString("Create"));
 
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/rss/tam").then().statusCode(200)
+                .contentType(Matchers.containsString("application/rss+xml")).body(Matchers.containsString("<rss"))
+                .body(Matchers.containsString("TAM tickets feed"));
+
         Long ticketId = userTicket == null ? null : userTicket.id;
         User supportUser = User.find("email", "support1@mnemosyne-systems.ai").firstResult();
         User tamUser = User.find("email", "tam@mnemosyne-systems.ai").firstResult();
