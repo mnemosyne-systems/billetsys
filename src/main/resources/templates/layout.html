@@ -1228,8 +1228,9 @@
                     const select = document.createElement('select');
                     select.setAttribute('aria-label', 'Code language');
                     select.setAttribute('data-md-code-language', 'true');
-                    select.innerHTML = '<option value="__label">Code</option>'
+                    select.innerHTML = '<option value="__label" selected hidden>Code</option>'
                         + '<option value="">Plaintext</option>'
+                        + '<option value="bash">Bash</option>'
                         + '<option value="sql">SQL</option>'
                         + '<option value="c">C</option>'
                         + '<option value="cpp">C++</option>'
