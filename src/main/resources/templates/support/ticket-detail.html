@@ -211,6 +211,14 @@
         text-decoration: none;
         font-weight: 600;
     }
+    .attachment-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .export-btn {
+        margin-right: auto;
+    }
 </style>
 
 <h2>Messages</h2>
@@ -303,11 +311,16 @@
         </div>
         <input type="file" name="attachments" multiple data-attachment-input class="attachment-input">
         <div class="form-actions attachment-actions">
+            <a class="action-button export-btn" href="/tickets/export/{ticket.id}">Export</a>
             <button type="button" class="action-button" data-attachment-trigger>Browse</button>
             <button type="submit" class="action-button">Add</button>
         </div>
     </div>
 </form>
+    {#else}
+    <div class="form-actions attachment-actions">
+        <a class="action-button export-btn" href="/tickets/export/{ticket.id}">Export</a>
+    </div>
 {/if}
 {/content}
 {/include}

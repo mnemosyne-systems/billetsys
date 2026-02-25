@@ -61,4 +61,8 @@ public class Attachment extends PanacheEntityBase {
     public boolean isImage() {
         return mimeType != null && mimeType.toLowerCase().startsWith("image/");
     }
+
+    public boolean isVideo() {
+        return mimeType != null && mimeType.toLowerCase().startsWith("video/");
+    }
 }

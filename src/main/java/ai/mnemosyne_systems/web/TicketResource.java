@@ -70,6 +70,9 @@ public class TicketResource {
     @Inject
     TicketEmailService ticketEmailService;
 
+    @Inject
+    PdfService pdfService;
+
     @GET
     public TemplateInstance list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
         User user = requireSupport(auth);
@@ -324,6 +327,26 @@ public class TicketResource {
             throw new BadRequestException(label + " version is invalid");
         }
         return version;
+    }
+
+    @GET
+    @Path("/export/{id}")
+    @Produces("application/pdf")
+    public Response exportTicketToPdf(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
+        User user = AuthHelper.findUser(auth);
+        if (!AuthHelper.isSupport(user) && !AuthHelper.isTam(user)) {
+            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
+        }
+        Ticket ticket = Ticket.findById(id);
+        if (ticket == null) {
+            throw new NotFoundException();
+        }
+        if (AuthHelper.isTam(user) && ticket.tamUsers.stream().noneMatch(t -> t.id.equals(user.id))) {
+            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
+        }
+        byte[] ticketPdf = pdfService.generateTicketPdf(ticket);
+        return Response.ok(ticketPdf).header("Content-Disposition", "attachment; filename=\"ticket-" + id + ".pdf\"")
+                .build();
     }
 
     private User requireSupport(String auth) {
