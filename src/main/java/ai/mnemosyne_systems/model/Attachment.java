@@ -37,9 +37,13 @@ public class Attachment extends PanacheEntityBase {
     @Column(nullable = false, columnDefinition = "bytea")
     public byte[] data;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "message_id", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "message_id")
     public Message message;
+
+    @ManyToOne
+    @JoinColumn(name = "article_id")
+    public Article article;
 
     public int sizeBytes() {
         return data == null ? 0 : data.length;

@@ -354,7 +354,7 @@ class UserAccessTest {
 
         Article created = Article.find("title", "Article One").firstResult();
         Assertions.assertNotNull(created);
-        Assertions.assertTrue(created.body.contains("/article-attachments/"));
+        Assertions.assertTrue(created.body.contains("/attachments/"));
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, tamCookie).get("/articles/create").then().statusCode(200);
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, userCookie).get("/articles/" + created.id).then()

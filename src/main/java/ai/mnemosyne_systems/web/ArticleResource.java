@@ -9,7 +9,6 @@
 package ai.mnemosyne_systems.web;
 
 import ai.mnemosyne_systems.model.Article;
-import ai.mnemosyne_systems.model.ArticleAttachment;
 import ai.mnemosyne_systems.model.Attachment;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
@@ -34,7 +33,6 @@ import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
@@ -147,7 +145,7 @@ public class ArticleResource {
         article.tags = tags == null ? null : tags.trim();
         article.body = body.trim();
         article.persist();
-        List<ArticleAttachment> attachments = storeAttachments(article,
+        List<Attachment> attachments = storeAttachments(article,
                 AttachmentHelper.readAttachments(input, "attachments"));
         article.body = resolveInlineAttachmentUrls(article.body, attachments);
         return Response.seeOther(URI.create("/articles")).build();
@@ -173,7 +171,7 @@ public class ArticleResource {
         article.title = title.trim();
         article.tags = tags == null ? null : tags.trim();
         article.body = body.trim();
-        List<ArticleAttachment> attachments = storeAttachments(article,
+        List<Attachment> attachments = storeAttachments(article,
                 AttachmentHelper.readAttachments(input, "attachments"));
         article.body = resolveInlineAttachmentUrls(article.body, attachments);
         return Response.seeOther(URI.create("/articles/" + id)).build();
@@ -192,33 +190,28 @@ public class ArticleResource {
         return Response.seeOther(URI.create("/articles")).build();
     }
 
-    private List<ArticleAttachment> storeAttachments(Article article, List<Attachment> uploaded) {
-        List<ArticleAttachment> stored = new ArrayList<>();
+    private List<Attachment> storeAttachments(Article article, List<Attachment> uploaded) {
         for (Attachment upload : uploaded) {
-            ArticleAttachment attachment = new ArticleAttachment();
-            attachment.article = article;
-            attachment.name = upload.name;
-            attachment.mimeType = upload.mimeType;
-            attachment.data = upload.data;
-            attachment.persist();
-            article.attachments.add(attachment);
-            stored.add(attachment);
+            upload.message = null;
+            upload.article = article;
+            upload.persist();
+            article.attachments.add(upload);
         }
         Panache.getEntityManager().flush();
-        return stored;
+        return uploaded;
     }
 
-    private String resolveInlineAttachmentUrls(String body, List<ArticleAttachment> attachments) {
+    private String resolveInlineAttachmentUrls(String body, List<Attachment> attachments) {
         if (body == null || body.isBlank() || attachments == null || attachments.isEmpty()) {
             return body;
         }
         String updated = body;
-        for (ArticleAttachment attachment : attachments) {
+        for (Attachment attachment : attachments) {
             if (attachment == null || attachment.id == null || attachment.name == null || attachment.name.isBlank()) {
                 continue;
             }
             String encodedName = URLEncoder.encode(attachment.name, StandardCharsets.UTF_8).replace("+", "%20");
-            String url = "/article-attachments/" + attachment.id + "/data";
+            String url = "/attachments/" + attachment.id + "/data";
             updated = updated.replace("attachment://" + encodedName, url);
             updated = updated.replace("attachment://" + attachment.name, url);
         }

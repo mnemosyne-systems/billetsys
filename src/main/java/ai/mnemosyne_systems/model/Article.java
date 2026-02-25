@@ -40,5 +40,5 @@ public class Article extends PanacheEntityBase {
     public String body;
 
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
-    public List<ArticleAttachment> attachments = new ArrayList<>();
+    public List<Attachment> attachments = new ArrayList<>();
 }
