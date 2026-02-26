@@ -137,8 +137,9 @@ public class LevelResource {
         return levelFormTemplate.data("level", level).data("action", "/levels/" + id).data("dayOptions", DAY_OPTIONS)
                 .data("countries", Country.list("order by name")).data("hourOptions", HOUR_OPTIONS)
                 .data("colorOptions", COLOR_OPTIONS)
-                .data("timezones", timezoneCountry != null
-                        ? Timezone.list("country = ?1 order by name", timezoneCountry) : List.of())
+                .data("timezones",
+                        timezoneCountry != null ? Timezone.list("country = ?1 order by name", timezoneCountry)
+                                : List.of())
                 .data("title", "Edit level").data("currentUser", user);
     }
 

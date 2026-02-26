@@ -70,7 +70,8 @@ public class CompanyResource {
         User primaryContact = new User();
         Country defaultCountry = Country.find("code", "US").firstResult();
         Timezone defaultTimezone = defaultCountry != null
-                ? Timezone.find("country = ?1 and name = ?2", defaultCountry, "America/New_York").firstResult() : null;
+                ? Timezone.find("country = ?1 and name = ?2", defaultCountry, "America/New_York").firstResult()
+                : null;
         company.country = defaultCountry;
         company.timezone = defaultTimezone;
         List<Country> countries = Country.list("order by name");
@@ -117,7 +118,8 @@ public class CompanyResource {
         java.util.List<Country> countries = Country.list("order by name");
         Country timezoneCountry = company.country != null ? company.country : Country.find("code", "US").firstResult();
         java.util.List<Timezone> timezones = timezoneCountry != null
-                ? Timezone.list("country = ?1 order by name", timezoneCountry) : java.util.List.of();
+                ? Timezone.list("country = ?1 order by name", timezoneCountry)
+                : java.util.List.of();
         return companyFormTemplate.data("company", company).data("users", User.list("type", User.TYPE_USER))
                 .data("tams", User.list("type", User.TYPE_TAM)).data("entitlements", Entitlement.listAll())
                 .data("supportLevels", Level.listAll()).data("companyEntitlements", companyEntitlements)

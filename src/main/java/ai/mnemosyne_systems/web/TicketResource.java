@@ -124,9 +124,10 @@ public class TicketResource {
         }
         List<Category> categories = Category.listAll();
         return formTemplate.data("ticket", ticket).data("companies", Company.listAll())
-                .data("companyEntitlements", ticket.company == null ? java.util.List.of() : CompanyEntitlement.find(
-                        "select distinct ce from CompanyEntitlement ce join fetch ce.entitlement join fetch ce.supportLevel where ce.company = ?1",
-                        ticket.company).list())
+                .data("companyEntitlements", ticket.company == null ? java.util.List.of()
+                        : CompanyEntitlement.find(
+                                "select distinct ce from CompanyEntitlement ce join fetch ce.entitlement join fetch ce.supportLevel where ce.company = ?1",
+                                ticket.company).list())
                 .data("selectedCompanyEntitlementId",
                         ticket.companyEntitlement == null ? null : ticket.companyEntitlement.id)
                 .data("categories", categories)

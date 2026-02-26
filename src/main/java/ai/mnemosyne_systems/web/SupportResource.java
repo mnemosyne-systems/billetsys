@@ -222,11 +222,13 @@ public class SupportResource {
                 continue;
             }
             String name = company.name == null ? "" : company.name.trim();
-            companyOptionLabels.put(company.id, name.toLowerCase(Locale.ENGLISH).startsWith("company ")
-                    ? name.substring("company ".length()).trim() : name);
+            companyOptionLabels.put(company.id,
+                    name.toLowerCase(Locale.ENGLISH).startsWith("company ") ? name.substring("company ".length()).trim()
+                            : name);
         }
-        List<User> users = selectedCompany == null ? List.of() : Company
-                .find("select u from Company c join c.users u where c = ?1 order by u.name", selectedCompany).list();
+        List<User> users = selectedCompany == null ? List.of()
+                : Company.find("select u from Company c join c.users u where c = ?1 order by u.name", selectedCompany)
+                        .list();
         String createUserUrl = selectedCompany == null ? "/support/users"
                 : "/support/users/" + selectedCompany.id + "/create";
         return Response.ok(supportUsersTemplate.data("users", users).data("companies", companies)
@@ -255,7 +257,8 @@ public class SupportResource {
         Country defaultCountry = Country.find("code", "US").firstResult();
         newUser.country = defaultCountry;
         newUser.timezone = defaultCountry != null
-                ? Timezone.find("country = ?1 and name = ?2", defaultCountry, "America/New_York").firstResult() : null;
+                ? Timezone.find("country = ?1 and name = ?2", defaultCountry, "America/New_York").firstResult()
+                : null;
         List<Country> countries = Country.list("order by name");
         List<Timezone> timezones = defaultCountry != null ? Timezone.list("country = ?1 order by name", defaultCountry)
                 : List.of();

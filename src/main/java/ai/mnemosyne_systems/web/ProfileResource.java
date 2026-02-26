@@ -185,7 +185,8 @@ public class ProfileResource {
         List<Country> countries = Country.list("order by name");
         Country timezoneCountry = user.country != null ? user.country : Country.find("code", "US").firstResult();
         List<Timezone> timezones = timezoneCountry != null
-                ? Timezone.list("country = ?1 order by name", timezoneCountry) : List.of();
+                ? Timezone.list("country = ?1 order by name", timezoneCountry)
+                : List.of();
         List<Company> userCompanies = Company
                 .find("select c from Company c join c.users u where u = ?1 order by c.name", user).list();
         Company userCompany = userCompanies.isEmpty() ? null : userCompanies.get(0);

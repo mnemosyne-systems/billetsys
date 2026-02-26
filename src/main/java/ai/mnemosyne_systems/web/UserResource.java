@@ -145,8 +145,9 @@ public class UserResource {
         if (!allowed) {
             throw new NotFoundException();
         }
-        java.util.List<User> users = selectedCompany == null ? java.util.List.of() : Company
-                .find("select u from Company c join c.users u where c = ?1 order by u.name", selectedCompany).list();
+        java.util.List<User> users = selectedCompany == null ? java.util.List.of()
+                : Company.find("select u from Company c join c.users u where c = ?1 order by u.name", selectedCompany)
+                        .list();
         String createUserUrl = selectedCompany == null ? "/tam/users" : "/tam/users/" + selectedCompany.id + "/create";
         return Response
                 .ok(supportUsersTemplate.data("users", users).data("companies", companies)
@@ -183,7 +184,8 @@ public class UserResource {
         Country defaultCountry = Country.find("code", "US").firstResult();
         newUser.country = defaultCountry;
         newUser.timezone = defaultCountry != null
-                ? Timezone.find("country = ?1 and name = ?2", defaultCountry, "America/New_York").firstResult() : null;
+                ? Timezone.find("country = ?1 and name = ?2", defaultCountry, "America/New_York").firstResult()
+                : null;
         List<Country> countries = Country.list("order by name");
         List<Timezone> timezones = defaultCountry != null ? Timezone.list("country = ?1 order by name", defaultCountry)
                 : List.of();
@@ -266,10 +268,10 @@ public class UserResource {
         java.util.List<Company> companies = Company
                 .find("select distinct c from Company c join c.users u where u = ?1", user).list();
         Company company = companies.isEmpty() ? null : companies.get(0);
-        java.util.List<CompanyEntitlement> entitlements = company == null ? java.util.List.of() : CompanyEntitlement
-                .find("select distinct ce from CompanyEntitlement ce join fetch ce.entitlement join fetch ce.supportLevel where ce.company = ?1",
-                        company)
-                .list();
+        java.util.List<CompanyEntitlement> entitlements = company == null ? java.util.List.of()
+                : CompanyEntitlement.find(
+                        "select distinct ce from CompanyEntitlement ce join fetch ce.entitlement join fetch ce.supportLevel where ce.company = ?1",
+                        company).list();
         java.util.List<CompanyEntitlement> uniqueEntitlements = new java.util.ArrayList<>();
         java.util.Set<Long> entitlementIds = new java.util.LinkedHashSet<>();
         for (CompanyEntitlement entitlement : entitlements) {
@@ -481,9 +483,10 @@ public class UserResource {
         if ("Open".equalsIgnoreCase(displayStatus) && !supportUsers.isEmpty()) {
             displayStatus = "Assigned";
         }
-        java.util.List<User> tamUsers = ticket.company == null ? new java.util.ArrayList<>() : User.find(
-                "select distinct u from Company c join c.users u where c = ?1 and lower(u.type) = ?2 order by u.email",
-                ticket.company, User.TYPE_TAM).list();
+        java.util.List<User> tamUsers = ticket.company == null ? new java.util.ArrayList<>()
+                : User.find(
+                        "select distinct u from Company c join c.users u where c = ?1 and lower(u.type) = ?2 order by u.email",
+                        ticket.company, User.TYPE_TAM).list();
         java.util.List<User> ticketTams = User
                 .find("select u from Ticket t join t.tamUsers u where t = ?1 order by u.email", ticket).list();
         if (!ticketTams.isEmpty()) {
@@ -605,8 +608,9 @@ public class UserResource {
         if (selectedCompany == null && !companies.isEmpty()) {
             selectedCompany = companies.get(0);
         }
-        List<User> users = selectedCompany == null ? List.of() : Company
-                .find("select u from Company c join c.users u where c = ?1 order by u.name", selectedCompany).list();
+        List<User> users = selectedCompany == null ? List.of()
+                : Company.find("select u from Company c join c.users u where c = ?1 order by u.name", selectedCompany)
+                        .list();
         return adminUsersTemplate.data("users", users).data("companies", companies)
                 .data("selectedCompanyId", selectedCompany == null ? null : selectedCompany.id)
                 .data("showCompanySelector", true).data("companyLocked", false).data("createUserUrl", "/users/create")
@@ -624,7 +628,8 @@ public class UserResource {
         Country defaultCountry = Country.find("code", "US").firstResult();
         newUser.country = defaultCountry;
         newUser.timezone = defaultCountry != null
-                ? Timezone.find("country = ?1 and name = ?2", defaultCountry, "America/New_York").firstResult() : null;
+                ? Timezone.find("country = ?1 and name = ?2", defaultCountry, "America/New_York").firstResult()
+                : null;
         List<Country> countries = Country.list("order by name");
         List<Timezone> timezones = defaultCountry != null ? Timezone.list("country = ?1 order by name", defaultCountry)
                 : List.of();
@@ -647,7 +652,8 @@ public class UserResource {
         Country timezoneCountry = editUser.country != null ? editUser.country
                 : Country.find("code", "US").firstResult();
         List<Timezone> timezones = timezoneCountry != null
-                ? Timezone.list("country = ?1 order by name", timezoneCountry) : List.of();
+                ? Timezone.list("country = ?1 order by name", timezoneCountry)
+                : List.of();
         List<Company> allCompanies = Company.list("order by name");
         Company userCompany = Company.find("select c from Company c join c.users u where u = ?1", editUser)
                 .firstResult();
@@ -1097,10 +1103,10 @@ public class UserResource {
             return "User";
         }
         return switch (type.toLowerCase()) {
-        case User.TYPE_ADMIN -> "Admin";
-        case User.TYPE_SUPPORT -> "Support";
-        case User.TYPE_TAM -> "TAM";
-        default -> "User";
+            case User.TYPE_ADMIN -> "Admin";
+            case User.TYPE_SUPPORT -> "Support";
+            case User.TYPE_TAM -> "TAM";
+            default -> "User";
         };
     }
 
