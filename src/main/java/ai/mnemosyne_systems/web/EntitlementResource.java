@@ -11,6 +11,7 @@ package ai.mnemosyne_systems.web;
 import ai.mnemosyne_systems.model.Entitlement;
 import ai.mnemosyne_systems.model.Level;
 import ai.mnemosyne_systems.model.User;
+import ai.mnemosyne_systems.model.Version;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
@@ -30,6 +31,10 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,9 +76,13 @@ public class EntitlementResource {
         Entitlement entitlement = new Entitlement();
         entitlement.description = "";
         entitlement.supportLevels = java.util.List.of();
+        Version version = new Version();
+        version.date = LocalDate.now();
+        entitlement.versions = java.util.List.of(version);
         return entitlementFormTemplate.data("entitlement", entitlement).data("action", "/entitlements")
                 .data("supportLevels", Level.listAll()).data("selectedLevelIds", java.util.Set.of())
-                .data("title", "New entitlement").data("currentUser", user);
+                .data("todayDate", LocalDate.now().toString()).data("title", "New entitlement")
+                .data("currentUser", user);
     }
 
     @GET
@@ -97,7 +106,9 @@ public class EntitlementResource {
             }
         }
         return entitlementViewTemplate.data("entitlement", entitlement).data("fromValues", fromValues)
-                .data("toValues", toValues).data("currentUser", user);
+                .data("toValues", toValues)
+                .data("versions", Version.list("entitlement = ?1 order by date asc, id asc", entitlement))
+                .data("currentUser", user);
     }
 
     @GET
@@ -119,20 +130,25 @@ public class EntitlementResource {
         }
         return entitlementFormTemplate.data("entitlement", entitlement).data("action", "/entitlements/" + id)
                 .data("supportLevels", Level.listAll()).data("selectedLevelIds", selectedLevelIds)
-                .data("title", "Edit entitlement").data("currentUser", user);
+                .data("todayDate", LocalDate.now().toString()).data("title", "Edit entitlement")
+                .data("currentUser", user);
     }
 
     @POST
     @Path("")
     @Transactional
     public Response createEntitlement(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
-            @FormParam("description") String description, @FormParam("levelIds") List<Long> levelIds) {
+            @FormParam("description") String description, @FormParam("levelIds") List<Long> levelIds,
+            @FormParam("versionIds") List<Long> versionIds, @FormParam("versionNames") List<String> versionNames,
+            @FormParam("versionDates") List<String> versionDates) {
         requireAdmin(auth);
         validate(name, description);
         Entitlement entitlement = new Entitlement();
         entitlement.name = name.trim();
         entitlement.description = description.trim();
         entitlement.supportLevels = resolveLevels(levelIds);
+        entitlement.versions.clear();
+        entitlement.versions.addAll(resolveVersions(entitlement, null, versionIds, versionNames, versionDates));
         entitlement.persist();
         return Response.seeOther(URI.create("/entitlements")).build();
     }
@@ -142,7 +158,9 @@ public class EntitlementResource {
     @Transactional
     public Response updateEntitlement(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
             @FormParam("name") String name, @FormParam("description") String description,
-            @FormParam("levelIds") List<Long> levelIds) {
+            @FormParam("levelIds") List<Long> levelIds, @FormParam("versionIds") List<Long> versionIds,
+            @FormParam("versionNames") List<String> versionNames,
+            @FormParam("versionDates") List<String> versionDates) {
         requireAdmin(auth);
         Entitlement entitlement = Entitlement
                 .find("select e from Entitlement e left join fetch e.supportLevels where e.id = ?1", id).firstResult();
@@ -153,6 +171,11 @@ public class EntitlementResource {
         entitlement.name = name.trim();
         entitlement.description = description.trim();
         entitlement.supportLevels = resolveLevels(levelIds);
+        List<Version> existingVersions = Version.list("entitlement = ?1", entitlement);
+        List<Version> resolvedVersions = resolveVersions(entitlement, existingVersions, versionIds, versionNames,
+                versionDates);
+        entitlement.versions.clear();
+        entitlement.versions.addAll(resolvedVersions);
         return Response.seeOther(URI.create("/entitlements")).build();
     }
 
@@ -183,6 +206,56 @@ public class EntitlementResource {
             return java.util.List.of();
         }
         return Level.list("id in ?1", levelIds);
+    }
+
+    private List<Version> resolveVersions(Entitlement entitlement, List<Version> existingVersions,
+            List<Long> versionIds, List<String> versionNames, List<String> versionDates) {
+        int size = Math.max(versionNames == null ? 0 : versionNames.size(),
+                versionDates == null ? 0 : versionDates.size());
+        if (size == 0) {
+            throw new BadRequestException("At least one version is required");
+        }
+        Map<Long, Version> existingById = new HashMap<>();
+        if (existingVersions != null) {
+            for (Version existing : existingVersions) {
+                if (existing != null && existing.id != null) {
+                    existingById.put(existing.id, existing);
+                }
+            }
+        }
+        List<Version> versions = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            String name = versionNames != null && i < versionNames.size() ? versionNames.get(i) : null;
+            String dateValue = versionDates != null && i < versionDates.size() ? versionDates.get(i) : null;
+            if ((name == null || name.isBlank()) && (dateValue == null || dateValue.isBlank())) {
+                continue;
+            }
+            if (name == null || name.isBlank()) {
+                throw new BadRequestException("Version name is required");
+            }
+            if (dateValue == null || dateValue.isBlank()) {
+                throw new BadRequestException("Version date is required");
+            }
+            LocalDate date;
+            try {
+                date = LocalDate.parse(dateValue.trim());
+            } catch (DateTimeParseException e) {
+                throw new BadRequestException("Version date is invalid");
+            }
+            Long id = versionIds != null && i < versionIds.size() ? versionIds.get(i) : null;
+            Version version = id == null ? new Version() : existingById.get(id);
+            if (id != null && version == null) {
+                throw new BadRequestException("Version does not belong to entitlement");
+            }
+            version.name = name.trim();
+            version.date = date;
+            version.entitlement = entitlement;
+            versions.add(version);
+        }
+        if (versions.isEmpty()) {
+            throw new BadRequestException("At least one version is required");
+        }
+        return versions;
     }
 
     private String firstLinePlainText(String description) {

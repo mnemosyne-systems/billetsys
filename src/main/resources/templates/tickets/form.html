@@ -36,6 +36,34 @@
                     </select>
                 </label>
             </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <label>Affects
+                    {#if ticket.id != null}
+                    <select name="affectsVersionId" required>
+                        {#if versions.isEmpty}
+                        <option value="">-</option>
+                        {/if}
+                        {#for version in versions}
+                        <option value="{version.id}" {#if ticket.affectsVersion != null && ticket.affectsVersion.id == version.id}selected{/if}>{version.name} ({version.date})</option>
+                        {/for}
+                    </select>
+                    {#else}
+                    <input type="text" value="{#if ticket.affectsVersion != null}{ticket.affectsVersion.name} ({ticket.affectsVersion.date}){#else}-{/if}" readonly>
+                    {/if}
+                </label>
+                <label>Resolved
+                    {#if ticket.id != null}
+                    <select name="resolvedVersionId">
+                        <option value="">-</option>
+                        {#for version in versions}
+                        <option value="{version.id}" {#if ticket.resolvedVersion != null && ticket.resolvedVersion.id == version.id}selected{/if}>{version.name} ({version.date})</option>
+                        {/for}
+                    </select>
+                    {#else}
+                    <input type="text" value="-" readonly>
+                    {/if}
+                </label>
+            </div>
             {#if ticket.id != null}
             <div>
                 <label>Company

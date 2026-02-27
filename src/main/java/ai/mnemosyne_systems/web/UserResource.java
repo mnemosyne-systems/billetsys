@@ -15,6 +15,7 @@ import ai.mnemosyne_systems.model.CompanyEntitlement;
 import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
+import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
 import io.quarkus.elytron.security.common.BcryptUtil;
@@ -294,6 +295,8 @@ public class UserResource {
                 .data("ticketName", company == null ? "" : Ticket.previewNextName(company))
                 .data("expiredEntitlementIds", expiredEntitlementIds).data("assignedCount", data.assignedTickets.size())
                 .data("openCount", data.openTickets.size()).data("ticketsBase", "/user/tickets")
+                .data("defaultAffectsVersion",
+                        uniqueEntitlements.isEmpty() ? null : defaultAffectsVersion(uniqueEntitlements.get(0)))
                 .data("showSupportUsers", User.TYPE_TAM.equalsIgnoreCase(user.type))
                 .data("usersBase", User.TYPE_TAM.equalsIgnoreCase(user.type) ? "/tam/users" : "/user/users")
                 .data("currentUser", user).data("categories", categories)
@@ -340,6 +343,7 @@ public class UserResource {
         ticket.company = entitlement.company;
         ticket.requester = user;
         ticket.companyEntitlement = entitlement;
+        ticket.affectsVersion = defaultAffectsVersion(entitlement);
         ticket.category = categoryId != null ? Category.findById(categoryId) : Category.findDefault();
         ticket.persist();
         Message message = new Message();
@@ -505,6 +509,7 @@ public class UserResource {
         boolean showLevel = User.TYPE_TAM.equalsIgnoreCase(user.type);
         String levelName = showLevel ? resolveLowestEntitlementLevelName(ticket) : null;
         java.util.List<Category> categories = Category.listAll();
+        java.util.List<Version> versions = availableVersions(ticket);
         return tamTicketDetailTemplate.data("ticket", ticket).data("displayStatus", displayStatus)
                 .data("supportUsers", supportUsers).data("tamUsers", tamUsers).data("messages", messages)
                 .data("messageLabels", messageLabels).data("messageAuthorNames", messageAuthorNames)
@@ -517,7 +522,7 @@ public class UserResource {
                 .data("ticketsBase", "/user/tickets")
                 .data("showSupportUsers", User.TYPE_TAM.equalsIgnoreCase(user.type))
                 .data("usersBase", User.TYPE_TAM.equalsIgnoreCase(user.type) ? "/tam/users" : "/user/users")
-                .data("currentUser", user).data("categories", categories);
+                .data("currentUser", user).data("categories", categories).data("versions", versions);
     }
 
     private List<ai.mnemosyne_systems.model.Message> loadMessages(Ticket ticket) {
@@ -566,28 +571,24 @@ public class UserResource {
         if (ticket == null) {
             throw new NotFoundException();
         }
-        return ticketEditTemplate.data("ticket", ticket).data("currentUser", user);
+        return ticketEditTemplate.data("ticket", ticket).data("versions", availableVersions(ticket))
+                .data("allowResolvedEdit", User.TYPE_TAM.equalsIgnoreCase(user.type)).data("currentUser", user);
     }
 
     @POST
     @Path("user/tickets/{id}")
     @Transactional
     public Response updateUserTicket(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @FormParam("status") String status) {
+            @FormParam("affectsVersionId") Long affectsVersionId,
+            @FormParam("resolvedVersionId") Long resolvedVersionId) {
         User user = requireUser(auth);
         Ticket ticket = findTicketForUser(user, id);
         if (ticket == null) {
             throw new NotFoundException();
         }
-        String normalized = status == null ? "" : status.trim();
-        if (!(normalized.equals("Assigned") || normalized.equals("In Progress") || normalized.equals("Resolved")
-                || normalized.equals("Closed"))) {
-            throw new BadRequestException("Status must be Assigned, In Progress, Resolved, or Closed");
-        }
-        String previousStatus = ticketEmailService.computeEffectiveStatus(ticket, ticket.status);
-        ticket.status = normalized;
-        if (!sameStatus(previousStatus, ticket.status)) {
-            ticketEmailService.notifyStatusChange(ticket, previousStatus, user);
+        ticket.affectsVersion = resolveVersionForTicket(ticket, affectsVersionId, "Affects");
+        if (User.TYPE_TAM.equalsIgnoreCase(user.type)) {
+            ticket.resolvedVersion = resolveOptionalVersionForTicket(ticket, resolvedVersionId, "Resolved");
         }
         return Response.seeOther(URI.create("/tickets/" + id)).build();
     }
@@ -1034,6 +1035,8 @@ public class UserResource {
         displayTicket.status = "Assigned";
         displayTicket.company = ticket.company;
         displayTicket.companyEntitlement = ticket.companyEntitlement;
+        displayTicket.affectsVersion = ticket.affectsVersion;
+        displayTicket.resolvedVersion = ticket.resolvedVersion;
         displayTicket.category = ticket.category;
         displayTicket.externalIssueLink = ticket.externalIssueLink;
         return displayTicket;
@@ -1049,6 +1052,8 @@ public class UserResource {
         displayTicket.status = ticket.status;
         displayTicket.company = ticket.company;
         displayTicket.companyEntitlement = ticket.companyEntitlement;
+        displayTicket.affectsVersion = ticket.affectsVersion;
+        displayTicket.resolvedVersion = ticket.resolvedVersion;
         displayTicket.category = ticket.category;
         displayTicket.externalIssueLink = ticket.externalIssueLink;
         return displayTicket;
@@ -1088,6 +1093,49 @@ public class UserResource {
         String normalizedLeft = left == null ? "" : left.trim();
         String normalizedRight = right == null ? "" : right.trim();
         return normalizedLeft.equalsIgnoreCase(normalizedRight);
+    }
+
+    private List<Version> availableVersions(Ticket ticket) {
+        if (ticket == null || ticket.companyEntitlement == null || ticket.companyEntitlement.entitlement == null) {
+            return List.of();
+        }
+        return Version.list("entitlement = ?1 order by date asc, id asc", ticket.companyEntitlement.entitlement);
+    }
+
+    private Version defaultAffectsVersion(CompanyEntitlement entitlement) {
+        if (entitlement == null || entitlement.entitlement == null) {
+            return null;
+        }
+        Version version = Version
+                .find("entitlement = ?1 and name = ?2 order by date asc, id asc", entitlement.entitlement, "1.0.0")
+                .firstResult();
+        if (version != null) {
+            return version;
+        }
+        return Version.find("entitlement = ?1 order by date asc, id asc", entitlement.entitlement).firstResult();
+    }
+
+    private Version resolveVersionForTicket(Ticket ticket, Long versionId, String label) {
+        Version version = resolveOptionalVersionForTicket(ticket, versionId, label);
+        if (version == null && !availableVersions(ticket).isEmpty()) {
+            throw new BadRequestException(label + " version is required");
+        }
+        return version;
+    }
+
+    private Version resolveOptionalVersionForTicket(Ticket ticket, Long versionId, String label) {
+        if (versionId == null) {
+            return null;
+        }
+        if (ticket == null || ticket.companyEntitlement == null || ticket.companyEntitlement.entitlement == null) {
+            throw new BadRequestException(label + " version is invalid");
+        }
+        Version version = Version.find("id = ?1 and entitlement = ?2", versionId, ticket.companyEntitlement.entitlement)
+                .firstResult();
+        if (version == null) {
+            throw new BadRequestException(label + " version is invalid");
+        }
+        return version;
     }
 
     private String normalizeType(String type, Set<String> allowedTypes, String errorMessage) {

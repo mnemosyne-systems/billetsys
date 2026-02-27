@@ -274,6 +274,17 @@ INSERT INTO entitlements (id, name, description)
 VALUES (nextval('entitlement_seq'), 'Enterprise', '24/7 support with SLA and dedicated TAM');
 
 -- =====================
+-- VERSIONS
+-- =====================
+INSERT INTO versions (id, name, date, entitlement_id)
+SELECT nextval('version_seq'), '1.0.0', CURRENT_DATE, e.id
+FROM entitlements e;
+
+INSERT INTO versions (id, name, date, entitlement_id)
+SELECT nextval('version_seq'), '1.0.1', CURRENT_DATE, e.id
+FROM entitlements e;
+
+-- =====================
 -- LEVELS
 -- =====================
 INSERT INTO support_levels (id, name, description, level, color, from_day, from_time, to_day, to_time, country_id, timezone_id)
@@ -333,6 +344,17 @@ INSERT INTO entitlement_support_levels (entitlement_id, support_level_id)
 SELECT e.id, s.id
 FROM entitlements e, support_levels s
 WHERE e.name = 'Enterprise' AND s.name = 'Normal';
+
+UPDATE tickets t
+SET affects_version_id = (
+    SELECT v.id
+    FROM versions v
+    JOIN company_entitlements ce ON ce.entitlement_id = v.entitlement_id
+    WHERE ce.id = t.company_entitlement_id AND v.name = '1.0.0'
+    ORDER BY v.id
+    LIMIT 1
+)
+WHERE t.company_entitlement_id IS NOT NULL;
 
 -- =====================
 -- CATEGORIES

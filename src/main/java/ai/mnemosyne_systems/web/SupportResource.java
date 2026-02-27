@@ -15,6 +15,7 @@ import ai.mnemosyne_systems.model.CompanyEntitlement;
 import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
+import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
 import io.quarkus.elytron.security.common.BcryptUtil;
@@ -347,6 +348,9 @@ public class SupportResource {
                 .data("companyEntitlements", entitlements)
                 .data("selectedCompanyEntitlementId", selectedCompanyEntitlementId).data("categories", categories)
                 .data("defaultCategoryId", defaultCategory == null ? null : defaultCategory.id)
+                .data("defaultAffectsVersion",
+                        selectedCompanyEntitlementId == null ? null
+                                : defaultAffectsVersion(CompanyEntitlement.findById(selectedCompanyEntitlementId)))
                 .data("action", "/support/tickets").data("ticketName", ticketName)
                 .data("entitlementsBase", "/support/tickets").data("assignedCount", counts.assignedCount)
                 .data("openCount", counts.openCount).data("ticketsBase", "/support").data("showSupportUsers", true)
@@ -416,6 +420,7 @@ public class SupportResource {
                 "select distinct ce from CompanyEntitlement ce join fetch ce.entitlement join fetch ce.supportLevel where ce.company = ?1",
                 ticket.company).list();
         java.util.List<Category> categories = Category.listAll();
+        java.util.List<Version> versions = availableVersions(ticket.companyEntitlement);
         return ticketDetailTemplate.data("ticket", ticket).data("displayStatus", displayStatus)
                 .data("supportUsers", supportUsers).data("tamUsers", tamUsers).data("messages", messages)
                 .data("messageLabels", messageLabels).data("messageAuthorNames", messageAuthorNames)
@@ -426,7 +431,7 @@ public class SupportResource {
                 .data("action", "/support/tickets/" + id).data("title", "Update").data("editableStatus", true)
                 .data("showLevel", true).data("ticketEntitlementExpired", isEntitlementExpired(ticket))
                 .data("supportUserBase", "/support/support-users").data("tamUserBase", "/support/tam-users")
-                .data("messageAction", "/support/tickets/" + id + "/messages")
+                .data("versions", versions).data("messageAction", "/support/tickets/" + id + "/messages")
                 .data("assignedCount", counts.assignedCount).data("openCount", counts.openCount)
                 .data("ticketsBase", "/support").data("showSupportUsers", true).data("currentUser", user)
                 .data("categories", categories);
@@ -521,6 +526,7 @@ public class SupportResource {
         ticket.company = company;
         ticket.requester = user;
         ticket.companyEntitlement = entitlement;
+        ticket.affectsVersion = defaultAffectsVersion(entitlement);
         ticket.category = categoryId != null ? Category.findById(categoryId) : Category.findDefault();
         ticket.persist();
         assignCompanyTams(ticket);
@@ -543,7 +549,9 @@ public class SupportResource {
     public Response updateTicket(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
             @jakarta.ws.rs.PathParam("id") Long id, @FormParam("status") String status,
             @FormParam("companyId") Long companyId, @FormParam("companyEntitlementId") Long companyEntitlementId,
-            @FormParam("categoryId") Long categoryId, @FormParam("externalIssueLink") String externalIssueLink) {
+            @FormParam("categoryId") Long categoryId, @FormParam("externalIssueLink") String externalIssueLink,
+            @FormParam("affectsVersionId") Long affectsVersionId,
+            @FormParam("resolvedVersionId") Long resolvedVersionId) {
         User user = requireSupport(auth);
         Ticket ticket = Ticket.findById(id);
         if (ticket == null) {
@@ -571,6 +579,8 @@ public class SupportResource {
         ticket.status = status;
         ticket.company = company;
         ticket.companyEntitlement = entitlement;
+        ticket.affectsVersion = resolveVersion(entitlement, affectsVersionId, "Affects", true);
+        ticket.resolvedVersion = resolveVersion(entitlement, resolvedVersionId, "Resolved", false);
         ticket.category = categoryId != null ? Category.findById(categoryId) : null;
         ticket.externalIssueLink = externalIssueLink != null && !externalIssueLink.isBlank() ? externalIssueLink.trim()
                 : null;
@@ -664,6 +674,9 @@ public class SupportResource {
                 .data("ticketName", ticketName).data("assignedCount", counts.assignedCount)
                 .data("openCount", counts.openCount).data("ticketsBase", "/support").data("showSupportUsers", true)
                 .data("entitlementsBase", "/support/tickets").data("message", message).data("currentUser", user)
+                .data("defaultAffectsVersion",
+                        selectedCompanyEntitlementId == null ? null
+                                : defaultAffectsVersion(CompanyEntitlement.findById(selectedCompanyEntitlementId)))
                 .data("categories", categories)
                 .data("defaultCategoryId", defaultCategory == null ? null : defaultCategory.id);
     }
@@ -683,6 +696,44 @@ public class SupportResource {
             }
         }
         return unique;
+    }
+
+    private List<Version> availableVersions(CompanyEntitlement companyEntitlement) {
+        if (companyEntitlement == null || companyEntitlement.entitlement == null) {
+            return List.of();
+        }
+        return Version.list("entitlement = ?1 order by date asc, id asc", companyEntitlement.entitlement);
+    }
+
+    private Version defaultAffectsVersion(CompanyEntitlement companyEntitlement) {
+        if (companyEntitlement == null || companyEntitlement.entitlement == null) {
+            return null;
+        }
+        Version version = Version.find("entitlement = ?1 and name = ?2 order by date asc, id asc",
+                companyEntitlement.entitlement, "1.0.0").firstResult();
+        if (version != null) {
+            return version;
+        }
+        return Version.find("entitlement = ?1 order by date asc, id asc", companyEntitlement.entitlement).firstResult();
+    }
+
+    private Version resolveVersion(CompanyEntitlement companyEntitlement, Long versionId, String label,
+            boolean required) {
+        if (versionId == null) {
+            if (required && !availableVersions(companyEntitlement).isEmpty()) {
+                throw new BadRequestException(label + " version is required");
+            }
+            return null;
+        }
+        if (companyEntitlement == null || companyEntitlement.entitlement == null) {
+            throw new BadRequestException(label + " version is invalid");
+        }
+        Version version = Version.find("id = ?1 and entitlement = ?2", versionId, companyEntitlement.entitlement)
+                .firstResult();
+        if (version == null) {
+            throw new BadRequestException(label + " version is invalid");
+        }
+        return version;
     }
 
     private String formatDate(LocalDateTime date) {
@@ -899,6 +950,8 @@ public class SupportResource {
         displayTicket.status = "Assigned";
         displayTicket.company = ticket.company;
         displayTicket.companyEntitlement = ticket.companyEntitlement;
+        displayTicket.affectsVersion = ticket.affectsVersion;
+        displayTicket.resolvedVersion = ticket.resolvedVersion;
         displayTicket.category = ticket.category;
         displayTicket.externalIssueLink = ticket.externalIssueLink;
         return displayTicket;
@@ -914,6 +967,8 @@ public class SupportResource {
         displayTicket.status = ticket.status;
         displayTicket.company = ticket.company;
         displayTicket.companyEntitlement = ticket.companyEntitlement;
+        displayTicket.affectsVersion = ticket.affectsVersion;
+        displayTicket.resolvedVersion = ticket.resolvedVersion;
         displayTicket.category = ticket.category;
         displayTicket.externalIssueLink = ticket.externalIssueLink;
         return displayTicket;

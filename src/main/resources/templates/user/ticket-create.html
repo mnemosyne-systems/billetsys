@@ -92,6 +92,14 @@
             </label>
         </div>
         {/if}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <label>Affects
+                <input type="text" value="{#if defaultAffectsVersion != null}{defaultAffectsVersion.name} ({defaultAffectsVersion.date}){#else}-{/if}" readonly>
+            </label>
+            <label>Resolved
+                <input type="text" value="-" readonly>
+            </label>
+        </div>
         <div class="form-actions">
             <button id="create-ticket-button" type="submit" class="action-button">Create</button>
         </div>

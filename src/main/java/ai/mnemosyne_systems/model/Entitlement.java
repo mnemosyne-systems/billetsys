@@ -17,8 +17,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -38,4 +40,7 @@ public class Entitlement extends PanacheEntityBase {
     @ManyToMany
     @JoinTable(name = "entitlement_support_levels", joinColumns = @JoinColumn(name = "entitlement_id"), inverseJoinColumns = @JoinColumn(name = "support_level_id"))
     public List<Level> supportLevels;
+
+    @OneToMany(mappedBy = "entitlement", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    public List<Version> versions = new ArrayList<>();
 }

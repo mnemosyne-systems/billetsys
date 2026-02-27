@@ -4,7 +4,7 @@ This document describes how to build the project, run it locally, and generate t
 
 ## Prerequisites
 
-- Java 25+
+- Java 25
 - Maven
 - PostgreSQL
 - Pandoc

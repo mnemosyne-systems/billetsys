@@ -26,6 +26,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.transaction.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import ai.mnemosyne_systems.model.Version;
 
 @ApplicationScoped
 public class UserSeeder {
@@ -344,9 +345,24 @@ public class UserSeeder {
         ticket.company = company;
         ticket.requester = requester;
         ticket.companyEntitlement = entitlement;
+        if (ticket.affectsVersion == null) {
+            ticket.affectsVersion = defaultAffectsVersion(entitlement);
+        }
         ticket.persist();
         seedMessage(ticket, "Sample ticket created.");
         return ticket;
+    }
+
+    private Version defaultAffectsVersion(CompanyEntitlement entitlement) {
+        if (entitlement == null || entitlement.entitlement == null) {
+            return null;
+        }
+        Version version = Version.find("entitlement = ?1 and name = ?2 order by id", entitlement.entitlement, "1.0.0")
+                .firstResult();
+        if (version != null) {
+            return version;
+        }
+        return Version.find("entitlement = ?1 order by id", entitlement.entitlement).firstResult();
     }
 
     private void seedMessage(Ticket ticket, String body) {
@@ -472,12 +488,37 @@ public class UserSeeder {
         Entitlement entitlement = Entitlement.find("name", name).firstResult();
         if (entitlement != null) {
             entitlement.description = description;
+            ensureEntitlementVersions(entitlement);
             return;
         }
         entitlement = new Entitlement();
         entitlement.name = name;
         entitlement.description = description;
         entitlement.persist();
+        ensureEntitlementVersions(entitlement);
+    }
+
+    private void ensureEntitlementVersions(Entitlement entitlement) {
+        if (entitlement == null) {
+            return;
+        }
+        ensureVersion(entitlement, "1.0.0");
+        ensureVersion(entitlement, "1.0.1");
+    }
+
+    private void ensureVersion(Entitlement entitlement, String name) {
+        Version version = Version.find("entitlement = ?1 and name = ?2", entitlement, name).firstResult();
+        if (version != null) {
+            if (version.date == null) {
+                version.date = java.time.LocalDate.now();
+            }
+            return;
+        }
+        version = new Version();
+        version.entitlement = entitlement;
+        version.name = name;
+        version.date = java.time.LocalDate.now();
+        version.persist();
     }
 
     private void assignLevelsToEntitlement(String entitlementName, String... supportLevelNames) {

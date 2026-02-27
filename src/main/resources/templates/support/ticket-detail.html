@@ -71,18 +71,39 @@
                     {/if}
                 {/if}
             </label>
-            <label>TAMs
-                {#if tamUsers.isEmpty}
+            {#if currentUser != null && currentUser.type != 'user'}
+            <label class="ticket-detail-spacer" aria-hidden="true">
                 <input type="text" value="-" readonly>
-                {#else}
-                <div>
-                    {#for user in tamUsers}
-                    <a href="{tamUserBase}/{user.id}">{user.name}</a>{#if !user_isLast}, {/if}
+            </label>
+            {/if}
+            <label>Affects
+                {#if editableStatus?? && editableStatus}
+                <select name="affectsVersionId" required>
+                    {#if versions.isEmpty}
+                    <option value="">-</option>
+                    {/if}
+                    {#for version in versions}
+                    <option value="{version.id}" {#if ticket.affectsVersion != null && ticket.affectsVersion.id == version.id}selected{/if}>{version.name} ({version.date})</option>
                     {/for}
-                </div>
+                </select>
+                {#else}
+                <input type="text" value="{#if ticket.affectsVersion != null}{ticket.affectsVersion.name} ({ticket.affectsVersion.date}){#else}-{/if}" readonly>
                 {/if}
             </label>
-            <label>Support users
+            <label>Resolved
+                {#if editableStatus?? && editableStatus}
+                <select name="resolvedVersionId">
+                    <option value="">-</option>
+                    {#for version in versions}
+                    <option value="{version.id}" {#if ticket.resolvedVersion != null && ticket.resolvedVersion.id == version.id}selected{/if}>{version.name} ({version.date})</option>
+                    {/for}
+                </select>
+                {#else}
+                <input type="text" value="{#if ticket.resolvedVersion != null}{ticket.resolvedVersion.name} ({ticket.resolvedVersion.date}){#else}-{/if}" readonly>
+                {/if}
+            </label>
+            {#if currentUser != null && currentUser.type != 'user'}
+            <label>Support
                 {#if supportUsers.isEmpty}
                     <input type="text" value="-" readonly>
                 {#else}
@@ -93,9 +114,41 @@
                     </div>
                 {/if}
             </label>
-            <label class="ticket-detail-spacer" aria-hidden="true">
+            <label>TAM
+                {#if tamUsers.isEmpty}
                 <input type="text" value="-" readonly>
+                {#else}
+                <div>
+                    {#for user in tamUsers}
+                    <a href="{tamUserBase}/{user.id}">{user.name}</a>{#if !user_isLast}, {/if}
+                    {/for}
+                </div>
+                {/if}
             </label>
+            {#else}
+            <label>Support
+                {#if supportUsers.isEmpty}
+                    <input type="text" value="-" readonly>
+                {#else}
+                    <div>
+                        {#for user in supportUsers}
+                            <a href="{supportUserBase}/{user.id}">{user.name}</a>{#if !user_isLast}, {/if}
+                        {/for}
+                    </div>
+                {/if}
+            </label>
+            <label>TAM
+                {#if tamUsers.isEmpty}
+                <input type="text" value="-" readonly>
+                {#else}
+                <div>
+                    {#for user in tamUsers}
+                    <a href="{tamUserBase}/{user.id}">{user.name}</a>{#if !user_isLast}, {/if}
+                    {/for}
+                </div>
+                {/if}
+            </label>
+            {/if}
         </div>
         {#if editableStatus?? && editableStatus}
         <input type="hidden" name="companyId" value="{ticket.company.id}">

@@ -21,6 +21,12 @@
             <label>Status
                 <input type="text" value="{ticket.status}" readonly>
             </label>
+            <label>Affects
+                <input type="text" value="{#if ticket.affectsVersion != null}{ticket.affectsVersion.name} ({ticket.affectsVersion.date}){#else}-{/if}" readonly>
+            </label>
+            <label>Resolved
+                <input type="text" value="{#if ticket.resolvedVersion != null}{ticket.resolvedVersion.name} ({ticket.resolvedVersion.date}){#else}-{/if}" readonly>
+            </label>
             <label>Entitlement
                 {#if ticket.companyEntitlement == null || ticket.companyEntitlement.entitlement == null}
                 <input type="text" value="-" readonly>

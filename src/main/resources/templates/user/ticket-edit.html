@@ -11,14 +11,27 @@
 <div class="form-card">
     <h1>{ticket.name}</h1>
     <form method="post" action="/user/tickets/{ticket.id}">
-        <label>Status
-            <select name="status" required>
-                <option value="Open" {#if ticket.status == 'Open'}selected{/if}>Open</option>
-                <option value="Assigned" {#if ticket.status == 'Assigned'}selected{/if}>Assigned</option>
-                <option value="In Progress" {#if ticket.status == 'In Progress'}selected{/if}>In Progress</option>
-                <option value="Resolved" {#if ticket.status == 'Resolved'}selected{/if}>Resolved</option>
-                <option value="Closed" {#if ticket.status == 'Closed'}selected{/if}>Closed</option>
+        <label>Affects
+            <select name="affectsVersionId" required>
+                {#if versions.isEmpty}
+                <option value="">-</option>
+                {/if}
+                {#for version in versions}
+                <option value="{version.id}" {#if ticket.affectsVersion != null && ticket.affectsVersion.id == version.id}selected{/if}>{version.name} ({version.date})</option>
+                {/for}
             </select>
+        </label>
+        <label>Resolved
+            {#if allowResolvedEdit?? && allowResolvedEdit}
+            <select name="resolvedVersionId">
+                <option value="">-</option>
+                {#for version in versions}
+                <option value="{version.id}" {#if ticket.resolvedVersion != null && ticket.resolvedVersion.id == version.id}selected{/if}>{version.name} ({version.date})</option>
+                {/for}
+            </select>
+            {#else}
+            <input type="text" value="{#if ticket.resolvedVersion != null}{ticket.resolvedVersion.name} ({ticket.resolvedVersion.date}){#else}-{/if}" readonly>
+            {/if}
         </label>
         <div class="form-actions">
             <a class="secondary-button" href="/user/tickets/{ticket.id}">Cancel</a>

@@ -15,8 +15,10 @@
         <th>Support <button class="sort-button" type="button" onclick="sortTable(this, 3)">↕</button></th>
         <th>Company <button class="sort-button" type="button" onclick="sortTable(this, 4)">↕</button></th>
         <th>Entitlement <button class="sort-button" type="button" onclick="sortTable(this, 5)">↕</button></th>
+        <th>Affects <button class="sort-button" type="button" onclick="sortTable(this, 6)">↕</button></th>
+        <th>Resolved <button class="sort-button" type="button" onclick="sortTable(this, 7)">↕</button></th>
         {#if currentUser == null || currentUser.type != 'user'}
-        <th>Level <button class="sort-button" type="button" onclick="sortTable(this, 6)">↕</button></th>
+        <th>Level <button class="sort-button" type="button" onclick="sortTable(this, 8)">↕</button></th>
         {/if}
     </tr>
     </thead>
@@ -45,6 +47,8 @@
             <span>{ticket.companyEntitlement.entitlement.name}</span>
             {/if}
         </td>
+        <td>{#if ticket.affectsVersion != null}{ticket.affectsVersion.name}{#else}-{/if}</td>
+        <td>{#if ticket.resolvedVersion != null}{ticket.resolvedVersion.name}{#else}-{/if}</td>
         {#if currentUser == null || currentUser.type != 'user'}
         <td>
             {#if ticket.companyEntitlement == null || ticket.companyEntitlement.supportLevel == null}

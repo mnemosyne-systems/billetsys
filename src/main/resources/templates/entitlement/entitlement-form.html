@@ -66,6 +66,43 @@
                 </select>
             </div>
         </div>
+        <div style="margin-top: 18px;">
+            <label>Versions</label>
+            <table id="versions-table">
+                <thead>
+                <tr>
+                    <th style="width: 25%;">Name</th>
+                    <th style="width: 25%;">Date</th>
+                    <th style="width: 10%;"></th>
+                </tr>
+                </thead>
+                <tbody id="versions-body">
+                {#if entitlement.versions == null || entitlement.versions.isEmpty}
+                <tr>
+                    <td><input type="hidden" name="versionIds"><input type="text" name="versionNames" required></td>
+                    <td><input type="date" name="versionDates" value="{todayDate}" required></td>
+                    <td><button type="button" class="action-button" onclick="removeVersionRow(this)">Remove</button></td>
+                </tr>
+                {#else}
+                {#for version in entitlement.versions}
+                <tr>
+                    <td>
+                        <input type="hidden" name="versionIds" value="{#if version.id != null}{version.id}{/if}">
+                        <input type="text" name="versionNames" value="{#if version.name != null}{version.name}{/if}" required>
+                    </td>
+                    <td>
+                        <input type="date" name="versionDates" value="{#if version.date != null}{version.date}{#else}{todayDate}{/if}" required>
+                    </td>
+                    <td><button type="button" class="action-button" onclick="removeVersionRow(this)">Remove</button></td>
+                </tr>
+                {/for}
+                {/if}
+                </tbody>
+            </table>
+            <div style="margin-top: 10px;">
+                <button type="button" class="action-button" onclick="addVersionRow()">Add version</button>
+            </div>
+        </div>
         <div class="form-actions">
             <button type="submit" class="action-button">Save</button>
         </div>
@@ -83,6 +120,31 @@
             option.selected = true;
             target.appendChild(option);
         });
+    }
+
+    function addVersionRow() {
+        const body = document.getElementById("versions-body");
+        if (!body) {
+            return;
+        }
+        const row = document.createElement("tr");
+        row.innerHTML =
+            '<td><input type="hidden" name="versionIds"><input type="text" name="versionNames" required></td>' +
+            '<td><input type="date" name="versionDates" value="{todayDate}" required></td>' +
+            '<td><button type="button" class="action-button" onclick="removeVersionRow(this)">Remove</button></td>';
+        body.appendChild(row);
+    }
+
+    function removeVersionRow(button) {
+        const body = document.getElementById("versions-body");
+        if (!body || !button) {
+            return;
+        }
+        const rows = body.querySelectorAll("tr");
+        if (rows.length <= 1) {
+            return;
+        }
+        button.closest("tr").remove();
     }
 
     document.addEventListener("DOMContentLoaded", () => {

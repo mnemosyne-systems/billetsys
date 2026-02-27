@@ -18,6 +18,7 @@ import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Level;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
+import ai.mnemosyne_systems.model.Version;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.quarkus.hibernate.orm.panache.Panache;
 import io.quarkus.mailer.Mail;
@@ -150,6 +151,7 @@ class UserAccessTest {
                 .contentType(ContentType.URLENC).formParam("status", "Assigned")
                 .formParam("companyId", supportTicket.company.id)
                 .formParam("companyEntitlementId", supportTicket.companyEntitlement.id)
+                .formParam("affectsVersionId", ensureVersion(supportTicket.companyEntitlement.entitlement, "1.0.0").id)
                 .post("/support/tickets/" + ticketId).then().statusCode(303);
         Ticket updatedSupportTicket = refreshedTicket(ticketId);
         Assertions.assertEquals("Assigned", updatedSupportTicket.status);
@@ -212,8 +214,7 @@ class UserAccessTest {
                 .statusCode(200).body(Matchers.containsString("Profile")).body(Matchers.containsString("tam"));
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/tickets/" + ticketId + "/edit").then()
-                .statusCode(200).body(Matchers.containsString("In Progress")).body(Matchers.containsString("Resolved"))
-                .body(Matchers.containsString("Closed"));
+                .statusCode(200).body(Matchers.containsString("Affects")).body(Matchers.containsString("Resolved"));
     }
 
     @Test
@@ -272,15 +273,15 @@ class UserAccessTest {
         String entitlementName = "Test Entitlement";
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .contentType(ContentType.URLENC).formParam("name", entitlementName)
-                .formParam("description", "Test description").formParam("date", "2026-01-01").formParam("duration", 2)
-                .post("/entitlements").then().statusCode(303);
+                .formParam("description", "Test description").formParam("versionNames", "1.0.0")
+                .formParam("versionDates", "2026-01-01").post("/entitlements").then().statusCode(303);
         Entitlement entitlement = Entitlement.find("name", entitlementName).firstResult();
         Assertions.assertNotNull(entitlement);
 
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .contentType(ContentType.URLENC).formParam("name", "Updated Entitlement")
-                .formParam("description", "Updated description").formParam("date", "2026-02-01")
-                .formParam("duration", 1).post("/entitlements/" + entitlement.id).then().statusCode(303);
+                .formParam("description", "Updated description").formParam("versionNames", "1.0.1")
+                .formParam("versionDates", "2026-02-01").post("/entitlements/" + entitlement.id).then().statusCode(303);
         Entitlement updatedEntitlement = refreshedEntitlement(entitlement.id);
         Assertions.assertEquals("Updated Entitlement", updatedEntitlement.name);
 
@@ -399,6 +400,7 @@ class UserAccessTest {
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .contentType(ContentType.URLENC).formParam("status", "In Progress").formParam("companyId", company.id)
                 .formParam("companyEntitlementId", entry.id).formParam("categoryId", bugCategory.id)
+                .formParam("affectsVersionId", ensureVersion(entry.entitlement, "1.0.0").id)
                 .formParam("externalIssueLink", "https://github.com/example/issue/1").post("/tickets/" + ticket.id)
                 .then().statusCode(303);
         Ticket updatedTicket = refreshedTicket(ticket.id);
@@ -558,8 +560,9 @@ class UserAccessTest {
 
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie)
                 .contentType(ContentType.URLENC).formParam("status", "Closed").formParam("companyId", ticket.company.id)
-                .formParam("companyEntitlementId", ticket.companyEntitlement.id).post("/support/tickets/" + ticket.id)
-                .then().statusCode(303);
+                .formParam("companyEntitlementId", ticket.companyEntitlement.id)
+                .formParam("affectsVersionId", ensureVersion(ticket.companyEntitlement.entitlement, "1.0.0").id)
+                .post("/support/tickets/" + ticket.id).then().statusCode(303);
 
         List<Mail> tamMessages = mailbox.getMailsSentTo("tam@mnemosyne-systems.ai");
         Assertions.assertFalse(tamMessages.isEmpty());
@@ -820,7 +823,22 @@ class UserAccessTest {
             entitlement.description = description;
             entitlement.persist();
         }
+        ensureVersion(entitlement, "1.0.0");
+        ensureVersion(entitlement, "1.0.1");
         return entitlement;
+    }
+
+    @Transactional
+    Version ensureVersion(Entitlement entitlement, String name) {
+        Version version = Version.find("entitlement = ?1 and name = ?2", entitlement, name).firstResult();
+        if (version == null) {
+            version = new Version();
+            version.entitlement = entitlement;
+            version.name = name;
+            version.date = java.time.LocalDate.now();
+            version.persist();
+        }
+        return version;
     }
 
     @Transactional

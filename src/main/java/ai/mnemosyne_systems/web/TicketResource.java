@@ -14,6 +14,7 @@ import ai.mnemosyne_systems.model.CompanyEntitlement;
 import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
+import ai.mnemosyne_systems.model.Version;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
@@ -96,13 +97,15 @@ public class TicketResource {
     @Path("/new")
     public TemplateInstance createForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
         User user = requireSupport(auth);
+        Ticket ticket = new Ticket();
         List<Category> categories = Category.listAll();
         Category defaultCategory = Category.findDefault();
-        return formTemplate.data("ticket", new Ticket()).data("companies", Company.listAll())
+        return formTemplate.data("ticket", ticket).data("companies", Company.listAll())
                 .data("companyEntitlements", java.util.List.of()).data("selectedCompanyEntitlementId", null)
                 .data("categories", categories)
                 .data("defaultCategoryId", defaultCategory == null ? null : defaultCategory.id)
-                .data("action", "/tickets").data("title", "New Ticket").data("currentUser", user);
+                .data("versions", java.util.List.of()).data("action", "/tickets").data("title", "New Ticket")
+                .data("currentUser", user);
     }
 
     @GET
@@ -123,6 +126,7 @@ public class TicketResource {
             }
         }
         List<Category> categories = Category.listAll();
+        List<Version> versions = availableVersions(ticket.companyEntitlement);
         return formTemplate.data("ticket", ticket).data("companies", Company.listAll())
                 .data("companyEntitlements", ticket.company == null ? java.util.List.of()
                         : CompanyEntitlement.find(
@@ -132,8 +136,8 @@ public class TicketResource {
                         ticket.companyEntitlement == null ? null : ticket.companyEntitlement.id)
                 .data("categories", categories)
                 .data("defaultCategoryId", ticket.category == null ? null : ticket.category.id)
-                .data("messages", messages).data("messageLabels", messageLabels).data("action", "/tickets/" + id)
-                .data("title", "Edit Ticket").data("currentUser", user);
+                .data("versions", versions).data("messages", messages).data("messageLabels", messageLabels)
+                .data("action", "/tickets/" + id).data("title", "Edit Ticket").data("currentUser", user);
     }
 
     @GET
@@ -189,6 +193,7 @@ public class TicketResource {
         ticket.company = company;
         ticket.requester = user;
         ticket.companyEntitlement = entitlement;
+        ticket.affectsVersion = defaultAffectsVersion(entitlement);
         ticket.category = category;
         ticket.persist();
         return Response.seeOther(URI.create("/tickets")).build();
@@ -200,7 +205,9 @@ public class TicketResource {
     public Response update(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
             @FormParam("status") String status, @FormParam("companyId") Long companyId,
             @FormParam("companyEntitlementId") Long companyEntitlementId, @FormParam("categoryId") Long categoryId,
-            @FormParam("externalIssueLink") String externalIssueLink) {
+            @FormParam("externalIssueLink") String externalIssueLink,
+            @FormParam("affectsVersionId") Long affectsVersionId,
+            @FormParam("resolvedVersionId") Long resolvedVersionId) {
         User user = requireSupport(auth);
         Ticket ticket = Ticket.findById(id);
         if (ticket == null) {
@@ -229,6 +236,8 @@ public class TicketResource {
         ticket.company = company;
         ticket.requester = user;
         ticket.companyEntitlement = entitlement;
+        ticket.affectsVersion = resolveVersion(entitlement, affectsVersionId, "Affects", true);
+        ticket.resolvedVersion = resolveVersion(entitlement, resolvedVersionId, "Resolved", false);
         ticket.category = categoryId != null ? Category.findById(categoryId) : null;
         ticket.externalIssueLink = externalIssueLink != null && !externalIssueLink.isBlank() ? externalIssueLink.trim()
                 : null;
@@ -266,13 +275,55 @@ public class TicketResource {
         Ticket ticket = new Ticket();
         ticket.company = company;
         ticket.name = Ticket.previewNextName(company);
+        if (!entitlements.isEmpty()) {
+            ticket.affectsVersion = defaultAffectsVersion(entitlements.get(0));
+        }
         java.util.List<Category> categories = Category.listAll();
         Category defaultCategory = Category.findDefault();
         return formTemplate.data("ticket", ticket).data("companies", Company.listAll())
                 .data("companyEntitlements", entitlements).data("selectedCompanyEntitlementId", null)
                 .data("categories", categories)
                 .data("defaultCategoryId", defaultCategory == null ? null : defaultCategory.id)
+                .data("versions", entitlements.isEmpty() ? java.util.List.of() : availableVersions(entitlements.get(0)))
                 .data("action", "/tickets").data("title", "New Ticket").data("currentUser", user);
+    }
+
+    private List<Version> availableVersions(CompanyEntitlement companyEntitlement) {
+        if (companyEntitlement == null || companyEntitlement.entitlement == null) {
+            return java.util.List.of();
+        }
+        return Version.list("entitlement = ?1 order by date asc, id asc", companyEntitlement.entitlement);
+    }
+
+    private Version defaultAffectsVersion(CompanyEntitlement companyEntitlement) {
+        if (companyEntitlement == null || companyEntitlement.entitlement == null) {
+            return null;
+        }
+        Version version = Version.find("entitlement = ?1 and name = ?2 order by date asc, id asc",
+                companyEntitlement.entitlement, "1.0.0").firstResult();
+        if (version != null) {
+            return version;
+        }
+        return Version.find("entitlement = ?1 order by date asc, id asc", companyEntitlement.entitlement).firstResult();
+    }
+
+    private Version resolveVersion(CompanyEntitlement companyEntitlement, Long versionId, String label,
+            boolean required) {
+        if (versionId == null) {
+            if (required && !availableVersions(companyEntitlement).isEmpty()) {
+                throw new BadRequestException(label + " version is required");
+            }
+            return null;
+        }
+        if (companyEntitlement == null || companyEntitlement.entitlement == null) {
+            throw new BadRequestException(label + " version is invalid");
+        }
+        Version version = Version.find("id = ?1 and entitlement = ?2", versionId, companyEntitlement.entitlement)
+                .firstResult();
+        if (version == null) {
+            throw new BadRequestException(label + " version is invalid");
+        }
+        return version;
     }
 
     private User requireSupport(String auth) {

@@ -19,6 +19,14 @@
         <th>Company</th>
         <td>{ticket.company.name}</td>
     </tr>
+    <tr>
+        <th>Affects</th>
+        <td>{#if ticket.affectsVersion != null}{ticket.affectsVersion.name} ({ticket.affectsVersion.date}){#else}-{/if}</td>
+    </tr>
+    <tr>
+        <th>Resolved</th>
+        <td>{#if ticket.resolvedVersion != null}{ticket.resolvedVersion.name} ({ticket.resolvedVersion.date}){#else}-{/if}</td>
+    </tr>
     </tbody>
 </table>
 

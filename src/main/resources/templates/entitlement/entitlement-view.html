@@ -53,6 +53,29 @@
         {/if}
         </tbody>
     </table>
+    <h2 style="margin-top: 18px;">Versions</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Date</th>
+        </tr>
+        </thead>
+        <tbody>
+        {#if versions == null || versions.isEmpty}
+        <tr>
+            <td colspan="2">-</td>
+        </tr>
+        {#else}
+        {#for version in versions}
+        <tr>
+            <td>{version.name}</td>
+            <td>{version.date}</td>
+        </tr>
+        {/for}
+        {/if}
+        </tbody>
+    </table>
     <div class="form-actions">
         <a class="action-button" href="/entitlements/{entitlement.id}/edit">Edit</a>
     </div>

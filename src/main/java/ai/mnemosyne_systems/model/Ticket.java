@@ -59,6 +59,14 @@ public class Ticket extends PanacheEntityBase {
     @JoinColumn(name = "company_entitlement_id")
     public CompanyEntitlement companyEntitlement;
 
+    @ManyToOne
+    @JoinColumn(name = "affects_version_id")
+    public Version affectsVersion;
+
+    @ManyToOne
+    @JoinColumn(name = "resolved_version_id")
+    public Version resolvedVersion;
+
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<Message> messages = new ArrayList<>();
 

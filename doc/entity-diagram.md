@@ -58,6 +58,8 @@ erDiagram
         BIGINT company_id FK
         BIGINT requester_id FK
         BIGINT company_entitlement_id FK
+        BIGINT affects_version_id FK
+        BIGINT resolved_version_id FK
         BIGINT category_id FK
         STRING external_issue_link
     }
@@ -90,6 +92,13 @@ erDiagram
         BIGINT id PK
         STRING name
         STRING description
+    }
+
+    VERSION {
+        BIGINT id PK
+        STRING name
+        DATE date
+        BIGINT entitlement_id FK
     }
 
     LEVEL {
@@ -145,6 +154,9 @@ erDiagram
     ARTICLE ||--o{ ATTACHMENT : has
     MESSAGE }o--|| USER : authored
     ENTITLEMENT ||--o{ COMPANY_ENTITLEMENT : includes
+    ENTITLEMENT ||--o{ VERSION : has
+    VERSION ||--o{ TICKET : affects
+    VERSION ||--o{ TICKET : resolves
     ENTITLEMENT ||--o{ ENTITLEMENT_LEVEL : maps
     COUNTRY ||--o{ LEVEL : locates
     LEVEL ||--o{ COMPANY_ENTITLEMENT : levels

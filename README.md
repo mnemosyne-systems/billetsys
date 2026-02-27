@@ -12,7 +12,7 @@ navigate and get their work done quicker.
 
 ## Technologies
 
-* [Java 25+](https://openjdk.org/)
+* [Java 25](https://openjdk.org/)
 * [Maven](https://maven.apache.org/)
 * [Quarkus](https://quarkus.io/)
 * [PostgreSQL](https://www.postgresql.org)
