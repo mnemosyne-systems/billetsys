@@ -27,6 +27,9 @@
         body {
             font-family: Arial, sans-serif;
             margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
             background: var(--body-bg);
             color: var(--body-text);
         }
@@ -128,7 +131,19 @@
             position: relative;
         }
         main {
+            flex: 1;
             padding: 20px;
+        }
+        .app-footer {
+            margin-top: auto;
+            background: var(--header-bg);
+            color: var(--header-text);
+            text-align: center;
+            padding: 10px 20px;
+            font-weight: 600;
+        }
+        .app-footer a {
+            color: var(--header-text);
         }
         table {
             border-collapse: collapse;
@@ -473,6 +488,10 @@
 <main>
     {#insert content}{/insert}
 </main>
+<footer class="app-footer">
+    Copyright © <span data-footer-year></span> Powered by
+    <a href="https://github.com/mnemosyne-systems/billetsys" target="_blank" rel="noopener">billetsys</a>
+</footer>
 <div class="session-warning" data-session-warning>
     <div class="session-warning-card">
         <h2>Session expiring</h2>
@@ -1265,6 +1284,10 @@
     }
 
     updateHeaderClock();
+    const footerYear = document.querySelector('[data-footer-year]');
+    if (footerYear) {
+        footerYear.textContent = String(new Date().getFullYear());
+    }
     setInterval(updateHeaderClock, 1000);
     setupSessionTimeout();
     setupAttachmentInputs();

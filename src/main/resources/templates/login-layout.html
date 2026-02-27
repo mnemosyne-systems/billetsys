@@ -125,6 +125,17 @@
             padding: 8px 10px;
             font-size: 14px;
         }
+        .app-footer {
+            margin-top: auto;
+            background: var(--header-bg);
+            color: var(--header-text);
+            text-align: center;
+            padding: 10px 20px;
+            font-weight: 600;
+        }
+        .app-footer a {
+            color: var(--header-text);
+        }
     </style>
 </head>
 <body>
@@ -142,5 +153,15 @@
 <main>
     {#insert content}{/insert}
 </main>
+<footer class="app-footer">
+    Copyright © <span data-footer-year></span> Powered by
+    <a href="https://github.com/mnemosyne-systems/billetsys" target="_blank" rel="noopener">billetsys</a>
+</footer>
+<script>
+    const footerYear = document.querySelector('[data-footer-year]');
+    if (footerYear) {
+        footerYear.textContent = String(new Date().getFullYear());
+    }
+</script>
 </body>
 </html>
