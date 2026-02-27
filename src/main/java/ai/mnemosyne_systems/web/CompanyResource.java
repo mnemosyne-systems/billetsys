@@ -282,37 +282,6 @@ public class CompanyResource {
         return Response.seeOther(URI.create("/companies")).build();
     }
 
-    @GET
-    @Path("{id}")
-    public TemplateInstance view(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = requireAdmin(auth);
-        Company company = Company.find("select distinct c from Company c left join fetch c.users where c.id = ?1", id)
-                .firstResult();
-        if (company == null) {
-            throw new NotFoundException();
-        }
-        java.util.List<User> users = Company
-                .find("select u from Company c join c.users u where c = ?1 and u.type = ?2 order by u.name", company,
-                        User.TYPE_USER)
-                .list();
-        java.util.List<User> tamUsers = Company
-                .find("select u from Company c join c.users u where c = ?1 and u.type = ?2 order by u.name", company,
-                        User.TYPE_TAM)
-                .list();
-        java.util.List<CompanyEntitlement> companyEntitlements = CompanyEntitlement.find(
-                "select distinct ce from CompanyEntitlement ce join fetch ce.entitlement join fetch ce.supportLevel where ce.company = ?1",
-                company).list();
-        java.util.Set<Long> expiredEntitlementIds = new java.util.LinkedHashSet<>();
-        for (CompanyEntitlement entry : companyEntitlements) {
-            if (entry != null && entry.id != null && isEntitlementExpired(entry)) {
-                expiredEntitlementIds.add(entry.id);
-            }
-        }
-        return companyViewTemplate.data("company", company).data("companyUsers", users).data("companyTams", tamUsers)
-                .data("companyEntitlements", companyEntitlements).data("expiredEntitlementIds", expiredEntitlementIds)
-                .data("currentUser", user);
-    }
-
     @POST
     @Path("{id}/delete")
     @Transactional
