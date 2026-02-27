@@ -59,6 +59,10 @@
             align-items: center;
             gap: 12px;
         }
+        .header-clock {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
         .profile-menu summary {
             cursor: pointer;
             list-style: none;
@@ -148,7 +152,9 @@
         </svg>
         billetsys
     </a>
-    <div class="header-actions"></div>
+    <div class="header-actions">
+        <span class="header-clock" data-header-clock></span>
+    </div>
 </header>
 <main>
     {#insert content}{/insert}
@@ -158,10 +164,23 @@
     <a href="https://github.com/mnemosyne-systems/billetsys" target="_blank" rel="noopener">billetsys</a>
 </footer>
 <script>
+    function updateHeaderClock() {
+        const clock = document.querySelector('[data-header-clock]');
+        if (!clock) {
+            return;
+        }
+        clock.textContent = new Date().toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
     const footerYear = document.querySelector('[data-footer-year]');
     if (footerYear) {
         footerYear.textContent = String(new Date().getFullYear());
     }
+    updateHeaderClock();
+    setInterval(updateHeaderClock, 1000);
 </script>
 </body>
 </html>
