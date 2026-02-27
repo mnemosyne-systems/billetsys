@@ -340,6 +340,52 @@ class UserAccessTest {
     }
 
     @Test
+    void reportsRespectRolePermissions() {
+        ensureUser("admin", "admin@mnemosyne-systems.ai", User.TYPE_ADMIN, "admin");
+        ensureUser("tam", "tam@mnemosyne-systems.ai", User.TYPE_TAM, "tam");
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
+        Long companyId = ensureCompany("Report Co");
+        ensureCompanyUsers(companyId, "tam@mnemosyne-systems.ai");
+        ensureTicket(companyId);
+        String adminCookie = login("admin", "admin");
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, adminCookie).get("/reports").then().statusCode(200)
+                .body(Matchers.containsString("Reports")).body(Matchers.containsString("Total tickets"))
+                .body(Matchers.containsString("Tickets by Status")).body(Matchers.containsString("Tickets by Category"))
+                .body(Matchers.containsString("Tickets by Company"))
+                .body(Matchers.containsString("Ticket Volume Over Time"))
+                .body(Matchers.containsString("Avg. First Response Time"))
+                .body(Matchers.containsString("Avg. Resolution Time")).body(Matchers.containsString("Company"))
+                .body(Matchers.containsString("All"));
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, adminCookie).queryParam("companyId", companyId)
+                .get("/reports").then().statusCode(200).body(Matchers.containsString("Reports"))
+                .body(Matchers.containsString("Report Co"))
+                .body(Matchers.not(Matchers.containsString("Tickets by Company")));
+
+        String tamCookie = login("tam", "tam");
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, tamCookie).get("/reports/tam").then().statusCode(200)
+                .body(Matchers.containsString("Reports")).body(Matchers.containsString("Total tickets"))
+                .body(Matchers.containsString("Tickets by Status"))
+                .body(Matchers.not(Matchers.containsString("Tickets by Company")));
+
+        String userCookie = login("user", "user");
+        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, userCookie).get("/reports").then()
+                .statusCode(303);
+
+        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, userCookie).get("/reports/tam")
+                .then().statusCode(303);
+
+        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, tamCookie).get("/reports").then()
+                .statusCode(303);
+
+        String supportCookie = login("support1", "support1");
+        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie).get("/reports")
+                .then().statusCode(303);
+    }
+
+    @Test
     void articlesRespectRolePermissions() {
         ensureUser("admin", "admin@mnemosyne-systems.ai", User.TYPE_ADMIN, "admin");
         ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");

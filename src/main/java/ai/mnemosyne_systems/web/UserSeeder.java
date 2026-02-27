@@ -183,15 +183,15 @@ public class UserSeeder {
         Ticket a4 = seedTicket(Ticket.formatName(company, 4), company, user2, enterpriseCritical);
         company.ticketSequence = 4L;
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
-        seedMessageAt(a1, "Sample ticket created.", now.minusMinutes(300));
-        seedMessageAt(a2, "Sample ticket created.", now.minusMinutes(30));
-        seedMessageAt(a3, "Sample ticket created.", now.minusMinutes(230));
-        seedMessageAt(a4, "Sample ticket created.", now.minusMinutes(100));
+        seedMessageAt(a1, "Sample ticket created.", now.minusMonths(8));
+        seedMessageAt(a2, "Sample ticket created.", now.minusMonths(3));
+        seedMessageAt(a3, "Sample ticket created.", now.minusMonths(1));
+        seedMessageAt(a4, "Sample ticket created.", now.minusDays(13));
         Message attachmentMessage = Message.find("ticket = ?1 and body = ?2", a1, "Sample ticket created.")
                 .firstResult();
         seedAttachment(attachmentMessage, "sample.txt", "text/plain",
                 "Sample attachment\nLine two".getBytes(StandardCharsets.UTF_8));
-        seedMessageAt(a1, "Sample attachments added.", now.minusMinutes(295));
+        seedMessageAt(a1, "Sample attachments added.", now.minusMonths(8).plusMinutes(5));
         Message attachmentMessageTwo = Message.find("ticket = ?1 and body = ?2", a1, "Sample attachments added.")
                 .firstResult();
         seedAttachment(attachmentMessageTwo, "sample-one.txt", "text/plain",
@@ -205,6 +205,23 @@ public class UserSeeder {
         if (a4 != null) {
             a4.status = "Closed";
             a4.persist();
+        }
+
+        Category bugCategory = Category.find("name", "Bug").firstResult();
+        Category featureCategory = Category.find("name", "Feature").firstResult();
+        if (a1 != null && bugCategory != null) {
+            a1.category = bugCategory;
+            a1.persist();
+        }
+        if (a3 != null && featureCategory != null) {
+            a3.category = featureCategory;
+            a3.persist();
+        }
+
+        User support1 = User.find("email", "support1@mnemosyne-systems.ai").firstResult();
+        if (support1 != null) {
+            seedReplyAt(a1, "Looking into this issue.", support1, now.minusMonths(8).plusMinutes(50));
+            seedReplyAt(a4, "This has been resolved.", support1, now.minusDays(13).plusMinutes(20));
         }
 
         Company companyB = Company
@@ -236,7 +253,11 @@ public class UserSeeder {
         }
         Ticket b1 = seedTicket(Ticket.formatName(companyB, 1), companyB, userB, starterCritical);
         companyB.ticketSequence = 1L;
-        seedMessageAt(b1, "Sample ticket created.", now.minusMinutes(15));
+        seedMessageAt(b1, "Sample ticket created.", now.minusDays(2));
+        if (b1 != null && bugCategory != null) {
+            b1.category = bugCategory;
+            b1.persist();
+        }
     }
 
     @Transactional
@@ -446,6 +467,24 @@ public class UserSeeder {
         message.body = body;
         message.date = date;
         message.author = ticket.requester;
+        message.persist();
+    }
+
+    private void seedReplyAt(Ticket ticket, String body, User author, java.time.LocalDateTime date) {
+        if (ticket == null || author == null) {
+            return;
+        }
+        Message message = Message.find("ticket = ?1 and body = ?2", ticket, body).firstResult();
+        if (message != null) {
+            message.date = date;
+            message.author = author;
+            return;
+        }
+        message = new Message();
+        message.ticket = ticket;
+        message.body = body;
+        message.date = date;
+        message.author = author;
         message.persist();
     }
 

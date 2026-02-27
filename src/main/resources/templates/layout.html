@@ -490,6 +490,9 @@
                 <span class="ticket-alarm" data-ticket-alarm aria-label="Alarm" title="SLA alarm">🚨</span>
             </a>
             <a href="/articles">Articles</a>
+            {#if currentUser != null && currentUser.type == 'tam'}
+            <a href="/reports/tam">Reports</a>
+            {/if}
             {#else}
             <a href="/">Home</a>
             <a href="/companies">Companies</a>

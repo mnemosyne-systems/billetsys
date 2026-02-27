@@ -557,6 +557,9 @@
             <a href="{#if usersBase??}{usersBase}{#else}/support/users{/if}">Users</a>
             {/if}
             <a href="/articles">Articles</a>
+            {#if currentUser != null && currentUser.type == 'tam'}
+            <a href="/reports/tam">Reports</a>
+            {/if}
         </nav>
     </div>
     <div class="header-actions">

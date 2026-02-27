@@ -120,6 +120,11 @@
             <artifactId>quarkus-jdbc-h2</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>chart.js</artifactId>
+            <version>4.4.7</version>
+        </dependency>
     </dependencies>
 
     <build>
