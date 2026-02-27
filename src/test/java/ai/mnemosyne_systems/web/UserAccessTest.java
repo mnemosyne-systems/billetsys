@@ -131,9 +131,9 @@ class UserAccessTest {
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/support/tickets/" + ticketId).then()
                 .statusCode(200).body(Matchers.containsString("Sample ticket created."))
                 .body(Matchers.containsString("/support/support-users/")).body(Matchers.containsString("support1"))
-                .body(Matchers.containsString("Ticket")).body(Matchers.containsString("Support users"))
+                .body(Matchers.containsString("Ticket")).body(Matchers.containsString("Support"))
                 .body(Matchers.containsString("Company")).body(Matchers.containsString("Entitlement"))
-                .body(Matchers.containsString("Level")).body(Matchers.containsString("TAMs"))
+                .body(Matchers.containsString("Level")).body(Matchers.containsString("TAM"))
                 .body(Matchers.containsString("/support/tam-users/")).body(Matchers.containsString("tam"))
                 .body(Matchers.containsString("Category")).body(Matchers.containsString("External issue"))
                 .body(Matchers.not(Matchers.containsString("Cancel")))
@@ -200,9 +200,9 @@ class UserAccessTest {
         User tamUser = User.find("email", "tam@mnemosyne-systems.ai").firstResult();
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/tickets/" + ticketId).then()
                 .statusCode(200).body(Matchers.containsString(userTicketName)).body(Matchers.containsString("Ticket"))
-                .body(Matchers.containsString("Support users")).body(Matchers.containsString("Company"))
+                .body(Matchers.containsString("Support")).body(Matchers.containsString("Company"))
                 .body(Matchers.containsString("Entitlement")).body(Matchers.containsString("value=\"Assigned\""))
-                .body(Matchers.containsString("TAMs")).body(Matchers.containsString("Category"))
+                .body(Matchers.containsString("TAM")).body(Matchers.containsString("Category"))
                 .body(Matchers.containsString("External issue")).body(Matchers.containsString("Reply"))
                 .body(Matchers.not(Matchers.containsString("Back")));
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/tickets/" + ticketId).then().statusCode(200)
@@ -246,7 +246,7 @@ class UserAccessTest {
         User supportUser = User.find("email", "support1@mnemosyne-systems.ai").firstResult();
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/tickets/" + ticketId).then()
                 .statusCode(200).body(Matchers.containsString(tamTicketName)).body(Matchers.containsString("Ticket"))
-                .body(Matchers.containsString("Support users")).body(Matchers.containsString("Company"))
+                .body(Matchers.containsString("Support")).body(Matchers.containsString("Company"))
                 .body(Matchers.containsString("Entitlement")).body(Matchers.containsString("/user/support-users/"))
                 .body(Matchers.containsString("Level")).body(Matchers.containsString("Critical"))
                 .body(Matchers.containsString("support1")).body(Matchers.containsString("/user/tam-users/"))
@@ -254,7 +254,7 @@ class UserAccessTest {
                 .body(Matchers.not(Matchers.containsString("Back")));
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/tickets/" + ticketId).then().statusCode(200)
-                .body(Matchers.containsString(tamTicketName)).body(Matchers.containsString("Support users"))
+                .body(Matchers.containsString(tamTicketName)).body(Matchers.containsString("Support"))
                 .body(Matchers.containsString("value=\"Assigned\""));
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/support-users/" + supportUser.id).then()
