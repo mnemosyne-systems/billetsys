@@ -96,6 +96,9 @@ public class UserResource {
     @Location("support/user-profile-view.html")
     Template userProfileViewTemplate;
 
+    @Location("support/company-view.html")
+    Template companyViewTemplate;
+
     @Inject
     TicketEmailService ticketEmailService;
 
@@ -404,6 +407,22 @@ public class UserResource {
         }
         SupportTicketData data = buildTicketDataForUser(user);
         return userProfileViewTemplate.data("viewedUser", viewedUser).data("assignedCount", data.assignedTickets.size())
+                .data("openCount", data.openTickets.size()).data("ticketsBase", "/user/tickets")
+                .data("showSupportUsers", User.TYPE_TAM.equalsIgnoreCase(user.type))
+                .data("usersBase", User.TYPE_TAM.equalsIgnoreCase(user.type) ? "/tam/users" : "/user/users")
+                .data("currentUser", user);
+    }
+
+    @GET
+    @Path("user/companies/{id}")
+    public TemplateInstance viewCompany(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
+        User user = requireUser(auth);
+        Company company = Company.findById(id);
+        if (company == null) {
+            throw new NotFoundException();
+        }
+        SupportTicketData data = buildTicketDataForUser(user);
+        return companyViewTemplate.data("company", company).data("assignedCount", data.assignedTickets.size())
                 .data("openCount", data.openTickets.size()).data("ticketsBase", "/user/tickets")
                 .data("showSupportUsers", User.TYPE_TAM.equalsIgnoreCase(user.type))
                 .data("usersBase", User.TYPE_TAM.equalsIgnoreCase(user.type) ? "/tam/users" : "/user/users")

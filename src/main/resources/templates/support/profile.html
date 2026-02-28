@@ -43,7 +43,11 @@
                 <div>
                     <label>Company
                         {#if user.type == 'user' || user.type == 'tam'}
-                            <input type="text" value="{#if userCompany != null}{userCompany.name}{/if}" readonly>
+                            {#if userCompany != null}
+                                <a href="/user/companies/{userCompany.id}">{userCompany.name}</a>
+                            {#else}
+                                <input type="text" value="" readonly>
+                            {/if}
                         {#else}
                             <select name="companyId">
                                 <option value="">Select company</option>

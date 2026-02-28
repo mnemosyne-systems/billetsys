@@ -36,6 +36,12 @@ erDiagram
         BIGINT primary_contact_id FK
     }
 
+    INSTALLATION {
+        BIGINT id PK
+        STRING name
+        BIGINT company_id FK
+    }
+
     USER {
         BIGINT id PK
         STRING name
@@ -140,6 +146,7 @@ erDiagram
     COUNTRY ||--o{ COMPANY : locates
     COUNTRY ||--o{ USER : locates
     TIMEZONE ||--o{ COMPANY : assigns
+    COMPANY ||--|| INSTALLATION : has
     TIMEZONE ||--o{ USER : assigns
     TIMEZONE ||--o{ LEVEL : assigns
     COMPANY ||--o{ TICKET : has

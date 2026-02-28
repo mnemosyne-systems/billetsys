@@ -13,6 +13,7 @@ import ai.mnemosyne_systems.model.Attachment;
 import ai.mnemosyne_systems.model.Company;
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Entitlement;
+import ai.mnemosyne_systems.model.Installation;
 import ai.mnemosyne_systems.model.CompanyEntitlement;
 import ai.mnemosyne_systems.model.Level;
 import ai.mnemosyne_systems.model.Ticket;
@@ -149,6 +150,7 @@ public class UserSeeder {
             primaryContact = seedUser("primaryContact", "Company Primary Contact", "primaryContact@sample.com",
                     "+1-555-0333", "300", "America/Chicago", "US", User.TYPE_USER, "primaryContact");
         }
+        ensureOwnerCompany(primaryContact);
         Company company = Company
                 .find("select distinct c from Company c left join fetch c.users where c.name = ?1", "A").firstResult();
         if (company == null) {
@@ -322,6 +324,55 @@ public class UserSeeder {
         if (!exists) {
             company.users.add(user);
         }
+    }
+
+    private void ensureOwnerCompany(User primaryContact) {
+        Company ownerCompany = Company
+                .find("select distinct c from Company c left join fetch c.users where lower(c.name) = lower(?1)",
+                        "mnemosyne systems")
+                .firstResult();
+        if (ownerCompany == null) {
+            ownerCompany = new Company();
+            ownerCompany.name = "mnemosyne systems";
+            ownerCompany.country = findCountryByCode("US");
+            ownerCompany.timezone = findTimezoneByName("America/New_York");
+            ownerCompany.primaryContact = primaryContact;
+            ownerCompany.persist();
+        }
+        if (ownerCompany.country == null) {
+            ownerCompany.country = findCountryByCode("US");
+        }
+        if (ownerCompany.timezone == null) {
+            ownerCompany.timezone = findTimezoneByName("America/New_York");
+        }
+        if (ownerCompany.primaryContact == null && primaryContact != null) {
+            ownerCompany.primaryContact = primaryContact;
+        }
+        List<User> ownerUsers = User.list("type in ?1 order by name", List.of(User.TYPE_SUPPORT, User.TYPE_TAM));
+        for (User ownerUser : ownerUsers) {
+            addUserIfMissing(ownerCompany, ownerUser);
+        }
+        ensureInstallation(ownerCompany, "mnemosyne systems");
+    }
+
+    private void ensureInstallation(Company company, String name) {
+        if (company == null || name == null || name.isBlank()) {
+            return;
+        }
+        List<Installation> installations = Installation.list("order by id");
+        Installation singleton = installations.isEmpty() ? null : installations.get(0);
+        if (singleton == null) {
+            singleton = new Installation();
+            singleton.singletonKey = "installation";
+        } else {
+            for (int index = 1; index < installations.size(); index++) {
+                installations.get(index).delete();
+            }
+        }
+        singleton.company = company;
+        singleton.name = name;
+        singleton.singletonKey = "installation";
+        singleton.persist();
     }
 
     private Ticket seedTicket(String name, Company company, User requester, CompanyEntitlement entitlement) {

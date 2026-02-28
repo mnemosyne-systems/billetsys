@@ -82,6 +82,9 @@ public class SupportResource {
     @Location("support/user-profile-view.html")
     Template userProfileViewTemplate;
 
+    @Location("support/company-view.html")
+    Template companyViewTemplate;
+
     @Location("support/users.html")
     Template supportUsersTemplate;
 
@@ -181,6 +184,20 @@ public class SupportResource {
         }
         SupportTicketCounts counts = loadTicketCounts(currentUser);
         return userProfileViewTemplate.data("viewedUser", viewedUser).data("assignedCount", counts.assignedCount)
+                .data("openCount", counts.openCount).data("ticketsBase", "/support").data("showSupportUsers", true)
+                .data("currentUser", currentUser);
+    }
+
+    @GET
+    @Path("/companies/{id}")
+    public TemplateInstance viewCompany(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
+        User currentUser = requireSupport(auth);
+        Company company = Company.findById(id);
+        if (company == null) {
+            throw new NotFoundException();
+        }
+        SupportTicketCounts counts = loadTicketCounts(currentUser);
+        return companyViewTemplate.data("company", company).data("assignedCount", counts.assignedCount)
                 .data("openCount", counts.openCount).data("ticketsBase", "/support").data("showSupportUsers", true)
                 .data("currentUser", currentUser);
     }

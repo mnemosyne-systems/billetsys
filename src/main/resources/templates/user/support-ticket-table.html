@@ -13,12 +13,20 @@
         <th>Date <button class="sort-button" type="button" onclick="sortTable(this, 1)">↕</button></th>
         <th>Status <button class="sort-button" type="button" onclick="sortTable(this, 2)">↕</button></th>
         <th>Support <button class="sort-button" type="button" onclick="sortTable(this, 3)">↕</button></th>
+        {#if currentUser == null || currentUser.type != 'user'}
         <th>Company <button class="sort-button" type="button" onclick="sortTable(this, 4)">↕</button></th>
         <th>Entitlement <button class="sort-button" type="button" onclick="sortTable(this, 5)">↕</button></th>
-        <th>Affects <button class="sort-button" type="button" onclick="sortTable(this, 6)">↕</button></th>
-        <th>Resolved <button class="sort-button" type="button" onclick="sortTable(this, 7)">↕</button></th>
-        {#if currentUser == null || currentUser.type != 'user'}
-        <th>Level <button class="sort-button" type="button" onclick="sortTable(this, 8)">↕</button></th>
+        <th>Level <button class="sort-button" type="button" onclick="sortTable(this, 6)">↕</button></th>
+        <th>Affects <button class="sort-button" type="button" onclick="sortTable(this, 7)">↕</button></th>
+        {#if pageTitle == 'Closed tickets'}
+        <th>Resolved <button class="sort-button" type="button" onclick="sortTable(this, 8)">↕</button></th>
+        {/if}
+        {#else}
+        <th>Entitlement <button class="sort-button" type="button" onclick="sortTable(this, 4)">↕</button></th>
+        <th>Affects <button class="sort-button" type="button" onclick="sortTable(this, 5)">↕</button></th>
+        {#if pageTitle == 'Closed tickets'}
+        <th>Resolved <button class="sort-button" type="button" onclick="sortTable(this, 6)">↕</button></th>
+        {/if}
         {/if}
     </tr>
     </thead>
@@ -39,7 +47,9 @@
                 -
             {/if}
         </td>
-        <td>{ticket.company.name}</td>
+        {#if currentUser == null || currentUser.type != 'user'}
+        <td><a href="/user/companies/{ticket.company.id}">{ticket.company.name}</a></td>
+        {/if}
         <td>
             {#if ticket.companyEntitlement == null || ticket.companyEntitlement.entitlement == null}
             <span>-</span>
@@ -47,8 +57,6 @@
             <span>{ticket.companyEntitlement.entitlement.name}</span>
             {/if}
         </td>
-        <td>{#if ticket.affectsVersion != null}{ticket.affectsVersion.name}{#else}-{/if}</td>
-        <td>{#if ticket.resolvedVersion != null}{ticket.resolvedVersion.name}{#else}-{/if}</td>
         {#if currentUser == null || currentUser.type != 'user'}
         <td>
             {#if ticket.companyEntitlement == null || ticket.companyEntitlement.supportLevel == null}
@@ -57,6 +65,10 @@
             <span>{ticket.companyEntitlement.supportLevel.name}</span>
             {/if}
         </td>
+        {/if}
+        <td>{#if ticket.affectsVersion != null}{ticket.affectsVersion.name}{#else}-{/if}</td>
+        {#if pageTitle == 'Closed tickets'}
+        <td>{#if ticket.resolvedVersion != null}{ticket.resolvedVersion.name}{#else}-{/if}</td>
         {/if}
     </tr>
     {/for}

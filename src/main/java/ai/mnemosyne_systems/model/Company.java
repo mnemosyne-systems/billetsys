@@ -20,6 +20,7 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
@@ -75,6 +76,9 @@ public class Company extends PanacheEntityBase {
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<CompanyEntitlement> entitlements = new ArrayList<>();
+
+    @OneToOne(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    public Installation installation;
 
     public String emailsDisplay() {
         if (users == null || users.isEmpty()) {

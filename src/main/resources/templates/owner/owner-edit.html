@@ -1,0 +1,148 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+{#include admin-layout}
+    {#content}
+        <div class="form-card">
+            <h1>Edit Owner</h1>
+            <form method="post" action="/owner/edit" onsubmit="selectAll('selectedSupport'); selectAll('selectedTam');">
+                <div>
+                    <label>Name
+                        <input type="text" name="name" value="{company.name}" required>
+                    </label>
+                </div>
+                <div>
+                    <label>Address1
+                        <input type="text" name="address1" value="{company.address1}">
+                    </label>
+                </div>
+                <div>
+                    <label>Address2
+                        <input type="text" name="address2" value="{company.address2}">
+                    </label>
+                </div>
+                <div>
+                    <label>City
+                        <input type="text" name="city" value="{company.city}">
+                    </label>
+                </div>
+                <div>
+                    <label>State
+                        <input type="text" name="state" value="{company.state}">
+                    </label>
+                </div>
+                <div>
+                    <label>Zip
+                        <input type="text" name="zip" value="{company.zip}">
+                    </label>
+                </div>
+                <div>
+                    <label>Phone Number
+                        <input type="text" name="phoneNumber" value="{company.phoneNumber}">
+                    </label>
+                </div>
+                <div>
+                    <label>Country
+                        <select name="countryId">
+                            {#for country in countries}
+                                <option value="{country.id}" {#if company.country != null && company.country.id == country.id}selected{/if}>{country.name}</option>
+                            {/for}
+                        </select>
+                    </label>
+                </div>
+                <div>
+                    <label>Time Zone
+                        <select name="timezoneId">
+                            {#for timezone in timezones}
+                                <option value="{timezone.id}" {#if company.timezone != null && company.timezone.id == timezone.id}selected{/if}>{timezone.name}</option>
+                            {/for}
+                        </select>
+                    </label>
+                </div>
+                <div style="display: grid; gap: 16px;">
+                    <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: start;">
+                        <div>
+                            <label style="font-weight: 600;">Support</label>
+                            <select id="availableSupport" multiple size="8" style="width: 100%;">
+                                {#for user in supportUsers}
+                                    {#if !selectedSupportIds.contains(user.id)}
+                                        <option value="{user.id}">{user.name}</option>
+                                    {/if}
+                                {/for}
+                            </select>
+                        </div>
+                        <div style="display: grid; gap: 8px; margin-top: 22px;">
+                            <button type="button" class="secondary-button" onclick="moveSelected('availableSupport', 'selectedSupport')">→</button>
+                            <button type="button" class="secondary-button" onclick="moveSelected('selectedSupport', 'availableSupport')">←</button>
+                        </div>
+                        <div>
+                            <label style="font-weight: 600;">Assigned</label>
+                            <select id="selectedSupport" name="supportIds" multiple size="8" style="width: 100%;">
+                                {#for user in supportUsers}
+                                    {#if selectedSupportIds.contains(user.id)}
+                                        <option value="{user.id}">{user.name}</option>
+                                    {/if}
+                                {/for}
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: start;">
+                        <div>
+                            <label style="font-weight: 600;">TAM</label>
+                            <select id="availableTam" multiple size="8" style="width: 100%;">
+                                {#for user in tamUsers}
+                                    {#if !selectedTamIds.contains(user.id)}
+                                        <option value="{user.id}">{user.name}</option>
+                                    {/if}
+                                {/for}
+                            </select>
+                        </div>
+                        <div style="display: grid; gap: 8px; margin-top: 22px;">
+                            <button type="button" class="secondary-button" onclick="moveSelected('availableTam', 'selectedTam')">→</button>
+                            <button type="button" class="secondary-button" onclick="moveSelected('selectedTam', 'availableTam')">←</button>
+                        </div>
+                        <div>
+                            <label style="font-weight: 600;">Assigned</label>
+                            <select id="selectedTam" name="tamIds" multiple size="8" style="width: 100%;">
+                                {#for user in tamUsers}
+                                    {#if selectedTamIds.contains(user.id)}
+                                        <option value="{user.id}">{user.name}</option>
+                                    {/if}
+                                {/for}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="action-button">Save</button>
+                </div>
+            </form>
+        </div>
+        <script>
+            function moveSelected(fromId, toId) {
+                const from = document.getElementById(fromId);
+                const to = document.getElementById(toId);
+                if (!from || !to) {
+                    return;
+                }
+                const selected = Array.from(from.selectedOptions);
+                selected.forEach(option => to.add(option));
+            }
+
+            function selectAll(selectId) {
+                const select = document.getElementById(selectId);
+                if (!select) {
+                    return;
+                }
+                Array.from(select.options).forEach(option => {
+                    option.selected = true;
+                });
+            }
+        </script>
+    {/content}
+{/include}

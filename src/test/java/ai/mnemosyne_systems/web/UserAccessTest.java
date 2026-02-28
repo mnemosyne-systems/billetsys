@@ -57,7 +57,18 @@ class UserAccessTest {
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/companies").then().statusCode(200)
                 .body(Matchers.containsString("Companies")).body(Matchers.containsString("Name"))
-                .body(Matchers.containsString("Country"));
+                .body(Matchers.containsString("Country"))
+                .body(Matchers.not(Matchers.containsString(">mnemosyne systems</a></td>")));
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/owner").then().statusCode(200)
+                .body(Matchers.containsString("mnemosyne systems")).body(Matchers.containsString("Edit"))
+                .body(Matchers.containsString("Support")).body(Matchers.containsString("TAM"))
+                .body(Matchers.not(Matchers.containsString("<h2>Primary Contact</h2>")))
+                .body(Matchers.not(Matchers.containsString("<th>Entitlements</th>")))
+                .body(Matchers.not(Matchers.containsString("<th>Users</th>")))
+                .body(Matchers.not(Matchers.containsString("TAMs")));
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/owner/edit").then().statusCode(200)
+                .body(Matchers.containsString("Edit Owner")).body(Matchers.containsString("name=\"supportIds\""))
+                .body(Matchers.containsString("name=\"tamIds\""));
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/users/create").then().statusCode(200)
                 .body(Matchers.containsString("New user")).body(Matchers.containsString("value=\"user\""))

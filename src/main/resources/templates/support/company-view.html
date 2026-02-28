@@ -1,0 +1,51 @@
+<!--
+  Eclipse Public License - v 2.0
+
+    THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+    PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+    OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+-->
+
+{#include support-layout}
+    {#content}
+        <div class="form-card">
+            <h1>{company.name}</h1>
+            <table>
+                <tbody>
+                <tr>
+                    <th>Address1</th>
+                    <td>{company.address1}</td>
+                </tr>
+                <tr>
+                    <th>Address2</th>
+                    <td>{company.address2}</td>
+                </tr>
+                <tr>
+                    <th>Phone Number</th>
+                    <td>{company.phoneNumber}</td>
+                </tr>
+                <tr>
+                    <th>City</th>
+                    <td>{company.city}</td>
+                </tr>
+                <tr>
+                    <th>State</th>
+                    <td>{company.state}</td>
+                </tr>
+                <tr>
+                    <th>Zip</th>
+                    <td>{company.zip}</td>
+                </tr>
+                <tr>
+                    <th>Country</th>
+                    <td>{#if company.country}{company.country.name}{/if}</td>
+                </tr>
+                <tr>
+                    <th>Time Zone</th>
+                    <td>{#if company.timezone}{company.timezone.name}{/if}</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    {/content}
+{/include}

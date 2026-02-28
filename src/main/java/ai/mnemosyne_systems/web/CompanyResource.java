@@ -59,7 +59,9 @@ public class CompanyResource {
     @GET
     public TemplateInstance listCompanies(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
         User user = requireAdmin(auth);
-        return companiesTemplate.data("companies", Company.listAll()).data("currentUser", user);
+        return companiesTemplate
+                .data("companies", Company.list("lower(name) <> lower(?1) order by name", "mnemosyne systems"))
+                .data("currentUser", user);
     }
 
     @GET
