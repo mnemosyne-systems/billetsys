@@ -30,7 +30,7 @@ import java.util.List;
 import ai.mnemosyne_systems.model.Version;
 
 @ApplicationScoped
-public class UserSeeder {
+public class AppSeeder {
 
     void onStart(@Observes StartupEvent event) {
         seedCountriesAndTimezones();
@@ -126,8 +126,8 @@ public class UserSeeder {
                 "US", User.TYPE_SUPPORT, "support1");
         seedUser("support2", "Michael Chen", "support2@mnemosyne-systems.ai", "+1-555-0102", "102",
                 "America/Los_Angeles", "US", User.TYPE_SUPPORT, "support2");
-        seedUser("tam", "Technical Account Manager", "tam@mnemosyne-systems.ai", "+1-555-0300", "300",
-                "America/Chicago", "US", User.TYPE_TAM, "tam");
+        seedUser("tam1", "Technical Account Manager", "tam1@mnemosyne-systems.ai", "+1-555-0300", "300",
+                "America/Chicago", "US", User.TYPE_TAM, "tam1");
         removeUser("user@mnemosyne-systems.ai");
         removeUser("support@mnemosyne-systems.ai");
     }
@@ -140,22 +140,11 @@ public class UserSeeder {
                 "FR", User.TYPE_USER, "user2");
         User userB = seedUser("userb", "Bob Brown", "userb@mnemosyne-systems.ai", "+1-555-0203", null,
                 "America/New_York", "US", User.TYPE_USER, "userb");
-        User tam = User.find("email", "tam@mnemosyne-systems.ai").firstResult();
-        User tam2 = User.find("email", "tam2@mnemosyne-systems.ai").firstResult();
-        if (tam == null) {
-            tam = seedUser("tam", "Technical Account Manager", "tam@mnemosyne-systems.ai", "+1-555-0300", "300",
-                    "America/Chicago", "US", User.TYPE_TAM, "tam");
-        }
-        if (tam2 == null) {
-            tam2 = seedUser("tam2", "Technical Account Manager", "tam2@mnemosyne-systems.ai", "+1-555-0311", "300",
-                    "America/Chicago", "US", User.TYPE_TAM, "tam2");
-        }
-        User primaryContact = User.find("email", "primaryContact@sample.com").firstResult();
-        if (primaryContact == null) {
-            primaryContact = seedUser("primaryContact", "Company Primary Contact", "primaryContact@sample.com",
-                    "+1-555-0333", "300", "America/Chicago", "US", User.TYPE_USER, "primaryContact");
-        }
-        ensureOwnerCompany(primaryContact);
+        User tam1 = seedUser("tam1", "Technical Account Manager 1", "tam1@mnemosyne-systems.ai", "+1-555-0300", "300",
+                "America/Chicago", "US", User.TYPE_TAM, "tam1");
+        User tam2 = seedUser("tam2", "Technical Account Manager 2", "tam2@mnemosyne-systems.ai", "+1-555-0311", "301",
+                "America/Chicago", "US", User.TYPE_TAM, "tam2");
+
         Company company = Company
                 .find("select distinct c from Company c left join fetch c.users where c.name = ?1", "A").firstResult();
         if (company == null) {
@@ -163,7 +152,7 @@ public class UserSeeder {
             company.name = "A";
             company.country = findCountryByCode("US");
             company.timezone = findTimezoneByName("America/New_York");
-            company.primaryContact = primaryContact;
+            company.primaryContact = user1;
             company.persist();
         }
         if (company.country == null) {
@@ -174,10 +163,12 @@ public class UserSeeder {
         }
         company.users.removeIf(existing -> User.TYPE_ADMIN.equalsIgnoreCase(existing.type)
                 || User.TYPE_SUPPORT.equalsIgnoreCase(existing.type));
+        company.users.removeIf(existing -> User.TYPE_TAM.equalsIgnoreCase(existing.type)
+                && !"tam1@mnemosyne-systems.ai".equalsIgnoreCase(existing.email));
         addUserIfMissing(company, user1);
         addUserIfMissing(company, user2);
-        addUserIfMissing(company, tam);
-        addUserIfMissing(company, primaryContact);
+        addUserIfMissing(company, tam1);
+        company.primaryContact = user1;
 
         ensureCompanyEntitlement(company, "Enterprise", "Escalate");
         ensureCompanyEntitlement(company, "Enterprise", "Normal");
@@ -205,8 +196,8 @@ public class UserSeeder {
                 "Second attachment".getBytes(StandardCharsets.UTF_8));
         assignSupportIfMissing(a1, "support1@mnemosyne-systems.ai");
         assignSupportIfMissing(a4, "support1@mnemosyne-systems.ai");
-        assignTamIfMissing(a1, "tam@mnemosyne-systems.ai");
-        assignTamIfMissing(a4, "tam@mnemosyne-systems.ai");
+        assignTamIfMissing(a1, "tam1@mnemosyne-systems.ai");
+        assignTamIfMissing(a4, "tam1@mnemosyne-systems.ai");
         if (a4 != null) {
             a4.status = "Closed";
             a4.persist();
@@ -236,7 +227,7 @@ public class UserSeeder {
             companyB.name = "B";
             companyB.country = findCountryByCode("US");
             companyB.timezone = findTimezoneByName("America/New_York");
-            companyB.primaryContact = primaryContact;
+            companyB.primaryContact = userB;
             companyB.persist();
         }
         if (companyB.country == null) {
@@ -247,9 +238,11 @@ public class UserSeeder {
         }
         companyB.users.removeIf(existing -> User.TYPE_ADMIN.equalsIgnoreCase(existing.type)
                 || User.TYPE_SUPPORT.equalsIgnoreCase(existing.type));
+        companyB.users.removeIf(existing -> User.TYPE_TAM.equalsIgnoreCase(existing.type)
+                && !"tam2@mnemosyne-systems.ai".equalsIgnoreCase(existing.email));
         addUserIfMissing(companyB, userB);
         addUserIfMissing(companyB, tam2);
-        addUserIfMissing(companyB, primaryContact);
+        companyB.primaryContact = userB;
         CompanyEntitlement starterCritical = ensureCompanyEntitlement(companyB, "Starter", "Critical");
         if (starterCritical != null) {
             starterCritical.duration = CompanyEntitlement.DURATION_MONTHLY;
@@ -263,6 +256,7 @@ public class UserSeeder {
             b1.category = bugCategory;
             b1.persist();
         }
+        ensureOwnerCompany(null);
     }
 
     @Transactional
@@ -305,41 +299,20 @@ public class UserSeeder {
 
         if (user == null) {
             user = new User();
-            user.name = username;
-            user.fullName = fullName;
-            user.email = email;
-            user.phoneNumber = phoneNumber;
-            user.phoneExtension = phoneExtension;
-            user.timezone = timezone;
-            user.country = country;
-            user.type = type;
+        }
+        user.name = username;
+        user.fullName = fullName;
+        user.email = email;
+        user.phoneNumber = phoneNumber;
+        user.phoneExtension = phoneExtension;
+        user.timezone = timezone;
+        user.country = country;
+        user.type = type;
+        if (password != null && !password.isBlank()) {
             user.passwordHash = BcryptUtil.bcryptHash(password);
+        }
+        if (user.id == null) {
             user.persist();
-            return user;
-        }
-        if (user.name == null || user.name.isBlank()) {
-            user.name = username;
-        }
-        if (user.fullName == null || user.fullName.isBlank()) {
-            user.fullName = fullName;
-        }
-        if (user.phoneNumber == null || user.phoneNumber.isBlank()) {
-            user.phoneNumber = phoneNumber;
-        }
-        if (user.phoneExtension == null || user.phoneExtension.isBlank()) {
-            user.phoneExtension = phoneExtension;
-        }
-        if (user.timezone == null) {
-            user.timezone = timezone;
-        }
-        if (user.country == null) {
-            user.country = country;
-        }
-        if (user.type == null || user.type.isBlank()) {
-            user.type = type;
-        }
-        if (user.passwordHash == null || user.passwordHash.isBlank()) {
-            user.passwordHash = BcryptUtil.bcryptHash(password);
         }
         return user;
     }

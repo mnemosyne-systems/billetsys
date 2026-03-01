@@ -17,7 +17,7 @@
     {#if companyLocked?? && companyLocked}
     <input type="text" aria-label="Company" value="{#for company in companies}{#if selectedCompanyId == company.id}{company.name}{/if}{/for}" readonly>
     {#else}
-    <select name="companyId" aria-label="Company" onchange="window.location = '/users?companyId=' + this.value">
+    <select name="companyId" aria-label="Company" onchange="window.location = '/users/' + this.value">
         {#for company in companies}
         <option value="{company.id}" {#if selectedCompanyId == company.id}selected{/if}>{company.name}</option>
         {/for}
@@ -42,7 +42,7 @@
     {#else}
     {#for user in users}
     <tr>
-        <td><a href="/users/{user.id}">{user.name}</a></td>
+        <td><a href="/user/{user.id}">{user.name}</a></td>
         <td>{user.fullName ?: ''}</td>
         <td>{user.type}</td>
     </tr>

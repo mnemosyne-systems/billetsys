@@ -52,8 +52,13 @@ class UserAccessTest {
         ai.mnemosyne_systems.model.User adminUser = ai.mnemosyne_systems.model.User
                 .find("email", "admin@mnemosyne-systems.ai").firstResult();
         Long adminId = adminUser == null ? null : adminUser.id;
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/users/" + adminId).then().statusCode(200)
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/" + adminId).then().statusCode(200)
                 .body(Matchers.containsString("Edit"));
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/admin").then().statusCode(200)
+                .body(Matchers.containsString(">Owner<")).body(Matchers.containsString(">Companies<"))
+                .body(Matchers.containsString(">Users<")).body(Matchers.containsString(">Entitlements<"))
+                .body(Matchers.not(Matchers.containsString("<nav class=\"header-nav\">")));
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/companies").then().statusCode(200)
                 .body(Matchers.containsString("Companies")).body(Matchers.containsString("Name"))
@@ -94,7 +99,7 @@ class UserAccessTest {
         ensureUser("support2", "support2@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support2");
         ensureDefaultCategories();
         Long companyId = ensureCompany("Support Co");
-        ensureCompanyUsers(companyId, "tam@mnemosyne-systems.ai");
+        ensureCompanyUsers(companyId, "tam1@mnemosyne-systems.ai");
         ai.mnemosyne_systems.model.Ticket supportTicket = ensureTicket(companyId);
         ensureMessage(supportTicket, "Sample ticket created.");
         String supportTicketName = supportTicket == null ? "" : supportTicket.name;
@@ -168,7 +173,7 @@ class UserAccessTest {
         Assertions.assertEquals("Assigned", updatedSupportTicket.status);
         Assertions.assertTrue(ticketHasSupportUser(ticketId, supportUser.id));
         String userCookie = login("user", "user");
-        String tamCookie = login("tam", "tam");
+        String tamCookie = login("tam1", "tam1");
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, userCookie).get("/tickets/" + ticketId).then()
                 .statusCode(200).body(Matchers.containsString("value=\"Assigned\""));
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, tamCookie).get("/tickets/" + ticketId).then().statusCode(200)
@@ -208,7 +213,7 @@ class UserAccessTest {
 
         Long ticketId = userTicket == null ? null : userTicket.id;
         User supportUser = User.find("email", "support1@mnemosyne-systems.ai").firstResult();
-        User tamUser = User.find("email", "tam@mnemosyne-systems.ai").firstResult();
+        User tamUser = User.find("email", "tam1@mnemosyne-systems.ai").firstResult();
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/tickets/" + ticketId).then()
                 .statusCode(200).body(Matchers.containsString(userTicketName)).body(Matchers.containsString("Ticket"))
                 .body(Matchers.containsString("Support")).body(Matchers.containsString("Company"))
@@ -230,12 +235,12 @@ class UserAccessTest {
 
     @Test
     void tamCanAccessUserTicketsMenu() {
-        ensureUser("tam", "tam@mnemosyne-systems.ai", User.TYPE_TAM, "tam");
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
         Long companyId = ensureCompany("TAM Co");
-        ensureCompanyUsers(companyId, "tam@mnemosyne-systems.ai");
+        ensureCompanyUsers(companyId, "tam1@mnemosyne-systems.ai");
         ai.mnemosyne_systems.model.Ticket tamTicket = ensureTicket(companyId);
         String tamTicketName = tamTicket == null ? null : tamTicket.name;
-        String cookie = login("tam", "tam");
+        String cookie = login("tam1", "tam1");
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/tickets").then().statusCode(200)
                 .body(Matchers.containsString("Tickets")).body(Matchers.containsString("Open tickets"))
@@ -342,11 +347,11 @@ class UserAccessTest {
     @Test
     void reportsRespectRolePermissions() {
         ensureUser("admin", "admin@mnemosyne-systems.ai", User.TYPE_ADMIN, "admin");
-        ensureUser("tam", "tam@mnemosyne-systems.ai", User.TYPE_TAM, "tam");
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
         ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
         ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
         Long companyId = ensureCompany("Report Co");
-        ensureCompanyUsers(companyId, "tam@mnemosyne-systems.ai");
+        ensureCompanyUsers(companyId, "tam1@mnemosyne-systems.ai");
         ensureTicket(companyId);
         String adminCookie = login("admin", "admin");
 
@@ -364,7 +369,7 @@ class UserAccessTest {
                 .body(Matchers.containsString("Report Co"))
                 .body(Matchers.not(Matchers.containsString("Tickets by Company")));
 
-        String tamCookie = login("tam", "tam");
+        String tamCookie = login("tam1", "tam1");
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, tamCookie).get("/reports/tam").then().statusCode(200)
                 .body(Matchers.containsString("Reports")).body(Matchers.containsString("Total tickets"))
                 .body(Matchers.containsString("Tickets by Status"))
@@ -389,11 +394,11 @@ class UserAccessTest {
     void articlesRespectRolePermissions() {
         ensureUser("admin", "admin@mnemosyne-systems.ai", User.TYPE_ADMIN, "admin");
         ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
-        ensureUser("tam", "tam@mnemosyne-systems.ai", User.TYPE_TAM, "tam");
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
         ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
         Article seeded = ensureArticle("Runbook", "ops,prod", "Seed article");
         String supportCookie = login("support1", "support1");
-        String tamCookie = login("tam", "tam");
+        String tamCookie = login("tam1", "tam1");
         String userCookie = login("user", "user");
         String adminCookie = login("admin", "admin");
 
@@ -530,10 +535,10 @@ class UserAccessTest {
     @Test
     void attachmentsPageUsesRoleHeader() {
         ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
-        ensureUser("tam", "tam@mnemosyne-systems.ai", User.TYPE_TAM, "tam");
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
         ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
         Long companyId = ensureCompany("Attachment Role Co");
-        ensureCompanyUsers(companyId, "tam@mnemosyne-systems.ai");
+        ensureCompanyUsers(companyId, "tam1@mnemosyne-systems.ai");
         Ticket ticket = ensureTicket(companyId);
         Message message = ensureMessageWithBody(ticket, "Attachment role message");
         Attachment attachment = ensureAttachment(message, "role-attachment.txt");
@@ -545,7 +550,7 @@ class UserAccessTest {
                 .statusCode(200).body(Matchers.matchesPattern(
                         "(?s).*Tickets\\s*\\(" + counts.assignedCount + "/" + counts.openCount + "\\).*"));
 
-        String tamCookie = login("tam", "tam");
+        String tamCookie = login("tam1", "tam1");
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, tamCookie).get("/attachments/" + attachment.id).then()
                 .statusCode(200).body(Matchers.matchesPattern("(?s).*Tickets\\s*\\(\\d+/\\d+\\).*"));
 
@@ -596,10 +601,10 @@ class UserAccessTest {
     void sendsEmailsForTicketMessageAndStatusChanges() {
         mailbox.clear();
         ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
-        ensureUser("tam", "tam@mnemosyne-systems.ai", User.TYPE_TAM, "tam");
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
         ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
         Long companyId = ensureCompany("Email Notify Co");
-        ensureCompanyUsers(companyId, "tam@mnemosyne-systems.ai", "user@mnemosyne-systems.ai");
+        ensureCompanyUsers(companyId, "tam1@mnemosyne-systems.ai", "user@mnemosyne-systems.ai");
         Ticket ticket = ensureUnassignedOpenTicket(companyId);
         String supportCookie = login("support1", "support1");
 
@@ -621,7 +626,7 @@ class UserAccessTest {
                 .formParam("affectsVersionId", ensureVersion(ticket.companyEntitlement.entitlement, "1.0.0").id)
                 .post("/support/tickets/" + ticket.id).then().statusCode(303);
 
-        List<Mail> tamMessages = mailbox.getMailsSentTo("tam@mnemosyne-systems.ai");
+        List<Mail> tamMessages = mailbox.getMailsSentTo("tam1@mnemosyne-systems.ai");
         Assertions.assertFalse(tamMessages.isEmpty());
         Mail statusMail = tamMessages.get(tamMessages.size() - 1);
         Assertions.assertTrue(statusMail.getText().contains("Status"));
@@ -632,9 +637,9 @@ class UserAccessTest {
     void incomingEmailWithTicketSubjectAddsMessageAndAttachments() {
         mailbox.clear();
         ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
-        ensureUser("tam", "tam@mnemosyne-systems.ai", User.TYPE_TAM, "tam");
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
         Long companyId = ensureCompany("Incoming Existing Co");
-        ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai", "tam@mnemosyne-systems.ai");
+        ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai", "tam1@mnemosyne-systems.ai");
         Ticket ticket = ensureTicket(companyId);
         String body = "Incoming body " + System.nanoTime();
 
@@ -767,7 +772,7 @@ class UserAccessTest {
         ticket.companyEntitlement = entry;
         ticket.supportUsers
                 .add(ai.mnemosyne_systems.model.User.find("email", "support1@mnemosyne-systems.ai").firstResult());
-        ticket.tamUsers.add(ai.mnemosyne_systems.model.User.find("email", "tam@mnemosyne-systems.ai").firstResult());
+        ticket.tamUsers.add(ai.mnemosyne_systems.model.User.find("email", "tam1@mnemosyne-systems.ai").firstResult());
         ticket.persist();
         return ticket;
     }

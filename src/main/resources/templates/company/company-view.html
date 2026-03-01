@@ -51,7 +51,7 @@
                             <span>-</span>
                         {#else}
                             {#for user in companyUsers}
-                                <div> <a href="/users/{user.id}">{user.name} </a></div>
+                                <div> <a href="/user/{user.id}">{user.name} </a></div>
                             {/for}
                         {/if}
                     </td>
@@ -63,7 +63,7 @@
                             <span>-</span>
                         {#else}
                             {#for user in companyTams}
-                                <div><a href="/users/{user.id}">{user.name}</a></div>
+                                <div><a href="/user/{user.id}">{user.name}</a></div>
                             {/for}
                         {/if}
                     </td>
@@ -120,7 +120,7 @@
                 </tr>
                 <tr>
                     <th>Name</th>
-                    <td>{#if company.primaryContact}<a href="/users/{primaryContact.id}">{company.primaryContact.name} </a>{/if}</td>
+                    <td>{#if company.primaryContact}<a href="/user/{primaryContact.id}">{company.primaryContact.name} </a>{/if}</td>
                 </tr>
                 <tr>
                     <th>Full Name</th>

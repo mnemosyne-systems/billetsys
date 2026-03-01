@@ -29,11 +29,14 @@ public class HomeResource {
     @Location("login.html")
     Template login;
 
+    @Location("admin/home.html")
+    Template adminHome;
+
     @GET
     public Object index(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @QueryParam("error") String error) {
         User user = AuthHelper.findUser(auth);
         if (AuthHelper.isAdmin(user)) {
-            return Response.status(Response.Status.SEE_OTHER).header("Location", "/companies").build();
+            return Response.status(Response.Status.SEE_OTHER).header("Location", "/admin").build();
         }
         if (AuthHelper.isSupport(user)) {
             return Response.status(Response.Status.SEE_OTHER).header("Location", "/support").build();
@@ -43,5 +46,15 @@ public class HomeResource {
         }
         TemplateInstance instance = login.data("error", error);
         return instance;
+    }
+
+    @GET
+    @Path("/admin")
+    public Object adminHome(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
+        User user = AuthHelper.findUser(auth);
+        if (!AuthHelper.isAdmin(user)) {
+            return Response.status(Response.Status.SEE_OTHER).header("Location", "/").build();
+        }
+        return adminHome.data("currentUser", user);
     }
 }

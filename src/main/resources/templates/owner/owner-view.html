@@ -46,7 +46,7 @@
                 </tr>
                 </tbody>
             </table>
-            <h2 style="margin-top: 20px;">Teams</h2>
+            <p></p>
             <table>
                 <thead>
                 <tr>
@@ -61,7 +61,7 @@
                             <span>-</span>
                         {#else}
                             {#for user in supportUsers}
-                                <div><a href="/users/{user.id}">{user.name}</a></div>
+                                <div><a href="/user/{user.id}">{user.name}</a></div>
                             {/for}
                         {/if}
                     </td>
@@ -70,7 +70,7 @@
                             <span>-</span>
                         {#else}
                             {#for user in tamUsers}
-                                <div><a href="/users/{user.id}">{user.name}</a></div>
+                                <div><a href="/user/{user.id}">{user.name}</a></div>
                             {/for}
                         {/if}
                     </td>

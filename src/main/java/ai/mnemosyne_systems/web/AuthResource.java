@@ -48,7 +48,7 @@ public class AuthResource {
                 .maxAge(3600).secure(false).build();
         String redirect;
         if (AuthHelper.isAdmin(user)) {
-            redirect = "/companies";
+            redirect = "/admin";
         } else if (AuthHelper.isSupport(user)) {
             redirect = "/support";
         } else {
