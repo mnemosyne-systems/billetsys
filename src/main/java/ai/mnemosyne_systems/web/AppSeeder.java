@@ -347,6 +347,10 @@ public class AppSeeder {
         if (ownerCompany.primaryContact == null && primaryContact != null) {
             ownerCompany.primaryContact = primaryContact;
         }
+        User adminUser = User.find("email", "admin@mnemosyne-systems.ai").firstResult();
+        if (adminUser != null) {
+            addUserIfMissing(ownerCompany, adminUser);
+        }
         List<User> ownerUsers = User.list("type in ?1 order by name", List.of(User.TYPE_SUPPORT, User.TYPE_TAM));
         for (User ownerUser : ownerUsers) {
             addUserIfMissing(ownerCompany, ownerUser);

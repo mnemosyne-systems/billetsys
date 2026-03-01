@@ -42,12 +42,7 @@
                 </div>
                 <div>
                     <label>Company
-                        <select name="companyId">
-                            <option value="">Select company</option>
-                            {#for company in allCompanies}
-                                <option value="{company.id}" {#if userCompany != null && userCompany.id == company.id}selected{/if}>{company.name}</option>
-                            {/for}
-                        </select>
+                        <input type="text" value="{#if userCompany != null}{userCompany.name}{/if}" readonly>
                     </label>
                 </div>
                 <div>

@@ -10,6 +10,7 @@ package ai.mnemosyne_systems.web;
 
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Company;
+import ai.mnemosyne_systems.model.Installation;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import io.quarkus.elytron.security.common.BcryptUtil;
@@ -112,7 +113,9 @@ public class ProfileResource {
             user.timezone = null;
         }
 
-        if (User.TYPE_ADMIN.equalsIgnoreCase(user.type) || User.TYPE_SUPPORT.equalsIgnoreCase(user.type)) {
+        if (User.TYPE_ADMIN.equalsIgnoreCase(user.type)) {
+            ensureAdminAssignedToOwnerCompany(user);
+        } else if (User.TYPE_SUPPORT.equalsIgnoreCase(user.type)) {
             String companyIdStr = value(form, "companyId");
             List<Company> currentCompanies = Company.find("select c from Company c join c.users u where u = ?1", user)
                     .list();
@@ -139,6 +142,24 @@ public class ProfileResource {
             user.logoBase64 = logoData.trim();
         }
         return Response.seeOther(URI.create("/profile")).build();
+    }
+
+    private void ensureAdminAssignedToOwnerCompany(User user) {
+        Installation installation = Installation.find("singletonKey", "installation").firstResult();
+        if (installation == null || installation.company == null) {
+            return;
+        }
+        Company ownerCompany = installation.company;
+        List<Company> currentCompanies = Company.find("select c from Company c join c.users u where u = ?1", user)
+                .list();
+        for (Company company : currentCompanies) {
+            company.users.removeIf(existing -> existing.id != null && existing.id.equals(user.id));
+        }
+        boolean exists = ownerCompany.users.stream()
+                .anyMatch(existing -> existing.id != null && existing.id.equals(user.id));
+        if (!exists) {
+            ownerCompany.users.add(user);
+        }
     }
 
     private String trimOrNull(String value) {

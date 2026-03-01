@@ -25,3 +25,13 @@ VALUES (nextval('user_seq'), 'user', 'user@mnemosyne-systems.ai', 'user', '$2b$1
 INSERT INTO users (id, name, email, user_type, password_hash)
 VALUES (nextval('user_seq'), 'tam1', 'tam1@mnemosyne-systems.ai', 'tam', '$2b$12$OPDXvPZTCdwgSBbhyxOlmedXUriIH8kV4gFVRmIu/iK4qGuMcbIve')
 ;
+
+INSERT INTO companies (id, name)
+VALUES (nextval('company_seq'), 'mnemosyne systems')
+;
+
+INSERT INTO company_users (company_id, user_id)
+SELECT c.id, u.id
+FROM companies c, users u
+WHERE c.name = 'mnemosyne systems' AND u.email = 'admin@mnemosyne-systems.ai'
+;
