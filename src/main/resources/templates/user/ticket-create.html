@@ -92,12 +92,16 @@
             </label>
         </div>
         {/if}
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
             <label>Affects
-                <input type="text" value="{#if defaultAffectsVersion != null}{defaultAffectsVersion.name} ({defaultAffectsVersion.date}){#else}-{/if}" readonly>
-            </label>
-            <label>Resolved
-                <input type="text" value="-" readonly>
+                <select name="affectsVersionId" {#if !versions.isEmpty}required{/if}>
+                    {#if versions.isEmpty}
+                    <option value="">-</option>
+                    {/if}
+                    {#for version in versions}
+                    <option value="{version.id}" {#if defaultAffectsVersion != null && (defaultAffectsVersion.id == version.id || (defaultAffectsVersion.name == version.name && defaultAffectsVersion.date == version.date))}selected{/if}>{version.name} ({version.date})</option>
+                    {/for}
+                </select>
             </label>
         </div>
         <div class="form-actions">

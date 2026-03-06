@@ -590,6 +590,8 @@ public class AppSeeder {
         }
         ensureVersion(entitlement, "1.0.0");
         ensureVersion(entitlement, "1.0.1");
+        ensureVersion(entitlement, "1.0.2");
+        ensureVersion(entitlement, "1.0.3");
     }
 
     private void ensureVersion(Entitlement entitlement, String name) {

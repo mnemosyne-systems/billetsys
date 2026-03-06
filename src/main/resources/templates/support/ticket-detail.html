@@ -219,6 +219,15 @@
         align-items: center;
         gap: 10px;
     }
+    .attachment-actions .action-button {
+        min-height: 34px;
+        box-sizing: border-box;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font: inherit;
+        line-height: normal;
+    }
     .export-btn {
         margin-right: auto;
     }
@@ -331,7 +340,7 @@
         </div>
         <input type="file" name="attachments" multiple data-attachment-input class="attachment-input">
         <div class="form-actions attachment-actions">
-            {#if currentUser.type == 'tam' || currentUser.type == 'support'}
+            {#if currentUser.type == 'user' || currentUser.type == 'tam' || currentUser.type == 'support'}
             <a class="action-button export-btn" href="/tickets/export/{ticket.id}">Export</a>
             {/if}
             <button type="button" class="action-button" data-attachment-trigger>Browse</button>
@@ -340,7 +349,7 @@
     </div>
 </form>
     {#else}
-    {#if currentUser.type == 'tam' || currentUser.type == 'support'}
+    {#if currentUser.type == 'user' || currentUser.type == 'tam' || currentUser.type == 'support'}
     <div class="form-actions attachment-actions">
         <a class="action-button export-btn" href="/tickets/export/{ticket.id}">Export</a>
     </div>

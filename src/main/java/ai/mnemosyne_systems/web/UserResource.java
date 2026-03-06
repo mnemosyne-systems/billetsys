@@ -305,6 +305,7 @@ public class UserResource {
                 .data("ticketName", company == null ? "" : Ticket.previewNextName(company))
                 .data("expiredEntitlementIds", expiredEntitlementIds).data("assignedCount", data.assignedTickets.size())
                 .data("openCount", data.openTickets.size()).data("ticketsBase", "/user/tickets")
+                .data("versions", knownVersions())
                 .data("defaultAffectsVersion",
                         uniqueEntitlements.isEmpty() ? null : defaultAffectsVersion(uniqueEntitlements.get(0)))
                 .data("showSupportUsers", User.TYPE_TAM.equalsIgnoreCase(user.type))
@@ -322,6 +323,7 @@ public class UserResource {
         String status = AttachmentHelper.readFormValue(input, "status");
         String messageBody = AttachmentHelper.readFormValue(input, "message");
         Long companyEntitlementId = AttachmentHelper.readFormLong(input, "companyEntitlementId");
+        Long affectsVersionId = AttachmentHelper.readFormLong(input, "affectsVersionId");
         Long categoryId = AttachmentHelper.readFormLong(input, "categoryId");
         if (status == null || status.isBlank()) {
             throw new BadRequestException("Status is required");
@@ -353,7 +355,7 @@ public class UserResource {
         ticket.company = entitlement.company;
         ticket.requester = user;
         ticket.companyEntitlement = entitlement;
-        ticket.affectsVersion = defaultAffectsVersion(entitlement);
+        ticket.affectsVersion = resolveKnownVersion(affectsVersionId, "Affects");
         ticket.category = categoryId != null ? Category.findById(categoryId) : Category.findDefault();
         ticket.persist();
         Message message = new Message();
@@ -1180,6 +1182,29 @@ public class UserResource {
             return version;
         }
         return Version.find("entitlement = ?1 order by date asc, id asc", entitlement.entitlement).firstResult();
+    }
+
+    private List<Version> knownVersions() {
+        java.util.Map<String, Version> versionsByRelease = new java.util.LinkedHashMap<>();
+        for (Version version : Version.<Version> list("order by date asc, id asc")) {
+            String key = version.name + "|" + version.date;
+            versionsByRelease.putIfAbsent(key, version);
+        }
+        return new java.util.ArrayList<>(versionsByRelease.values());
+    }
+
+    private Version resolveKnownVersion(Long versionId, String label) {
+        if (versionId == null) {
+            if (!knownVersions().isEmpty()) {
+                throw new BadRequestException(label + " version is required");
+            }
+            return null;
+        }
+        Version version = Version.findById(versionId);
+        if (version == null) {
+            throw new BadRequestException(label + " version is invalid");
+        }
+        return version;
     }
 
     private Version resolveVersionForTicket(Ticket ticket, Long versionId, String label) {

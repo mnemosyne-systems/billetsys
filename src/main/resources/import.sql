@@ -243,6 +243,14 @@ INSERT INTO versions (id, name, date, entitlement_id)
 SELECT nextval('version_seq'), '1.0.1', CURRENT_DATE, e.id
 FROM entitlements e;
 
+INSERT INTO versions (id, name, date, entitlement_id)
+SELECT nextval('version_seq'), '1.0.2', CURRENT_DATE, e.id
+  FROM entitlements e;
+
+INSERT INTO versions (id, name, date, entitlement_id)
+SELECT nextval('version_seq'), '1.0.3', CURRENT_DATE, e.id
+  FROM entitlements e;
+
 -- =====================
 -- ENTITLEMENT LEVELS
 -- =====================

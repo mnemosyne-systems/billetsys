@@ -195,6 +195,9 @@ class UserAccessTest {
     void userCanAccessUserTicketsMenu() {
         ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
         ensureDefaultCategories();
+        Entitlement createPageEntitlement = ensureEntitlement("Create Page Versions", "Create page version list");
+        ensureVersion(createPageEntitlement, "0.9.0", java.time.LocalDate.of(2024, 1, 1));
+        ensureVersion(createPageEntitlement, "9.9.9", java.time.LocalDate.of(2024, 12, 31));
         Long companyId = ensureCompany("Test Co");
         ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai", "superuser1@mnemosyne-systems.ai");
         ai.mnemosyne_systems.model.Ticket userTicket = ensureTicket(companyId);
@@ -212,6 +215,15 @@ class UserAccessTest {
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/tickets/closed").then().statusCode(200)
                 .body(Matchers.containsString("Closed tickets")).body(Matchers.containsString("Create"));
 
+        String userCreatePage = RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/tickets/create")
+                .then().statusCode(200).extract().asString();
+        Assertions.assertTrue(userCreatePage.contains("select name=\"affectsVersionId\""));
+        Assertions.assertTrue(userCreatePage.contains("9.9.9"));
+        Assertions.assertFalse(userCreatePage.contains("Resolved"));
+        Assertions.assertEquals(1, countOccurrences(userCreatePage, ">1.0.0 ("));
+        Assertions.assertTrue(
+                userCreatePage.indexOf("0.9.0 (2024-01-01)") < userCreatePage.indexOf("9.9.9 (2024-12-31)"));
+
         Long ticketId = userTicket == null ? null : userTicket.id;
         User supportUser = User.find("email", "support1@mnemosyne-systems.ai").firstResult();
         User tamUser = User.find("email", "tam1@mnemosyne-systems.ai").firstResult();
@@ -221,7 +233,7 @@ class UserAccessTest {
                 .body(Matchers.containsString("Entitlement")).body(Matchers.containsString("value=\"Assigned\""))
                 .body(Matchers.containsString("TAM")).body(Matchers.containsString("Category"))
                 .body(Matchers.containsString("External issue")).body(Matchers.containsString("Reply"))
-                .body(Matchers.not(Matchers.containsString("Back")));
+                .body(Matchers.containsString("Export")).body(Matchers.not(Matchers.containsString("Back")));
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/companies/" + companyId).then()
                 .statusCode(200).body(Matchers.containsString("<th>User</th>"))
                 .body(Matchers.containsString("<th>Superuser</th>")).body(Matchers.containsString("<th>TAM</th>"))
@@ -244,6 +256,8 @@ class UserAccessTest {
     @Test
     void tamCanAccessUserTicketsMenu() {
         ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
+        Entitlement createPageEntitlement = ensureEntitlement("TAM Create Versions", "TAM create version list");
+        ensureVersion(createPageEntitlement, "8.8.8", java.time.LocalDate.of(2024, 6, 1));
         Long companyId = ensureCompany("TAM Co");
         ensureCompanyUsers(companyId, "tam1@mnemosyne-systems.ai");
         ai.mnemosyne_systems.model.Ticket tamTicket = ensureTicket(companyId);
@@ -262,6 +276,13 @@ class UserAccessTest {
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/tickets/closed").then().statusCode(200)
                 .body(Matchers.containsString("Closed tickets")).body(Matchers.containsString("Create"));
 
+        String tamCreatePage = RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/tickets/create")
+                .then().statusCode(200).extract().asString();
+        Assertions.assertTrue(tamCreatePage.contains("select name=\"affectsVersionId\""));
+        Assertions.assertTrue(tamCreatePage.contains("8.8.8"));
+        Assertions.assertFalse(tamCreatePage.contains("Resolved"));
+        Assertions.assertEquals(1, countOccurrences(tamCreatePage, ">1.0.0 ("));
+
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/rss/tam").then().statusCode(200)
                 .contentType(Matchers.containsString("application/rss+xml")).body(Matchers.containsString("<rss"))
                 .body(Matchers.containsString("TAM tickets feed"));
@@ -275,7 +296,7 @@ class UserAccessTest {
                 .body(Matchers.containsString("Level")).body(Matchers.containsString("Critical"))
                 .body(Matchers.containsString("support1")).body(Matchers.containsString("/user/tam-users/"))
                 .body(Matchers.containsString("tam")).body(Matchers.containsString("Reply"))
-                .body(Matchers.not(Matchers.containsString("Back")));
+                .body(Matchers.containsString("Export")).body(Matchers.not(Matchers.containsString("Back")));
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/tickets/" + ticketId).then().statusCode(200)
                 .body(Matchers.containsString(tamTicketName)).body(Matchers.containsString("Support"))
@@ -289,6 +310,9 @@ class UserAccessTest {
     @Test
     void superuserCanAccessCompanyScopedPages() {
         ensureUser("superuser1", "superuser1@mnemosyne-systems.ai", User.TYPE_SUPERUSER, "superuser1");
+        Entitlement createPageEntitlement = ensureEntitlement("Superuser Create Versions",
+                "Superuser create version list");
+        ensureVersion(createPageEntitlement, "7.7.7", java.time.LocalDate.of(2024, 7, 1));
         Long companyId = ensureCompany("Superuser Co");
         Long otherCompanyId = ensureCompany("Other Superuser Co");
         ensureCompanyUsers(companyId, "superuser1@mnemosyne-systems.ai");
@@ -301,6 +325,13 @@ class UserAccessTest {
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/superuser").then().statusCode(200)
                 .body(Matchers.containsString("Tickets")).body(Matchers.containsString("Create"));
+
+        String superuserCreatePage = RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie)
+                .get("/superuser/tickets/create").then().statusCode(200).extract().asString();
+        Assertions.assertTrue(superuserCreatePage.contains("select name=\"affectsVersionId\""));
+        Assertions.assertTrue(superuserCreatePage.contains("7.7.7"));
+        Assertions.assertFalse(superuserCreatePage.contains("Resolved"));
+        Assertions.assertEquals(1, countOccurrences(superuserCreatePage, ">1.0.0 ("));
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/superuser/users/" + companyId).then()
                 .statusCode(200).body(Matchers.containsString("Users")).body(Matchers.containsString("superuser1"));
@@ -315,7 +346,7 @@ class UserAccessTest {
         Long ticketId = superuserTicket == null ? null : superuserTicket.id;
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/superuser/tickets/" + ticketId).then()
                 .statusCode(200).body(Matchers.containsString("Superusers"))
-                .body(Matchers.containsString("/superuser/companies/"));
+                .body(Matchers.containsString("/superuser/companies/")).body(Matchers.containsString("Export"));
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/tickets/" + ticketId).then().statusCode(200)
                 .body(Matchers.containsString("Superusers"));
@@ -952,6 +983,23 @@ class UserAccessTest {
             version.persist();
         }
         return version;
+    }
+
+    @Transactional
+    Version ensureVersion(Entitlement entitlement, String name, java.time.LocalDate date) {
+        Version version = ensureVersion(entitlement, name);
+        version.date = date;
+        return version;
+    }
+
+    int countOccurrences(String text, String snippet) {
+        int count = 0;
+        int index = 0;
+        while ((index = text.indexOf(snippet, index)) >= 0) {
+            count++;
+            index += snippet.length();
+        }
+        return count;
     }
 
     @Transactional

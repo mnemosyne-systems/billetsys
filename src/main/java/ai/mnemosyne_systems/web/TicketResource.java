@@ -340,7 +340,7 @@ public class TicketResource {
     @Produces("application/pdf")
     public Response exportTicketToPdf(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
         User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isSupport(user) && !AuthHelper.isTam(user) && !AuthHelper.isSuperuser(user)) {
+        if (!AuthHelper.isSupport(user) && !AuthHelper.isUser(user) && !AuthHelper.isSuperuser(user)) {
             throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
         }
         Ticket ticket = Ticket.findById(id);
@@ -349,6 +349,10 @@ public class TicketResource {
         }
         if ((AuthHelper.isTam(user) || AuthHelper.isSuperuser(user))
                 && ticket.company.users.stream().noneMatch(u -> u.id.equals(user.id))) {
+            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
+        }
+        if (User.TYPE_USER.equalsIgnoreCase(user.type)
+                && (ticket.requester == null || !ticket.requester.id.equals(user.id))) {
             throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
         }
         byte[] ticketPdf = pdfService.generateTicketPdf(ticket);
