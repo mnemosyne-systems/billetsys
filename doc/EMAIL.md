@@ -42,7 +42,7 @@ The settings above are based on Quarkus mailer reference behavior.
 ## Outgoing notifications
 
 Notifications are sent to all users on the ticket:
-- Requester (User)
+- Requester (User/Superuser)
 - TAM users assigned to the ticket
 - Support users assigned to the ticket
 

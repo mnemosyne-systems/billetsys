@@ -7,6 +7,8 @@ The default roles installed in the development environment are
 * User: `user1` / `user1`
 * User: `user2` / `user2`
 * User: `userb` / `userb`
+* Superuser: `superuser1` / `superuser1`
+* Superuser: `superuser2` / `superuser2`
 * TAM: `tam1` / `tam1`
 * TAM: `tam2` / `tam2`
 * Support: `support1` / `support1`
