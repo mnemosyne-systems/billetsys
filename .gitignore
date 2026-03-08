@@ -3,3 +3,14 @@ target/
 .idea/
 *.iml
 doc/manual/en/build/
+
+
+### VS Code ###
+.vscode/
+
+
+# Secrets
+.env*
+
+# Dependencies
+node_modules/
