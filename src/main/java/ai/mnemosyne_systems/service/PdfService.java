@@ -1,7 +1,6 @@
 package ai.mnemosyne_systems.service;
 
 import ai.mnemosyne_systems.model.*;
-import ai.mnemosyne_systems.resource.ReportResource;
 import com.lowagie.text.*;
 import com.lowagie.text.Font;
 import com.lowagie.text.Image;
@@ -121,8 +120,8 @@ public class PdfService {
         }
     }
 
-    public byte[] generateReportPdf(ReportResource.ReportData data, String companyName, String period,
-            boolean showCompanyTable, Map<String, String> chartImages) {
+    public byte[] generateReportPdf(ReportData data, String companyName, String period, boolean showCompanyTable,
+            Map<String, String> chartImages) {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             Document document = new Document();
             PdfWriter.getInstance(document, outputStream);

@@ -8,10 +8,7 @@
 
 package ai.mnemosyne_systems.resource;
 
-import ai.mnemosyne_systems.model.Company;
-import ai.mnemosyne_systems.model.Message;
-import ai.mnemosyne_systems.model.Ticket;
-import ai.mnemosyne_systems.model.User;
+import ai.mnemosyne_systems.model.*;
 import ai.mnemosyne_systems.service.PdfService;
 import ai.mnemosyne_systems.util.AuthHelper;
 import io.quarkus.qute.Location;
@@ -569,16 +566,5 @@ public class ReportResource {
             throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
         }
         return user;
-    }
-
-    public static class ReportData {
-        public int totalTickets;
-        public Map<String, Long> ticketsByStatus;
-        public Map<String, Long> ticketsByCategory;
-        public Map<String, Long> ticketsByCompany;
-        public Map<String, Long> ticketsOverTime;
-        public Map<String, Double> avgFirstResponseTime;
-        public Map<String, Double> avgResolutionTime;
-        public Map<String, List<Ticket>> resolutionHistogram;
     }
 }
