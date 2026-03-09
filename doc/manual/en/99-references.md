@@ -11,7 +11,6 @@
 [texlive]: https://www.tug.org/texlive/
 [git_squash]: https://www.git-tower.com/learn/git/faq/git-squash
 [progit]: https://github.com/progit/progit2/releases
-[prometheus]: https://prometheus.io/
 
 [configuration]: https://github.com/mnemosyne-systems/billetsys/blob/main/doc/CONFIGURATION.md
 [developers]: https://github.com/mnemosyne-systems/billetsys/blob/main/doc/DEVELOPERS.md

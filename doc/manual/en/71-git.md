@@ -1,7 +1,7 @@
 
 ## Java programming
 
-[**billetsys**](https://github.com/pgmoneta/pgmoneta) is developed using the [Java programming language](https://en.wikipedia.org/wiki/Java_(programming_language)) so it is a good idea to have some knowledge about the language before you begin to make changes.
+[**billetsys**](https://github.com/mnemosyne-systems/billetsys) is developed using the [Java programming language](https://en.wikipedia.org/wiki/Java_(programming_language)) so it is a good idea to have some knowledge about the language before you begin to make changes.
 
 ## Git guide
 
