@@ -52,7 +52,7 @@
                            data-country="{#if user.country != null}{user.country.name}{/if}"
                            data-timezone="{#if user.timezone != null}{user.timezone.name}{/if}"
                            data-logo="{user.logoBase64}"
-                        >{user.email}</a>{#if !user_isLast}, {/if}
+                        >{user.name}</a>{#if !user_isLast}, {/if}
                     {/for}
                 </div>
                 {/if}
@@ -71,7 +71,7 @@
                            data-country="{#if user.country != null}{user.country.name}{/if}"
                            data-timezone="{#if user.timezone != null}{user.timezone.name}{/if}"
                            data-logo="{user.logoBase64}"
-                        >{user.email}</a>{#if !user_isLast}, {/if}
+                        >{user.name}</a>{#if !user_isLast}, {/if}
                     {/for}
                 </div>
                 {/if}
@@ -185,7 +185,7 @@
                    data-country="{#if message.author.country != null}{message.author.country.name}{/if}"
                    data-timezone="{#if message.author.timezone != null}{message.author.timezone.name}{/if}"
                    data-logo="{message.author.logoBase64}"
-                >{message.author.email}</a>{#else}-{/if}
+                >{message.author.name}</a>{#else}-{/if}
         </td>
     </tr>
     <tr>

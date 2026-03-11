@@ -311,13 +311,15 @@ class UserAccessTest {
     @Test
     void superuserCanAccessCompanyScopedPages() {
         ensureUser("superuser1", "superuser1@mnemosyne-systems.ai", User.TYPE_SUPERUSER, "superuser1");
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
         Entitlement createPageEntitlement = ensureEntitlement("Superuser Create Versions",
                 "Superuser create version list");
         ensureVersion(createPageEntitlement, "7.7.7", java.time.LocalDate.of(2024, 7, 1));
         Long companyId = ensureCompany("Superuser Co");
         Long otherCompanyId = ensureCompany("Other Superuser Co");
-        ensureCompanyUsers(companyId, "superuser1@mnemosyne-systems.ai");
+        ensureCompanyUsers(companyId, "superuser1@mnemosyne-systems.ai", "tam1@mnemosyne-systems.ai");
         ai.mnemosyne_systems.model.Ticket superuserTicket = ensureTicket(companyId);
+        ensureMessage(superuserTicket, "Superuser ticket message");
         ai.mnemosyne_systems.model.Ticket otherCompanyTicket = ensureTicket(otherCompanyId);
         String cookie = login("superuser1", "superuser1");
 
@@ -345,9 +347,15 @@ class UserAccessTest {
                 .body(Matchers.containsString("Superuser tickets feed"));
 
         Long ticketId = superuserTicket == null ? null : superuserTicket.id;
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/superuser/tickets/" + ticketId).then()
-                .statusCode(200).body(Matchers.containsString("Superusers"))
-                .body(Matchers.containsString("/superuser/companies/")).body(Matchers.containsString("Export"));
+        String superuserTicketPage = RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie)
+                .get("/superuser/tickets/" + ticketId).then().statusCode(200).extract().asString();
+        Assertions.assertTrue(superuserTicketPage.contains("Superusers"));
+        Assertions.assertTrue(superuserTicketPage.contains("/superuser/companies/"));
+        Assertions.assertTrue(superuserTicketPage.contains("Export"));
+        Assertions.assertTrue(superuserTicketPage.contains(">support1</a>"));
+        Assertions.assertTrue(superuserTicketPage.contains(">superuser1</a>"));
+        Assertions.assertFalse(superuserTicketPage.contains(">support1@mnemosyne-systems.ai</a>"));
+        Assertions.assertFalse(superuserTicketPage.contains(">superuser1@mnemosyne-systems.ai</a>"));
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/tickets/" + ticketId).then().statusCode(200)
                 .body(Matchers.containsString("Superusers"));
