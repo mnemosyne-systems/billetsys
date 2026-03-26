@@ -1,6 +1,6 @@
 # Email integration
 
-This project uses Quarkus Mailer (`quarkus-mailer`) for outgoing notifications and a multipart endpoint for incoming email ingestion.
+This project uses Quarkus Mailer (`quarkus-mailer`) for outgoing notifications, a multipart endpoint for incoming email ingestion, and mailbox polling for pulling messages from IMAP/POP3 mailboxes.
 
 ## Configuration
 
@@ -10,10 +10,12 @@ Set these base properties (or environment variables):
 ticket.mailer.from=${MAIL_FROM:no-reply@billetsys.local}
 quarkus.mailer.mock=${MAIL_MOCK:true}
 %test.quarkus.mailer.mock=true
+ticket.mail.incoming.enabled=${MAIL_INCOMING_ENABLED:true}
 ```
 
 - `ticket.mailer.from` is the sender address.
 - `quarkus.mailer.mock=true` enables the Quarkus mock tester mailbox (default for local/runtime in this project).
+- `ticket.mail.incoming.enabled=true` keeps `POST /mail/incoming` enabled by default.
 
 ### SMTP configuration (real email delivery)
 
@@ -39,6 +41,32 @@ Notes:
 
 The settings above are based on Quarkus mailer reference behavior.
 
+### Mailbox polling configuration
+
+To pull messages from a mailbox and turn them into ticket updates, configure:
+
+```properties
+ticket.mailbox.enabled=true
+ticket.mailbox.poll-interval=5m
+ticket.mailbox.protocol=imap
+ticket.mailbox.host=mail.example.com
+ticket.mailbox.port=993
+ticket.mailbox.username=${MAILBOX_USERNAME}
+ticket.mailbox.password=${MAILBOX_PASSWORD}
+ticket.mailbox.folder=INBOX
+ticket.mailbox.ssl=true
+ticket.mailbox.starttls=false
+ticket.mailbox.unread-only=true
+ticket.mailbox.delete-after-process=false
+```
+
+Notes:
+- `ticket.mailbox.enabled=true` turns on scheduled mailbox polling.
+- `ticket.mailbox.protocol` supports standard Jakarta Mail store protocols such as `imap`, `imaps`, `pop3`, or `pop3s`.
+- `ticket.mailbox.unread-only=true` means only unseen messages are pulled.
+- `ticket.mailbox.delete-after-process=true` can be used if processed messages should be removed from the mailbox after successful ingestion.
+- Keep mailbox credentials in environment variables or secrets, not in committed files.
+
 ## Outgoing notifications
 
 Notifications are sent to all users on the ticket:
@@ -58,6 +86,14 @@ Incoming messages are accepted at:
 
 `POST /mail/incoming` (multipart/form-data)
 
+To disable this endpoint while leaving mailbox polling or outgoing email enabled, set:
+
+```properties
+ticket.mail.incoming.enabled=false
+```
+
+When disabled, requests to `POST /mail/incoming` return `404 Not Found`.
+
 Supported fields:
 - `from` (email address)
 - `subject`
@@ -72,6 +108,13 @@ Behavior:
 - If a ticket token is provided, `From` must belong to that ticket/company context; otherwise the mail is ignored.
 - If no ticket token is provided, the sender must belong to a company; ticket creation uses that company.
 - Unknown sender or sender/ticket mismatch is ignored and logged at warning level.
+
+The same ingestion logic is reused by mailbox polling:
+- The mailbox reader pulls messages from the configured folder.
+- The first `From:` address is used to resolve the sender and therefore the company context.
+- A subject token such as `[A-00005]` is used to find the existing ticket.
+- If no subject token exists, the message creates a new ticket for the sender's company.
+- Successfully processed mailbox messages are marked seen, and can optionally be deleted after processing.
 
 ## Testing
 

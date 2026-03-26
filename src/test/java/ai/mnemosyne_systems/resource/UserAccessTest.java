@@ -19,6 +19,8 @@ import ai.mnemosyne_systems.model.Level;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
+import ai.mnemosyne_systems.service.MailboxPollingService;
+import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.util.AuthHelper;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.quarkus.hibernate.orm.panache.Panache;
@@ -28,9 +30,15 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
+import jakarta.mail.Session;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
 import jakarta.transaction.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Properties;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -40,6 +48,12 @@ class UserAccessTest {
 
     @Inject
     MockMailbox mailbox;
+
+    @Inject
+    MailboxPollingService mailboxPollingService;
+
+    @Inject
+    TicketEmailService ticketEmailService;
 
     @Test
     void adminCanAccessAdminUsers() {
@@ -825,6 +839,152 @@ class UserAccessTest {
         Assertions.assertNull(findMessageByBody(orphanBody));
     }
 
+    @Test
+    void incomingEmailRequiresBody() {
+        RestAssured.given().contentType("multipart/form-data").multiPart("from", "user@mnemosyne-systems.ai")
+                .multiPart("subject", "Missing body").post("/mail/incoming").then().statusCode(400);
+
+        RestAssured.given().contentType("multipart/form-data").multiPart("from", "user@mnemosyne-systems.ai")
+                .multiPart("subject", "Blank body").multiPart("body", "   ").post("/mail/incoming").then()
+                .statusCode(400);
+    }
+
+    @Test
+    void incomingEmailNormalizesSenderAndAssignsCompanyTamsOnNewTicket() {
+        mailbox.clear();
+        ensureUser("normalize-user", "normalize-user@mnemosyne-systems.ai", User.TYPE_USER, "normalize-user");
+        ensureUser("normalize-tam", "normalize-tam@mnemosyne-systems.ai", User.TYPE_TAM, "normalize-tam");
+        Long companyId = ensureCompany("Incoming Normalize Co");
+        ensureCompanyUsers(companyId, "normalize-user@mnemosyne-systems.ai", "normalize-tam@mnemosyne-systems.ai");
+        ensureTicket(companyId);
+        String body = "Normalized incoming " + System.nanoTime();
+
+        RestAssured.given().contentType("multipart/form-data")
+                .multiPart("from", " NORMALIZE-USER@MNEMOSYNE-SYSTEMS.AI ")
+                .multiPart("subject", "Create normalized ticket").multiPart("body", body).post("/mail/incoming").then()
+                .statusCode(200);
+
+        Message saved = findMessageByBody(body);
+        Assertions.assertNotNull(saved);
+        Assertions.assertNotNull(saved.ticket);
+        User tamUser = User.find("email", "normalize-tam@mnemosyne-systems.ai").firstResult();
+        Assertions.assertNotNull(tamUser);
+        Assertions.assertTrue(ticketHasTamUser(saved.ticket.id, tamUser.id));
+    }
+
+    @Test
+    void mailboxMessageWithTicketSubjectAddsMessageAndAttachments() throws Exception {
+        mailbox.clear();
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
+        Long companyId = ensureCompany("Mailbox Existing Co");
+        ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai", "tam1@mnemosyne-systems.ai");
+        Ticket ticket = ensureTicket(companyId);
+        String body = "Mailbox update " + System.nanoTime();
+
+        MimeMessage mailboxMessage = new MimeMessage(Session.getInstance(new Properties()));
+        mailboxMessage.setFrom(new InternetAddress("user@mnemosyne-systems.ai"));
+        mailboxMessage.setSubject("[" + ticket.name + "] mailbox reply");
+        MimeBodyPart textPart = new MimeBodyPart();
+        textPart.setText(body, StandardCharsets.UTF_8.name());
+        MimeBodyPart attachmentPart = new MimeBodyPart();
+        attachmentPart.setFileName("mailbox.txt");
+        attachmentPart.setContent("mailbox-attachment", "text/plain; charset=UTF-8");
+        attachmentPart.setDisposition(MimeBodyPart.ATTACHMENT);
+        MimeMultipart multipart = new MimeMultipart();
+        multipart.addBodyPart(textPart);
+        multipart.addBodyPart(attachmentPart);
+        mailboxMessage.setContent(multipart);
+        mailboxMessage.saveChanges();
+
+        mailboxPollingService.processMailboxMessage(mailboxMessage);
+
+        Message saved = findMessageByBody(body);
+        Assertions.assertNotNull(saved);
+        Assertions.assertEquals(ticket.id, saved.ticket.id);
+        List<Attachment> attachments = Attachment.find("message = ?1", saved).list();
+        Assertions.assertEquals(1, attachments.size());
+        Assertions.assertEquals("mailbox.txt", attachments.get(0).name);
+
+        List<Mail> userMessages = mailbox.getMailsSentTo("user@mnemosyne-systems.ai");
+        Assertions.assertFalse(userMessages.isEmpty());
+        Assertions.assertTrue(userMessages.get(userMessages.size() - 1).getSubject().contains("[" + ticket.name + "]"));
+    }
+
+    @Test
+    void mailboxMessageWithoutTicketSubjectCreatesTicket() throws Exception {
+        mailbox.clear();
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        Long companyId = ensureCompany("Mailbox New Co");
+        ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai");
+        ensureTicket(companyId);
+        String body = "Create ticket from mailbox " + System.nanoTime();
+
+        MimeMessage mailboxMessage = new MimeMessage(Session.getInstance(new Properties()));
+        mailboxMessage.setFrom(new InternetAddress("user@mnemosyne-systems.ai"));
+        mailboxMessage.setSubject("Need help from mailbox");
+        mailboxMessage.setText(body, StandardCharsets.UTF_8.name());
+        mailboxMessage.saveChanges();
+
+        mailboxPollingService.processMailboxMessage(mailboxMessage);
+
+        Message saved = findMessageByBody(body);
+        Assertions.assertNotNull(saved);
+        Assertions.assertNotNull(saved.ticket);
+        Assertions.assertNotNull(saved.ticket.name);
+        Assertions.assertTrue(saved.ticket.name.contains("-"));
+    }
+
+    @Test
+    void mailboxHtmlMessageStripsHtmlAndKeepsInlineAttachments() throws Exception {
+        mailbox.clear();
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        Long companyId = ensureCompany("Mailbox Html Co");
+        ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai");
+        ensureTicket(companyId);
+
+        MimeMessage mailboxMessage = new MimeMessage(Session.getInstance(new Properties()));
+        mailboxMessage.setFrom(new InternetAddress("user@mnemosyne-systems.ai"));
+        mailboxMessage.setSubject("HTML only mailbox");
+        MimeBodyPart htmlPart = new MimeBodyPart();
+        htmlPart.setContent("<div>Hello<br/>Mailbox</div><p>Second&nbsp;paragraph</p>", "text/html; charset=UTF-8");
+        MimeBodyPart attachmentPart = new MimeBodyPart();
+        attachmentPart.setFileName("inline.txt");
+        attachmentPart.setDisposition(MimeBodyPart.INLINE);
+        attachmentPart.setContent("inline-attachment", "text/plain; charset=UTF-8");
+        MimeMultipart multipart = new MimeMultipart();
+        multipart.addBodyPart(htmlPart);
+        multipart.addBodyPart(attachmentPart);
+        mailboxMessage.setContent(multipart);
+        mailboxMessage.saveChanges();
+
+        mailboxPollingService.processMailboxMessage(mailboxMessage);
+
+        Message saved = findMessageByBody("Hello\nMailbox\nSecond paragraph");
+        Assertions.assertNotNull(saved);
+        List<Attachment> attachments = Attachment.find("message = ?1", saved).list();
+        Assertions.assertEquals(1, attachments.size());
+        Assertions.assertEquals("inline.txt", attachments.get(0).name);
+        Assertions.assertEquals("text/plain", attachments.get(0).mimeType);
+    }
+
+    @Test
+    void computeEffectiveStatusUsesSupportAssignmentsAndOpenFallback() {
+        Ticket ticket = new Ticket();
+        ticket.supportUsers.clear();
+
+        Assertions.assertEquals("Open", ticketEmailService.computeEffectiveStatus(ticket, null));
+        Assertions.assertEquals("Open", ticketEmailService.computeEffectiveStatus(ticket, "  "));
+        Assertions.assertEquals("Open", ticketEmailService.computeEffectiveStatus(ticket, "Open"));
+
+        User support = new User();
+        support.email = "support1@mnemosyne-systems.ai";
+        ticket.supportUsers.add(support);
+
+        Assertions.assertEquals("Assigned", ticketEmailService.computeEffectiveStatus(ticket, "Open"));
+        Assertions.assertEquals("Closed", ticketEmailService.computeEffectiveStatus(ticket, "Closed"));
+    }
+
     @Transactional
     void ensureUser(String name, String email, String type, String password) {
         User user = User.find("email", email).firstResult();
@@ -1095,6 +1255,13 @@ class UserAccessTest {
     @Transactional
     boolean ticketHasSupportUser(Long ticketId, Long userId) {
         Long count = Ticket.count("select distinct t from Ticket t join t.supportUsers u where t.id = ?1 and u.id = ?2",
+                ticketId, userId);
+        return count != null && count > 0;
+    }
+
+    @Transactional
+    boolean ticketHasTamUser(Long ticketId, Long userId) {
+        Long count = Ticket.count("select distinct t from Ticket t join t.tamUsers u where t.id = ?1 and u.id = ?2",
                 ticketId, userId);
         return count != null && count > 0;
     }
