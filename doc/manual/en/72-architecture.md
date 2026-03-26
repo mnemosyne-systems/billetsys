@@ -5,7 +5,7 @@
 ## Backend
 
 [**billetsys**](https://github.com/mnemosyne-systems/billetsys) is built on [Java](https://en.wikipedia.org/wiki/Java_(programming_language)) 25
-and [Quarkus](https://quarkus.io/) 3.32 using [PostgreSQL](https://www.postgresql.org/) as the database.
+and [Quarkus](https://quarkus.io/) 3.33 using [PostgreSQL](https://www.postgresql.org/) as the database.
 
 The data model is defined in `model/` using JPA entities backed by [Hibernate ORM Panache](https://quarkus.io/guides/hibernate-orm-panache).
 
