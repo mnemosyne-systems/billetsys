@@ -126,6 +126,8 @@ function App() {
 function AuthenticatedHeader({ session }) {
   const [now, setNow] = useState(() => new Date());
   const location = useLocation();
+  const ticketMenuRef = useRef(null);
+  const profileMenuRef = useRef(null);
   const role = session?.role;
   const showTicketMenu = role === 'support' || role === 'user';
   const ticketMenuBasePath = role === 'support' ? '/support/tickets' : '/user/tickets';
@@ -146,12 +148,35 @@ function AuthenticatedHeader({ session }) {
   const showTicketAlarm = String(ticketAlarmState.data || '').trim().toLowerCase() === 'true';
   const isTicketRoute = isRoleTicketRoute(role, location.pathname);
   const rssHref = rssPath(role);
-  const closeTicketMenu = event => {
+  const closeDetailsMenu = event => {
     const menu = event.currentTarget.closest('details');
     if (menu) {
       menu.open = false;
     }
   };
+  useEffect(() => {
+    if (ticketMenuRef.current) {
+      ticketMenuRef.current.open = false;
+    }
+    if (profileMenuRef.current) {
+      profileMenuRef.current.open = false;
+    }
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    const handlePointerDown = event => {
+      [ticketMenuRef.current, profileMenuRef.current].forEach(menu => {
+        if (!menu || !menu.open || menu.contains(event.target)) {
+          return;
+        }
+        menu.open = false;
+      });
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, []);
 
   return (
     <header className="shell-header">
@@ -169,7 +194,7 @@ function AuthenticatedHeader({ session }) {
             {navigation.map(link => {
               if (showTicketMenu && link.label === 'Tickets') {
                 return (
-                  <details key={link.href} className="shell-nav-menu">
+                  <details key={link.href} className="shell-nav-menu" ref={ticketMenuRef}>
                     <summary className={`shell-nav-link shell-nav-summary${isTicketRoute ? ' active' : ''}`}>
                       {ticketLabel}
                       <span
@@ -181,13 +206,13 @@ function AuthenticatedHeader({ session }) {
                       </span>
                     </summary>
                     <div className="shell-nav-dropdown">
-                      <SmartLink className="shell-nav-dropdown-link" href={ticketMenuBasePath} onClick={closeTicketMenu}>
+                      <SmartLink className="shell-nav-dropdown-link" href={ticketMenuBasePath} onClick={closeDetailsMenu}>
                         Active tickets
                       </SmartLink>
-                      <SmartLink className="shell-nav-dropdown-link" href={`${ticketMenuBasePath}/open`} onClick={closeTicketMenu}>
+                      <SmartLink className="shell-nav-dropdown-link" href={`${ticketMenuBasePath}/open`} onClick={closeDetailsMenu}>
                         Open tickets
                       </SmartLink>
-                      <SmartLink className="shell-nav-dropdown-link" href={`${ticketMenuBasePath}/closed`} onClick={closeTicketMenu}>
+                      <SmartLink className="shell-nav-dropdown-link" href={`${ticketMenuBasePath}/closed`} onClick={closeDetailsMenu}>
                         Closed tickets
                       </SmartLink>
                     </div>
@@ -231,7 +256,7 @@ function AuthenticatedHeader({ session }) {
                 </svg>
               </a>
             )}
-            <details className="profile-menu">
+            <details className="profile-menu" ref={profileMenuRef}>
               <summary className="user-summary" aria-label={userName}>
                 {session?.logoBase64 ? (
                   <img className="user-logo" src={session.logoBase64} alt="User logo" />
@@ -245,13 +270,13 @@ function AuthenticatedHeader({ session }) {
                 )}
               </summary>
               <div className="profile-dropdown">
-                <SmartLink className="profile-link" href="/profile">
+                <SmartLink className="profile-link" href="/profile" onClick={closeDetailsMenu}>
                   Profile
                 </SmartLink>
-                <SmartLink className="profile-link" href="/profile/password">
+                <SmartLink className="profile-link" href="/profile/password" onClick={closeDetailsMenu}>
                   Password
                 </SmartLink>
-                <a className="profile-link" href="/logout">
+                <a className="profile-link" href="/logout" onClick={closeDetailsMenu}>
                   Sign out
                 </a>
               </div>
@@ -635,12 +660,6 @@ function ProfilePage({ sessionState }) {
 
   return (
     <section className="panel">
-      <div className="section-header">
-        <div>
-          <h2>Profile</h2>
-        </div>
-      </div>
-
       <DataState state={profileState} emptyMessage="Profile unavailable." signInHref={sessionState.data?.homePath || '/login'}>
         {formState && profile && (
           <div className="article-detail">
