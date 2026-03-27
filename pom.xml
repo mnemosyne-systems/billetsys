@@ -63,6 +63,10 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-resteasy-jackson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-orm-panache</artifactId>
         </dependency>
         <dependency>
@@ -104,11 +108,6 @@
             <version>2.0.3</version>
         </dependency>
         <dependency>
-            <groupId>org.commonmark</groupId>
-            <artifactId>commonmark</artifactId>
-            <version>0.27.1</version>
-        </dependency>
-        <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>highlightjs</artifactId>
             <version>11.11.1</version>
@@ -139,9 +138,26 @@
             <artifactId>chart.js</artifactId>
             <version>4.5.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark</artifactId>
+            <version>0.27.1</version>
+        </dependency>
     </dependencies>
 
     <build>
+        <sourceDirectory>src/backend/main/java</sourceDirectory>
+        <testSourceDirectory>src/backend/test/java</testSourceDirectory>
+        <resources>
+            <resource>
+                <directory>src/backend/main/resources</directory>
+            </resource>
+        </resources>
+        <testResources>
+            <testResource>
+                <directory>src/backend/test/resources</directory>
+            </testResource>
+        </testResources>
         <plugins>
             <plugin>
                 <groupId>io.quarkus</groupId>

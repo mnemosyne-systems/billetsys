@@ -3,3 +3,4 @@ target/
 .idea/
 *.iml
 doc/manual/en/build/
+src/frontend/node_modules/
