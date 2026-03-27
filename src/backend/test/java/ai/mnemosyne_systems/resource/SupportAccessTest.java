@@ -569,8 +569,8 @@ class SupportAccessTest extends AccessTestSupport {
 
     @Test
     void reactAppShellRedirectsToStaticIndex() {
-        RestAssured.given().redirects().follow(false).get("/app").then().statusCode(302).header("Location",
-                Matchers.endsWith("/"));
+        RestAssured.given().redirects().follow(true).get("/app").then().statusCode(200)
+                .body(Matchers.containsString("id=\"root\"")).body(Matchers.containsString("/app/assets/"));
     }
 
     @Test
