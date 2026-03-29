@@ -16,6 +16,9 @@ navigate and get their work done quicker.
 * [Maven](https://maven.apache.org/)
 * [Quarkus](https://quarkus.io/)
 * [PostgreSQL](https://www.postgresql.org)
+* [Vite](https://vitejs.dev/)
+* [React](https://react.dev/)
+* [TypeScript](https://www.typescriptlang.org/)
 
 ## Developer
 
@@ -23,6 +26,7 @@ See the developer documentation for setup and workflow details:
 
 * [Developer guide](./doc/DEVELOPERS.md)
 * [Build and run guide](./doc/BUILDING.md)
+* [Frontend guide](./src/frontend/README.md)
 
 The users defined for testing are
 

@@ -1,0 +1,54 @@
+import { Link } from 'react-router-dom';
+import useJson from '../hooks/useJson';
+import DataState from '../components/common/DataState';
+import { SmartLink } from '../utils/routing';
+import type { SessionPageProps } from '../types/app';
+import type { CollectionResponse, EntitlementRecord } from '../types/domain';
+
+export default function EntitlementsPage({ sessionState }: SessionPageProps) {
+  const entitlementsState = useJson<CollectionResponse<EntitlementRecord>>('/api/entitlements');
+
+  return (
+    <section className="panel">
+      <div className="section-header">
+        <div>
+          <h2>Entitlements</h2>
+        </div>
+        <div className="button-row">
+          <SmartLink className="primary-button" href="/entitlements/new">
+            Create
+          </SmartLink>
+        </div>
+      </div>
+
+      <DataState state={entitlementsState} emptyMessage="No entitlements are available yet." signInHref={sessionState.data?.homePath || '/login'}>
+        <div className="category-list">
+          {entitlementsState.data?.items.map((entitlement: EntitlementRecord) => (
+            <article key={entitlement.id} className="category-card">
+              <div className="category-card-head">
+                <div>
+                  <h3>
+                    <Link className="inline-link" to={`/entitlements/${entitlement.id}`}>
+                      {entitlement.name}
+                    </Link>
+                  </h3>
+                  <p className="tag-copy">{entitlement.descriptionPreview || 'No description'}</p>
+                  <div className="pill-row">
+                    {(entitlement.supportLevels || []).map(level => (
+                      <span key={String(level.id)} className="status-pill">
+                        {level.name || 'Unnamed level'}
+                      </span>
+                    ))}
+                    {(!entitlement.supportLevels || entitlement.supportLevels.length === 0) && (
+                      <span className="muted-text">No support levels</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </DataState>
+    </section>
+  );
+}
