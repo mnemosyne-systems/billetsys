@@ -34,7 +34,16 @@ See the developer documentation for setup and workflow details:
 * [Build and run guide](./doc/BUILDING.md)
 * [Frontend guide](./src/frontend/README.md)
 
-You will need a [PostgreSQL](https://www.postgresql.org/) setup as
+### Quick start
+
+Clone the repository:
+
+```sh
+git clone https://github.com/mnemosyne-systems/billetsys.git
+cd billetsys
+```
+
+Set up [PostgreSQL](https://www.postgresql.org/):
 
 ```sh
 createuser -P ticketdb
@@ -45,13 +54,30 @@ where the password is `ticketdb`. Enable access in `pg_hba.conf` and reload.
 
 The configuration is defined in `src/backend/main/resources/application.properties`.
 
-To build and run `billetsys`
+Copy the example environment file and fill in the secrets:
 
 ```sh
-git clone https://github.com/mnemosyne-systems/billetsys.git
-cd billetsys
+cp .env.example .env
+```
+
+Start the support services (CAP + Valkey) with compose:
+
+```sh
+make platform
+```
+
+This detects whether you have Podman Compose or Docker Compose and starts the containers defined
+in `docker-compose.yml`. If neither is installed, the command is skipped with a warning.
+
+Start billetsys in development mode:
+
+```sh
 make
 ```
+
+The application is available at http://localhost:8080.
+
+### Test accounts
 
 The users defined for testing are
 

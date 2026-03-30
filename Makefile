@@ -6,7 +6,7 @@
 # OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
 #
 
-.PHONY: all format clean run test docs db-drop db-create full frontend
+.PHONY: all format clean run test docs db-drop db-create full frontend platform
 
 all: clean format run
 
@@ -39,4 +39,13 @@ db-drop:
 db-create:
 	@createdb -E UTF8 -O ticketdb ticketdb
 
-full: db-drop db-create clean frontend format test docs run
+platform:
+	@if command -v podman-compose >/dev/null 2>&1; then \
+		podman-compose up -d; \
+	elif command -v docker >/dev/null 2>&1; then \
+		docker compose up -d; \
+	else \
+		echo "No container runtime found (podman-compose or docker). Skipping compose services."; \
+	fi
+
+full: db-drop db-create platform clean frontend format test docs run

@@ -44,6 +44,16 @@ git clone https://github.com/mnemosyne-systems/billetsys.git
 cd billetsys
 ```
 
+## Start support services
+
+Billetsys uses a local CAP service for CAPTCHA protection on the login page. Start the support services before starting the application:
+
+```sh
+make platform
+```
+
+This detects whether you have Podman Compose or Docker Compose and starts the containers defined in `docker-compose.yml`. If neither is installed, the command is skipped with a warning.
+
 ## Start billetsys
 
 Start the application in Quarkus development mode:

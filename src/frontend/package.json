@@ -23,6 +23,7 @@
     ]
   },
   "dependencies": {
+    "@cap.js/widget": "^0.1.43",
     "@fontsource/red-hat-text": "^5.2.8",
     "@lexical/code": "^0.43.0",
     "@lexical/code-prism": "^0.43.0",

@@ -68,4 +68,5 @@ The targets are
 * `docs` - Generate documentation
 * `db-drop` - Drop the database
 * `db-create` - Create the database
-* `full` - Run everything
+* `platform` - Start compose services (CAP + Valkey)
+* `full` - Run everything (db-drop, db-create, platform, clean, format, test, docs, run)
