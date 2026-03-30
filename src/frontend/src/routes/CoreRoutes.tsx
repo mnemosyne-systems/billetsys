@@ -15,11 +15,21 @@ import ReportsPage from "../pages/ReportsPage";
 import StatusPage from "../pages/StatusPage";
 import { PATHS } from "./paths";
 import type { AppRoute, SessionState } from "../types/app";
+import ForgotPasswordPage from "../pages/ForgotPasswordPage";
+import ResetPasswordPage from "../pages/ResetPasswordPage";
 
 export function getCoreRoutes(sessionState: SessionState): AppRoute[] {
   return [
     { path: PATHS.root, element: <HomePage sessionState={sessionState} /> },
     { path: PATHS.login, element: <LoginPage sessionState={sessionState} /> },
+    {
+      path: PATHS.forgotPassword,
+      element: <ForgotPasswordPage sessionState={sessionState} />,
+    },
+    {
+      path: PATHS.resetPassword,
+      element: <ResetPasswordPage sessionState={sessionState} />,
+    },
     {
       path: PATHS.error,
       element: (

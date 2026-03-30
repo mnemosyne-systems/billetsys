@@ -114,7 +114,9 @@ function App() {
     ? { ...session, ...branding }
     : branding;
   const isLoginRoute =
-    location.pathname === "/login" && !session?.authenticated;
+    ["/login", "/forgot-password", "/reset-password"].includes(
+      location.pathname,
+    ) && !session?.authenticated;
   const brandName = branding.installationCompanyName || "billetsys";
 
   useEffect(() => {
