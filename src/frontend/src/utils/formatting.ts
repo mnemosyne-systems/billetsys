@@ -34,10 +34,10 @@ export function formatFileSize(size: number | null | undefined): string {
 
 export function formatPhone(phoneNumber?: string | null, extension?: string | null): string {
   if (!phoneNumber && !extension) {
-    return 'â€”';
+    return '—';
   }
   if (!extension) {
-    return phoneNumber || 'â€”';
+    return phoneNumber || '—';
   }
   return `${phoneNumber || ''} ext. ${extension}`.trim();
 }
@@ -137,4 +137,3 @@ export function sortEntitlementAssignments(assignments: AssignmentSummary[]): As
     return (left.levelName || '').localeCompare(right.levelName || '', undefined, { sensitivity: 'base' });
   });
 }
-

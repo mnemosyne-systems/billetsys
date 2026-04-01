@@ -36,12 +36,6 @@ export function OwnerPage({ sessionState }: SessionPageProps) {
 
   return (
     <section className="panel">
-      <div className="section-header">
-        <div>
-          <h2>Owner profile</h2>
-        </div>
-      </div>
-
       <DataState state={ownerState} emptyMessage="Owner company not found." signInHref={sessionState.data?.homePath || '/login'}>
         {owner && (
           <div className="article-detail">
@@ -49,40 +43,40 @@ export function OwnerPage({ sessionState }: SessionPageProps) {
               <div className="owner-form owner-detail-form">
                 <div className="owner-form-grid ticket-detail-grid">
                   <label>
-                    Name
-                    <input value={owner.name || 'â€”'} readOnly />
+                    Owner
+                    <input value={owner.name || '—'} readOnly />
                   </label>
                   <label>
                     Phone
-                    <input value={owner.phoneNumber || 'â€”'} readOnly />
+                    <input value={owner.phoneNumber || '—'} readOnly />
                   </label>
                   <label>
                     Country
-                    <input value={owner.countryName || 'â€”'} readOnly />
+                    <input value={owner.countryName || '—'} readOnly />
                   </label>
                   <label>
                     Time zone
-                    <input value={owner.timezoneName || 'â€”'} readOnly />
+                    <input value={owner.timezoneName || '—'} readOnly />
                   </label>
                   <label>
                     Address1
-                    <input value={owner.address1 || 'â€”'} readOnly />
+                    <input value={owner.address1 || '—'} readOnly />
                   </label>
                   <label>
                     Address2
-                    <input value={owner.address2 || 'â€”'} readOnly />
+                    <input value={owner.address2 || '—'} readOnly />
                   </label>
                   <label>
                     City
-                    <input value={owner.city || 'â€”'} readOnly />
+                    <input value={owner.city || '—'} readOnly />
                   </label>
                   <label>
                     State
-                    <input value={owner.state || 'â€”'} readOnly />
+                    <input value={owner.state || '—'} readOnly />
                   </label>
                   <label>
                     Zip
-                    <input value={owner.zip || 'â€”'} readOnly />
+                    <input value={owner.zip || '—'} readOnly />
                   </label>
                   <div className="detail-card-spacer" aria-hidden="true" />
                   <div className="owner-detail-panel">
@@ -299,4 +293,3 @@ export function OwnerEditPage({ sessionState }: SessionPageProps) {
 }
 
 export default OwnerPage;
-
