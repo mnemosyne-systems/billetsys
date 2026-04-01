@@ -20,6 +20,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -83,7 +84,8 @@ public class ArticleResource {
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
-    public Response create(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, MultipartFormDataInput input) {
+    public Response create(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
         requireCreateEdit(auth);
         String title = AttachmentHelper.readFormValue(input, "title");
         String tags = AttachmentHelper.readFormValue(input, "tags");
@@ -97,7 +99,7 @@ public class ArticleResource {
         List<Attachment> attachments = storeAttachments(article,
                 AttachmentHelper.readAttachments(input, "attachments"));
         article.body = resolveInlineAttachmentUrls(article.body, attachments);
-        return Response.seeOther(URI.create("/articles")).build();
+        return ReactRedirectSupport.redirect(client, "/articles");
     }
 
     @POST
@@ -105,7 +107,7 @@ public class ArticleResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
     public Response update(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            MultipartFormDataInput input) {
+            @HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
         requireCreateEdit(auth);
         Article article = Article
                 .find("select distinct a from Article a left join fetch a.attachments where a.id = ?1", id)
@@ -123,20 +125,21 @@ public class ArticleResource {
         List<Attachment> attachments = storeAttachments(article,
                 AttachmentHelper.readAttachments(input, "attachments"));
         article.body = resolveInlineAttachmentUrls(article.body, attachments);
-        return Response.seeOther(URI.create("/articles/" + id)).build();
+        return ReactRedirectSupport.redirect(client, "/articles/" + id);
     }
 
     @POST
     @Path("/{id}/delete")
     @Transactional
-    public Response delete(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
+    public Response delete(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
         requireAdmin(auth);
         Article article = Article.findById(id);
         if (article == null) {
             throw new NotFoundException();
         }
         article.delete();
-        return Response.seeOther(URI.create("/articles")).build();
+        return ReactRedirectSupport.redirect(client, "/articles");
     }
 
     private List<Attachment> storeAttachments(Article article, List<Attachment> uploaded) {

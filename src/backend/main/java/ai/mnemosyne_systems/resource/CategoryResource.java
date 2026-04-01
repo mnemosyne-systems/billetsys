@@ -20,6 +20,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -76,7 +77,8 @@ public class CategoryResource {
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
-    public Response create(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, MultipartFormDataInput input) {
+    public Response create(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
         requireAdmin(auth);
         String name = AttachmentHelper.readFormValue(input, "name");
         String description = AttachmentHelper.readFormValue(input, "description");
@@ -96,7 +98,7 @@ public class CategoryResource {
         List<Attachment> attachments = storeAttachments(category,
                 AttachmentHelper.readAttachments(input, "attachments"));
         category.description = resolveInlineAttachmentUrls(category.description, attachments);
-        return Response.seeOther(URI.create("/categories")).build();
+        return ReactRedirectSupport.redirect(client, "/categories");
     }
 
     @POST
@@ -104,7 +106,7 @@ public class CategoryResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
     public Response update(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            MultipartFormDataInput input) {
+            @HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
         requireAdmin(auth);
         Category category = Category
                 .find("select distinct c from Category c left join fetch c.attachments where c.id = ?1", id)
@@ -128,7 +130,7 @@ public class CategoryResource {
         List<Attachment> attachments = storeAttachments(category,
                 AttachmentHelper.readAttachments(input, "attachments"));
         category.description = resolveInlineAttachmentUrls(category.description, attachments);
-        return Response.seeOther(URI.create("/categories")).build();
+        return ReactRedirectSupport.redirect(client, "/categories");
     }
 
     static Category findCategoryWithAttachments(Long id) {
@@ -152,7 +154,8 @@ public class CategoryResource {
     @POST
     @Path("/{id}/delete")
     @Transactional
-    public Response delete(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
+    public Response delete(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
         requireAdmin(auth);
         Category category = Category.findById(id);
         if (category == null) {
@@ -160,7 +163,7 @@ public class CategoryResource {
         }
         Attachment.delete("category", category);
         category.delete();
-        return Response.seeOther(URI.create("/categories")).build();
+        return ReactRedirectSupport.redirect(client, "/categories");
     }
 
     private List<Attachment> storeAttachments(Category category, List<Attachment> uploaded) {

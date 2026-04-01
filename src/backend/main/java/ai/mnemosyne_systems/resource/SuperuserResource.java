@@ -319,7 +319,8 @@ public class SuperuserResource {
     @POST
     @Path("superuser/tickets/{id}")
     @Transactional
-    public Response updateTicket(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
+    public Response updateTicket(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id,
             @FormParam("affectsVersionId") Long affectsVersionId,
             @FormParam("resolvedVersionId") Long resolvedVersionId) {
         User user = requireSuperuser(auth);
@@ -329,7 +330,7 @@ public class SuperuserResource {
         }
         ticket.affectsVersion = resolveVersionForTicket(ticket, affectsVersionId, "Affects");
         ticket.resolvedVersion = resolveOptionalVersionForTicket(ticket, resolvedVersionId, "Resolved");
-        return Response.seeOther(URI.create("/superuser/tickets/" + id)).build();
+        return ReactRedirectSupport.redirect(client, "/superuser/tickets/" + id);
     }
 
     static List<Ticket> loadScopedTickets(User user) {
@@ -736,11 +737,7 @@ public class SuperuserResource {
     }
 
     private Response createTicketRedirect(String client, String path) {
-        if ("react".equalsIgnoreCase(client)) {
-            return Response.ok(new SupportTicketApiResource.RedirectResponse(path)).type(MediaType.APPLICATION_JSON)
-                    .build();
-        }
-        return Response.seeOther(URI.create(path)).build();
+        return ReactRedirectSupport.redirect(client, path);
     }
 
     private Version resolveVersionForTicket(Ticket ticket, Long versionId, String label) {

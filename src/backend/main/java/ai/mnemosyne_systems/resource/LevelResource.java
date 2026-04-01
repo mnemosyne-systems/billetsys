@@ -20,6 +20,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -94,7 +95,8 @@ public class LevelResource {
     @POST
     @Path("")
     @Transactional
-    public Response createLevel(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
+    public Response createLevel(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
             @FormParam("description") String description, @FormParam("level") Integer levelValue,
             @FormParam("color") String color, @FormParam("fromDay") Integer fromDay,
             @FormParam("fromTime") Integer fromTime, @FormParam("toDay") Integer toDay,
@@ -121,18 +123,19 @@ public class LevelResource {
         level.timezone = timezoneId != null ? Timezone.findById(timezoneId)
                 : Timezone.find("name", "America/New_York").firstResult();
         level.persist();
-        return Response.seeOther(URI.create("/levels")).build();
+        return ReactRedirectSupport.redirect(client, "/levels");
     }
 
     @POST
     @Path("{id}")
     @Transactional
     public Response updateLevel(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @FormParam("name") String name, @FormParam("description") String description,
-            @FormParam("level") Integer levelValue, @FormParam("color") String color,
-            @FormParam("fromDay") Integer fromDay, @FormParam("fromTime") Integer fromTime,
-            @FormParam("toDay") Integer toDay, @FormParam("toTime") Integer toTime,
-            @FormParam("countryId") Long countryId, @FormParam("timezoneId") Long timezoneId) {
+            @HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
+            @FormParam("description") String description, @FormParam("level") Integer levelValue,
+            @FormParam("color") String color, @FormParam("fromDay") Integer fromDay,
+            @FormParam("fromTime") Integer fromTime, @FormParam("toDay") Integer toDay,
+            @FormParam("toTime") Integer toTime, @FormParam("countryId") Long countryId,
+            @FormParam("timezoneId") Long timezoneId) {
         requireAdmin(auth);
         Level level = Level.findById(id);
         if (level == null) {
@@ -160,20 +163,21 @@ public class LevelResource {
         level.country = countryId != null ? Country.findById(countryId) : Country.find("code", "US").firstResult();
         level.timezone = timezoneId != null ? Timezone.findById(timezoneId)
                 : Timezone.find("name", "America/New_York").firstResult();
-        return Response.seeOther(URI.create("/levels")).build();
+        return ReactRedirectSupport.redirect(client, "/levels");
     }
 
     @POST
     @Path("{id}/delete")
     @Transactional
-    public Response deleteLevel(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
+    public Response deleteLevel(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
         requireAdmin(auth);
         Level level = Level.findById(id);
         if (level == null) {
             throw new NotFoundException();
         }
         level.delete();
-        return Response.seeOther(URI.create("/levels")).build();
+        return ReactRedirectSupport.redirect(client, "/levels");
     }
 
     private void validate(String name, String description, Integer levelValue, String color, Integer fromDay,

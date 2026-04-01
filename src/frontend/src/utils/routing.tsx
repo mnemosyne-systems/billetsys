@@ -79,6 +79,18 @@ export async function resolvePostRedirectPath(response: Response, fallback: stri
     const payload = (await response.json()) as RedirectJsonPayload;
     return resolveClientPath(payload?.redirectTo, fallback);
   }
+  const location = response?.headers?.get('Location');
+  if (location) {
+    try {
+      const redirectUrl = new URL(location, window.location.origin);
+      if (redirectUrl.origin !== window.location.origin) {
+        return fallback;
+      }
+      return resolveClientPath(`${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`, fallback);
+    } catch {
+      return resolveClientPath(location, fallback);
+    }
+  }
   return resolveRedirectPath(response, fallback);
 }
 

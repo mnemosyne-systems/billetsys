@@ -225,8 +225,8 @@ export default function CompanyFormPage({ sessionState, mode }: CompanyFormPageP
     }
     setSaveState({ saving: true, error: '' });
     try {
-      await postForm(`/companies/${id}/delete`, []);
-      navigate('/companies');
+      const response = await postForm(`/companies/${id}/delete`, []);
+      navigate(await resolvePostRedirectPath(response, '/companies'));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to delete company.' });
       return;

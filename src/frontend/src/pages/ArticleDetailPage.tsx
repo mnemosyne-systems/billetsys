@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import useJson from '../hooks/useJson';
 import DataState from '../components/common/DataState';
 import MarkdownContent from '../components/markdown/MarkdownContent';
-import { SmartLink } from '../utils/routing';
+import { resolvePostRedirectPath, SmartLink } from '../utils/routing';
 import { postForm } from '../utils/api';
 import type { SessionPageProps } from '../types/app';
 import type { ArticleRecord } from '../types/domain';
@@ -34,8 +34,8 @@ function DeleteArticleButton({ articleId, label = 'Delete article' }: DeleteArti
     setDeleting(true);
     setError('');
     try {
-      await postForm(`/articles/${articleId}/delete`, []);
-      navigate('/articles');
+      const response = await postForm(`/articles/${articleId}/delete`, []);
+      navigate(await resolvePostRedirectPath(response, '/articles'));
     } catch (submitError: unknown) {
       setDeleting(false);
       setError(submitError instanceof Error ? submitError.message : 'Unable to delete article.');

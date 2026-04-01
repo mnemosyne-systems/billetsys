@@ -13,6 +13,7 @@ import useJson from '../hooks/useJson';
 import DataState from '../components/common/DataState';
 import MarkdownEditor from '../components/markdown/MarkdownEditor';
 import { postForm, postMultipart } from '../utils/api';
+import { resolvePostRedirectPath } from '../utils/routing';
 import type { FormMode, SessionPageProps } from '../types/app';
 import type { CategoryRecord } from '../types/domain';
 
@@ -62,12 +63,12 @@ export default function CategoryFormPage({ sessionState, mode }: CategoryFormPag
     }
     setSaveState({ saving: true, error: '' });
     try {
-      await postMultipart(isEdit ? `/categories/${id}` : '/categories', [
+      const response = await postMultipart(isEdit ? `/categories/${id}` : '/categories', [
         ['name', formState.name],
         ['description', formState.description],
         ['isDefault', String(formState.isDefault)]
       ]);
-      navigate(isEdit && id ? `/categories/${id}` : '/categories');
+      navigate(await resolvePostRedirectPath(response, isEdit && id ? `/categories/${id}` : '/categories'));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save category.' });
       return;
@@ -81,8 +82,8 @@ export default function CategoryFormPage({ sessionState, mode }: CategoryFormPag
     }
     setSaveState({ saving: true, error: '' });
     try {
-      await postForm(`/categories/${id}/delete`, []);
-      navigate('/categories');
+      const response = await postForm(`/categories/${id}/delete`, []);
+      navigate(await resolvePostRedirectPath(response, '/categories'));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to delete category.' });
       return;

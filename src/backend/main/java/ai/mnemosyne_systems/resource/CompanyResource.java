@@ -25,6 +25,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -80,7 +81,8 @@ public class CompanyResource {
     @POST
     @Path("")
     @Transactional
-    public Response createCompany(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
+    public Response createCompany(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
             @FormParam("address1") String address1, @FormParam("address2") String address2,
             @FormParam("city") String city, @FormParam("state") String state, @FormParam("zip") String zip,
             @FormParam("countryId") Long countryId, @FormParam("timezoneId") Long timezoneId,
@@ -123,18 +125,18 @@ public class CompanyResource {
         company.persist();
         applyEntitlements(company, entitlementIds, levelIds, entitlementDates, entitlementDurations,
                 java.util.List.of());
-        return Response.seeOther(URI.create("/companies")).build();
+        return ReactRedirectSupport.redirect(client, "/companies");
     }
 
     @POST
     @Path("{id}")
     @Transactional
     public Response updateCompany(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @FormParam("name") String name, @FormParam("address1") String address1,
-            @FormParam("address2") String address2, @FormParam("city") String city, @FormParam("state") String state,
-            @FormParam("zip") String zip, @FormParam("countryId") Long countryId,
-            @FormParam("timezoneId") Long timezoneId, @FormParam("userIds") java.util.List<Long> userIds,
-            @FormParam("tamIds") java.util.List<Long> tamIds,
+            @HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
+            @FormParam("address1") String address1, @FormParam("address2") String address2,
+            @FormParam("city") String city, @FormParam("state") String state, @FormParam("zip") String zip,
+            @FormParam("countryId") Long countryId, @FormParam("timezoneId") Long timezoneId,
+            @FormParam("userIds") java.util.List<Long> userIds, @FormParam("tamIds") java.util.List<Long> tamIds,
             @FormParam("entitlementIds") java.util.List<Long> entitlementIds,
             @FormParam("levelIds") java.util.List<Long> levelIds,
             @FormParam("entitlementDates") java.util.List<String> entitlementDates,
@@ -195,20 +197,21 @@ public class CompanyResource {
             }
             entry.delete();
         }
-        return Response.seeOther(URI.create("/companies")).build();
+        return ReactRedirectSupport.redirect(client, "/companies");
     }
 
     @POST
     @Path("{id}/delete")
     @Transactional
-    public Response deleteCompany(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
+    public Response deleteCompany(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
         requireAdmin(auth);
         Company company = Company.findById(id);
         if (company == null) {
             throw new NotFoundException();
         }
         company.delete();
-        return Response.seeOther(URI.create("/companies")).build();
+        return ReactRedirectSupport.redirect(client, "/companies");
     }
 
     private User requireAdmin(String auth) {

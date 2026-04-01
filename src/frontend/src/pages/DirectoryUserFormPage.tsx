@@ -14,7 +14,7 @@ import useJson from '../hooks/useJson';
 import { postForm } from '../utils/api';
 import { createDirectoryUserFormState } from '../utils/forms';
 import { toQueryString } from '../utils/formatting';
-import { resolveClientPath, SmartLink } from '../utils/routing';
+import { resolveClientPath, resolvePostRedirectPath, SmartLink } from '../utils/routing';
 import type { SessionPageProps } from '../types/app';
 import type { CountryOption, DirectoryUserBootstrap, NamedEntity, TimezoneOption } from '../types/domain';
 import type { DirectoryUserFormState } from '../utils/forms';
@@ -79,7 +79,7 @@ export default function DirectoryUserFormPage({ sessionState, bootstrapBase, nav
     }
     setSaveState({ saving: true, error: '' });
     try {
-      await postForm(bootstrap.submitPath, [
+      const response = await postForm(bootstrap.submitPath, [
         ['name', formState.name],
         ['fullName', formState.fullName],
         ['email', formState.email],
@@ -92,7 +92,7 @@ export default function DirectoryUserFormPage({ sessionState, bootstrapBase, nav
         ['companyId', formState.companyId],
         ['password', formState.password]
       ]);
-      navigate(resolveClientPath(bootstrap.cancelPath, navigateFallback));
+      navigate(await resolvePostRedirectPath(response, resolveClientPath(bootstrap.cancelPath, navigateFallback)));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save user.' });
       return;
@@ -106,8 +106,8 @@ export default function DirectoryUserFormPage({ sessionState, bootstrapBase, nav
     }
     setSaveState({ saving: true, error: '' });
     try {
-      await postForm(`/user/${id}/delete`, []);
-      navigate(resolveClientPath(bootstrap.cancelPath, navigateFallback));
+      const response = await postForm(`/user/${id}/delete`, []);
+      navigate(await resolvePostRedirectPath(response, resolveClientPath(bootstrap.cancelPath, navigateFallback)));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to delete user.' });
       return;

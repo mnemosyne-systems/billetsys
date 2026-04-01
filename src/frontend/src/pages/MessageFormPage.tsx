@@ -15,7 +15,7 @@ import useJson from '../hooks/useJson';
 import { postForm, postMultipart } from '../utils/api';
 import { toQueryString } from '../utils/formatting';
 import { PATHS } from '../routes/paths';
-import { SmartLink } from '../utils/routing';
+import { resolvePostRedirectPath, SmartLink } from '../utils/routing';
 import type { SessionPageProps } from '../types/app';
 import type { MessageFormBootstrap } from '../types/domain';
 
@@ -57,13 +57,13 @@ export default function MessageFormPage({ sessionState }: SessionPageProps) {
     }
     setSaveState({ saving: true, error: '' });
     try {
-      await postMultipart(bootstrap.submitPath, [
+      const response = await postMultipart(bootstrap.submitPath, [
         ['body', formState.body],
         ['date', formState.date],
         ['ticketId', formState.ticketId],
         ['attachments', formState.files]
       ]);
-      navigate(PATHS.messages);
+      navigate(await resolvePostRedirectPath(response, PATHS.messages));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save message.' });
       return;
@@ -77,8 +77,8 @@ export default function MessageFormPage({ sessionState }: SessionPageProps) {
     }
     setSaveState({ saving: true, error: '' });
     try {
-      await postForm(`/messages/${id}/delete`, []);
-      navigate(PATHS.messages);
+      const response = await postForm(`/messages/${id}/delete`, []);
+      navigate(await resolvePostRedirectPath(response, PATHS.messages));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to delete message.' });
       return;

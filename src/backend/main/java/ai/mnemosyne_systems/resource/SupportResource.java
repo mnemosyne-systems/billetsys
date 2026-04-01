@@ -501,11 +501,7 @@ public class SupportResource {
     }
 
     private Response createTicketRedirect(String client, String path) {
-        if ("react".equalsIgnoreCase(client)) {
-            return Response.ok(new SupportTicketApiResource.RedirectResponse(path)).type(MediaType.APPLICATION_JSON)
-                    .build();
-        }
-        return Response.seeOther(URI.create(path)).build();
+        return ReactRedirectSupport.redirect(client, path);
     }
 
     private String formatDate(LocalDateTime date) {
