@@ -381,7 +381,7 @@ public class UserResource {
     @Path("user/tickets/{id}")
     @Transactional
     public Response updateUserTicket(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @FormParam("affectsVersionId") Long affectsVersionId,
+            @HeaderParam("X-Billetsys-Client") String client, @FormParam("affectsVersionId") Long affectsVersionId,
             @FormParam("resolvedVersionId") Long resolvedVersionId) {
         User user = requireUser(auth);
         Ticket ticket = findTicketForUser(user, id);
@@ -392,7 +392,7 @@ public class UserResource {
         if (User.TYPE_TAM.equalsIgnoreCase(user.type)) {
             ticket.resolvedVersion = resolveOptionalVersionForTicket(ticket, resolvedVersionId, "Resolved");
         }
-        return Response.seeOther(URI.create("/tickets/" + id)).build();
+        return ReactRedirectSupport.redirect(client, "/tickets/" + id);
     }
 
     @GET
@@ -450,7 +450,8 @@ public class UserResource {
     @POST
     @Path("users")
     @Transactional
-    public Response createAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
+    public Response createAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
             @FormParam("fullName") String fullName, @FormParam("email") String email,
             @FormParam("social") String social, @FormParam("phoneNumber") String phoneNumber,
             @FormParam("phoneExtension") String phoneExtension, @FormParam("timezoneId") Long timezoneId,
@@ -478,14 +479,15 @@ public class UserResource {
                 company.users.add(newUser);
             }
         }
-        return Response.seeOther(URI.create("/users")).build();
+        return ReactRedirectSupport.redirect(client, "/users");
     }
 
     @POST
     @Path("user/{id}")
     @Transactional
     public Response updateAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @FormParam("name") String name, @FormParam("fullName") String fullName, @FormParam("email") String email,
+            @HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
+            @FormParam("fullName") String fullName, @FormParam("email") String email,
             @FormParam("social") String social, @FormParam("phoneNumber") String phoneNumber,
             @FormParam("phoneExtension") String phoneExtension, @FormParam("timezoneId") Long timezoneId,
             @FormParam("countryId") Long countryId, @FormParam("type") String type,
@@ -521,7 +523,7 @@ public class UserResource {
                 company.users.add(editUser);
             }
         }
-        return Response.seeOther(URI.create("/users")).build();
+        return ReactRedirectSupport.redirect(client, "/users");
     }
 
     private String trimOrNull(String value) {
@@ -534,14 +536,45 @@ public class UserResource {
     @POST
     @Path("user/{id}/delete")
     @Transactional
-    public Response deleteAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
+    public Response deleteAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
         requireAdmin(auth);
         User deleteUser = User.findById(id);
         if (deleteUser == null) {
             throw new NotFoundException();
         }
+        if (Company.count("superuser = ?1", deleteUser) > 0) {
+            throw new BadRequestException("Reassign this company superuser before deleting the user.");
+        }
+        removeUserReferences(deleteUser);
         deleteUser.delete();
-        return Response.seeOther(URI.create("/users")).build();
+        return ReactRedirectSupport.redirect(client, "/users");
+    }
+
+    private void removeUserReferences(User user) {
+        List<Company> companies = Company
+                .find("select distinct c from Company c left join c.users u where u = ?1", user).list();
+        for (Company company : companies) {
+            company.users.removeIf(existing -> existing.id != null && existing.id.equals(user.id));
+        }
+        List<Ticket> supportTickets = Ticket
+                .find("select distinct t from Ticket t join t.supportUsers u where u = ?1", user).list();
+        for (Ticket ticket : supportTickets) {
+            ticket.supportUsers.removeIf(existing -> existing.id != null && existing.id.equals(user.id));
+        }
+        List<Ticket> tamTickets = Ticket.find("select distinct t from Ticket t join t.tamUsers u where u = ?1", user)
+                .list();
+        for (Ticket ticket : tamTickets) {
+            ticket.tamUsers.removeIf(existing -> existing.id != null && existing.id.equals(user.id));
+        }
+        List<Ticket> requesterTickets = Ticket.find("requester = ?1", user).list();
+        for (Ticket ticket : requesterTickets) {
+            ticket.requester = null;
+        }
+        List<Message> messages = Message.find("author = ?1", user).list();
+        for (Message message : messages) {
+            message.author = null;
+        }
     }
 
     private void validateUserFields(String name, String email, String type, boolean requirePassword, String password) {
@@ -931,11 +964,7 @@ public class UserResource {
     }
 
     private Response createTicketRedirect(String client, String path) {
-        if ("react".equalsIgnoreCase(client)) {
-            return Response.ok(new SupportTicketApiResource.RedirectResponse(path)).type(MediaType.APPLICATION_JSON)
-                    .build();
-        }
-        return Response.seeOther(URI.create(path)).build();
+        return ReactRedirectSupport.redirect(client, path);
     }
 
     private Version resolveVersionForTicket(Ticket ticket, Long versionId, String label) {

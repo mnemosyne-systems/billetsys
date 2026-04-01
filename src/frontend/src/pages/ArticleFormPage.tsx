@@ -14,6 +14,7 @@ import DataState from '../components/common/DataState';
 import MarkdownEditor from '../components/markdown/MarkdownEditor';
 import AttachmentPicker from '../components/common/AttachmentPicker';
 import { postMultipart } from '../utils/api';
+import { resolvePostRedirectPath } from '../utils/routing';
 import { DeleteArticleButton } from './ArticleDetailPage';
 import type { FormMode, SessionPageProps } from '../types/app';
 import type { ArticleRecord } from '../types/domain';
@@ -65,13 +66,13 @@ export default function ArticleFormPage({ sessionState, mode }: ArticleFormPageP
     }
     setSaveState({ saving: true, error: '' });
     try {
-      await postMultipart(isEdit ? `/articles/${id}` : '/articles', [
+      const response = await postMultipart(isEdit ? `/articles/${id}` : '/articles', [
         ['title', formState.title],
         ['tags', formState.tags],
         ['body', formState.body],
         ...files.map((file): ['attachments', File] => ['attachments', file])
       ]);
-      navigate(isEdit && id ? `/articles/${id}` : '/articles');
+      navigate(await resolvePostRedirectPath(response, isEdit && id ? `/articles/${id}` : '/articles'));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save article.' });
       return;

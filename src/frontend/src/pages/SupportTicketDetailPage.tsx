@@ -8,7 +8,7 @@
 
 import type { ChangeEvent, FormEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import DataState from '../components/common/DataState';
 import MarkdownContent from '../components/markdown/MarkdownContent';
 import MarkdownEditor from '../components/markdown/MarkdownEditor';
@@ -16,7 +16,7 @@ import { UserHoverLink, UserReferenceInlineList } from '../components/users/User
 import useJson from '../hooks/useJson';
 import { postForm } from '../utils/api';
 import { formatFileSize, toQueryString, versionLabel } from '../utils/formatting';
-import { SmartLink } from '../utils/routing';
+import { resolvePostRedirectPath, SmartLink } from '../utils/routing';
 import type { SessionPageProps } from '../types/app';
 import type { AttachmentReference, MessageReference, NamedEntity, SupportTicketDetailRecord, VersionInfo } from '../types/domain';
 import type { SupportTicketDetailState } from '../types/forms';
@@ -37,6 +37,7 @@ export default function SupportTicketDetailPage({
 }: SupportTicketDetailPageProps) {
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const [refreshNonce, setRefreshNonce] = useState(0);
   const ticketState = useJson<SupportTicketDetailRecord>(id ? `${apiBase}/${id}${toQueryString({ refresh: refreshNonce })}` : null);
   const ticket = ticketState.data;
@@ -96,7 +97,7 @@ export default function SupportTicketDetailPage({
     }
     setSaveState({ saving: true, error: '' });
     try {
-      await postForm(ticket.actionPath || `${apiBase}/${id || ''}`, [
+      const response = await postForm(ticket.actionPath || `${apiBase}/${id || ''}`, [
         ['status', formState.status],
         ['companyId', ticket.companyId],
         ['companyEntitlementId', ticket.companyEntitlementId],
@@ -107,7 +108,12 @@ export default function SupportTicketDetailPage({
       ], {
         headers: { 'X-Billetsys-Client': 'react' }
       });
-      setRefreshNonce(current => current + 1);
+      const redirectPath = await resolvePostRedirectPath(response, ticket.actionPath || `${apiBase}/${id || ''}`);
+      if (redirectPath !== location.pathname) {
+        navigate(redirectPath);
+      } else {
+        setRefreshNonce(current => current + 1);
+      }
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save ticket.' });
       return;

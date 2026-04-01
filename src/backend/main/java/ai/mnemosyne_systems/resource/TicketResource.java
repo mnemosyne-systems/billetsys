@@ -26,6 +26,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -153,7 +154,8 @@ public class TicketResource {
 
     @POST
     @Transactional
-    public Response create(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("status") String status,
+    public Response create(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, @FormParam("status") String status,
             @FormParam("companyId") Long companyId, @FormParam("companyEntitlementId") Long companyEntitlementId,
             @FormParam("categoryId") Long categoryId) {
         User user = requireSupport(auth);
@@ -185,16 +187,16 @@ public class TicketResource {
         ticket.affectsVersion = defaultAffectsVersion(entitlement);
         ticket.category = category;
         ticket.persist();
-        return Response.seeOther(URI.create("/tickets")).build();
+        return ReactRedirectSupport.redirect(client, "/tickets");
     }
 
     @POST
     @Path("/{id}")
     @Transactional
     public Response update(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @FormParam("status") String status, @FormParam("companyId") Long companyId,
-            @FormParam("companyEntitlementId") Long companyEntitlementId, @FormParam("categoryId") Long categoryId,
-            @FormParam("externalIssueLink") String externalIssueLink,
+            @HeaderParam("X-Billetsys-Client") String client, @FormParam("status") String status,
+            @FormParam("companyId") Long companyId, @FormParam("companyEntitlementId") Long companyEntitlementId,
+            @FormParam("categoryId") Long categoryId, @FormParam("externalIssueLink") String externalIssueLink,
             @FormParam("affectsVersionId") Long affectsVersionId,
             @FormParam("resolvedVersionId") Long resolvedVersionId) {
         User user = requireSupport(auth);
@@ -233,20 +235,21 @@ public class TicketResource {
         if (!sameStatus(previousStatus, ticket.status)) {
             ticketEmailService.notifyStatusChange(ticket, previousStatus, user);
         }
-        return Response.seeOther(URI.create("/tickets")).build();
+        return ReactRedirectSupport.redirect(client, "/tickets");
     }
 
     @POST
     @Path("/{id}/delete")
     @Transactional
-    public Response delete(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
+    public Response delete(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
         requireSupport(auth);
         Ticket ticket = Ticket.findById(id);
         if (ticket == null) {
             throw new NotFoundException();
         }
         ticket.delete();
-        return Response.seeOther(URI.create("/tickets")).build();
+        return ReactRedirectSupport.redirect(client, "/tickets");
     }
 
     @GET

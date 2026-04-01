@@ -11,7 +11,7 @@ import DataState from '../components/common/DataState';
 import { UserDetailCard } from '../components/users/UserProfileSections';
 import useJson from '../hooks/useJson';
 import { postForm } from '../utils/api';
-import { resolveClientPath, SmartLink } from '../utils/routing';
+import { resolveClientPath, resolvePostRedirectPath, SmartLink } from '../utils/routing';
 import type { MouseEvent } from 'react';
 import type { SessionPageProps } from '../types/app';
 import type { DirectoryUserDetail } from '../types/domain';
@@ -40,8 +40,8 @@ export default function DirectoryUserDetailPage({ sessionState, apiBase, backFal
       return;
     }
     try {
-      await postForm(detail.deletePath, []);
-      navigate(resolveClientPath(detail.backPath, backFallback));
+      const response = await postForm(detail.deletePath, []);
+      navigate(await resolvePostRedirectPath(response, resolveClientPath(detail.backPath, backFallback)));
     } catch (error: unknown) {
       window.alert(error instanceof Error ? error.message : 'Unable to delete user.');
     }

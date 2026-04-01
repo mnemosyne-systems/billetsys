@@ -13,7 +13,7 @@ import DataState from '../components/common/DataState';
 import useJson from '../hooks/useJson';
 import { postForm } from '../utils/api';
 import { toQueryString } from '../utils/formatting';
-import { SmartLink } from '../utils/routing';
+import { resolvePostRedirectPath, SmartLink } from '../utils/routing';
 import type { SessionPageProps } from '../types/app';
 import type { CompanyEntitlementOption, NamedEntity, TicketWorkbenchBootstrap, VersionInfo } from '../types/domain';
 import type { TicketWorkbenchFormState } from '../types/forms';
@@ -79,7 +79,7 @@ export default function TicketWorkbenchFormPage({ sessionState }: SessionPagePro
     }
     setSaveState({ saving: true, error: '' });
     try {
-      await postForm(bootstrap.submitPath, [
+      const response = await postForm(bootstrap.submitPath, [
         ['status', formState.status],
         ['companyId', formState.companyId],
         ['companyEntitlementId', formState.companyEntitlementId],
@@ -88,7 +88,7 @@ export default function TicketWorkbenchFormPage({ sessionState }: SessionPagePro
         ['affectsVersionId', formState.affectsVersionId],
         ['resolvedVersionId', formState.resolvedVersionId]
       ]);
-      navigate('/tickets');
+      navigate(await resolvePostRedirectPath(response, '/tickets'));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save ticket.' });
       return;
@@ -102,8 +102,8 @@ export default function TicketWorkbenchFormPage({ sessionState }: SessionPagePro
     }
     setSaveState({ saving: true, error: '' });
     try {
-      await postForm(`/tickets/${id}/delete`, []);
-      navigate('/tickets');
+      const response = await postForm(`/tickets/${id}/delete`, []);
+      navigate(await resolvePostRedirectPath(response, '/tickets'));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to delete ticket.' });
       return;

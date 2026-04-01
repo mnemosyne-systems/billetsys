@@ -20,6 +20,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -77,7 +78,8 @@ public class EntitlementResource {
     @POST
     @Path("")
     @Transactional
-    public Response createEntitlement(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
+    public Response createEntitlement(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
             @FormParam("description") String description, @FormParam("levelIds") List<Long> levelIds,
             @FormParam("versionIds") List<String> versionIds, @FormParam("versionNames") List<String> versionNames,
             @FormParam("versionDates") List<String> versionDates) {
@@ -90,16 +92,16 @@ public class EntitlementResource {
         entitlement.versions.clear();
         entitlement.versions.addAll(resolveVersions(entitlement, null, versionIds, versionNames, versionDates));
         entitlement.persist();
-        return Response.seeOther(URI.create("/entitlements")).build();
+        return ReactRedirectSupport.redirect(client, "/entitlements");
     }
 
     @POST
     @Path("{id}")
     @Transactional
     public Response updateEntitlement(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @FormParam("name") String name, @FormParam("description") String description,
-            @FormParam("levelIds") List<Long> levelIds, @FormParam("versionIds") List<String> versionIds,
-            @FormParam("versionNames") List<String> versionNames,
+            @HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
+            @FormParam("description") String description, @FormParam("levelIds") List<Long> levelIds,
+            @FormParam("versionIds") List<String> versionIds, @FormParam("versionNames") List<String> versionNames,
             @FormParam("versionDates") List<String> versionDates) {
         requireAdmin(auth);
         Entitlement entitlement = Entitlement
@@ -116,20 +118,21 @@ public class EntitlementResource {
                 versionDates);
         entitlement.versions.clear();
         entitlement.versions.addAll(resolvedVersions);
-        return Response.seeOther(URI.create("/entitlements")).build();
+        return ReactRedirectSupport.redirect(client, "/entitlements");
     }
 
     @POST
     @Path("{id}/delete")
     @Transactional
-    public Response deleteEntitlement(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
+    public Response deleteEntitlement(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
         requireAdmin(auth);
         Entitlement entitlement = Entitlement.findById(id);
         if (entitlement == null) {
             throw new NotFoundException();
         }
         entitlement.delete();
-        return Response.seeOther(URI.create("/entitlements")).build();
+        return ReactRedirectSupport.redirect(client, "/entitlements");
     }
 
     private void validate(String name, String description) {

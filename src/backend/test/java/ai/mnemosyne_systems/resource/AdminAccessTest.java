@@ -383,4 +383,106 @@ class AdminAccessTest extends AccessTestSupport {
         Assertions.assertTrue(companyHasUser(ownerCompany.id, "tam1@mnemosyne-systems.ai"));
     }
 
+    @Test
+    void reactAdminMutationsReturnJsonRedirects() {
+        ensureUser("admin-json", "admin-json@mnemosyne-systems.ai", User.TYPE_ADMIN, "admin-json");
+        String cookie = login("admin-json", "admin-json");
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).header("X-Billetsys-Client", "react")
+                .contentType(ContentType.URLENC).formParam("name", "react-admin-user")
+                .formParam("email", "react-admin-user@mnemosyne-systems.ai").formParam("type", User.TYPE_USER)
+                .formParam("password", "secret").post("/users").then().statusCode(200)
+                .body("redirectTo", Matchers.equalTo("/users"));
+        User createdUser = User.find("email", "react-admin-user@mnemosyne-systems.ai").firstResult();
+        Assertions.assertNotNull(createdUser);
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).header("X-Billetsys-Client", "react")
+                .multiPart("name", "React Redirect Category").multiPart("description", "Redirect body")
+                .multiPart("isDefault", "false").post("/categories").then().statusCode(200)
+                .body("redirectTo", Matchers.equalTo("/categories"));
+        Category category = Category.find("name", "React Redirect Category").firstResult();
+        Assertions.assertNotNull(category);
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).header("X-Billetsys-Client", "react")
+                .post("/categories/" + category.id + "/delete").then().statusCode(200)
+                .body("redirectTo", Matchers.equalTo("/categories"));
+    }
+
+    @Test
+    void adminCannotDeleteCompanySuperuserWithoutReassignment() {
+        ensureUser("admin-delete", "admin-delete@mnemosyne-systems.ai", User.TYPE_ADMIN, "admin-delete");
+        ensureUser("delete-target", "delete-target@mnemosyne-systems.ai", User.TYPE_USER, "delete-target");
+        String cookie = login("admin-delete", "admin-delete");
+        Long companyId = ensureCompany("Delete User Co");
+        Long targetUserId = prepareReferencedUserForDelete(companyId, "delete-target@mnemosyne-systems.ai", true);
+
+        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
+                .post("/user/" + targetUserId + "/delete").then().statusCode(400);
+
+        Assertions.assertNotNull(refreshedUser(targetUserId));
+        Company company = refreshedCompany(companyId);
+        Assertions.assertNotNull(company);
+        Assertions.assertNotNull(company.superuser);
+        Assertions.assertEquals(targetUserId, company.superuser.id);
+    }
+
+    @Test
+    void adminCanDeleteReferencedNonSuperuserWithoutServerError() {
+        ensureUser("admin-delete-2", "admin-delete-2@mnemosyne-systems.ai", User.TYPE_ADMIN, "admin-delete-2");
+        ensureUser("delete-target-2", "delete-target-2@mnemosyne-systems.ai", User.TYPE_USER, "delete-target-2");
+        String cookie = login("admin-delete-2", "admin-delete-2");
+        Long companyId = ensureCompany("Delete User Co 2");
+        Long targetUserId = prepareReferencedUserForDelete(companyId, "delete-target-2@mnemosyne-systems.ai", false);
+
+        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
+                .post("/user/" + targetUserId + "/delete").then().statusCode(303)
+                .header("Location", Matchers.endsWith("/users"));
+
+        Assertions.assertNull(refreshedUser(targetUserId));
+        Assertions.assertFalse(companyHasUser(companyId, "delete-target-2@mnemosyne-systems.ai"));
+        Assertions.assertTrue(deleteReferencesCleared("delete-target-2@mnemosyne-systems.ai"));
+    }
+
+    @Transactional
+    Long prepareReferencedUserForDelete(Long companyId, String email, boolean assignAsSuperuser) {
+        Company company = Company.findById(companyId);
+        User user = User.find("email", email).firstResult();
+        Assertions.assertNotNull(company);
+        Assertions.assertNotNull(user);
+        if (company.users.stream().noneMatch(existing -> existing.id != null && existing.id.equals(user.id))) {
+            company.users.add(user);
+        }
+        if (assignAsSuperuser) {
+            company.superuser = user;
+        }
+
+        Ticket ticket = new Ticket();
+        ticket.name = Ticket.nextName(company);
+        ticket.status = "Open";
+        ticket.company = company;
+        ticket.requester = user;
+        ticket.supportUsers.add(user);
+        ticket.tamUsers.add(user);
+        ticket.persist();
+
+        Message message = new Message();
+        message.ticket = ticket;
+        message.body = "Delete target message";
+        message.date = java.time.LocalDateTime.now();
+        message.author = user;
+        message.persist();
+
+        return user.id;
+    }
+
+    @Transactional
+    boolean deleteReferencesCleared(String email) {
+        long requesterCount = Ticket.count("requester.email", email);
+        long messageAuthorCount = Message.count("author.email", email);
+        long supportCount = Ticket.count("select distinct t from Ticket t join t.supportUsers u where u.email = ?1",
+                email);
+        long tamCount = Ticket.count("select distinct t from Ticket t join t.tamUsers u where u.email = ?1", email);
+        return requesterCount == 0 && messageAuthorCount == 0 && supportCount == 0 && tamCount == 0;
+    }
+
 }

@@ -209,4 +209,31 @@ class UserAccessTest extends AccessTestSupport {
                 .body("attachments.downloadPath", Matchers.hasItem("/attachments/" + attachment.id + "/data"));
     }
 
+    @Test
+    void reactUserMutationsReturnJsonRedirects() {
+        ensureUser("user-json", "user-json@mnemosyne-systems.ai", User.TYPE_USER, "user-json");
+        ensureDefaultCategories();
+        String cookie = login("user-json", "user-json");
+        Long companyId = ensureCompany("User Json Co");
+        ensureCompanyUsers(companyId, "user-json@mnemosyne-systems.ai");
+        Entitlement entitlement = ensureEntitlement("User Json Entitlement", "User json detail");
+        Version version = ensureVersion(entitlement, "10.0.0", java.time.LocalDate.of(2026, 2, 1));
+        CompanyEntitlement entry = ensureCompanyEntitlement(companyId, entitlement);
+        Assertions.assertNotNull(entry);
+        Assertions.assertNotNull(version);
+
+        String redirectTo = RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie)
+                .header("X-Billetsys-Client", "react").multiPart("status", "Open")
+                .multiPart("message", "User json redirect create").multiPart("companyId", companyId)
+                .multiPart("companyEntitlementId", entry.id).multiPart("categoryId", Category.findDefault().id)
+                .multiPart("affectsVersionId", version.id).post("/user/tickets").then().statusCode(200)
+                .body("redirectTo", Matchers.matchesPattern("/user/tickets/\\d+")).extract().path("redirectTo");
+        Long createdTicketId = Long.valueOf(redirectTo.substring(redirectTo.lastIndexOf('/') + 1));
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).header("X-Billetsys-Client", "react")
+                .contentType(ContentType.URLENC).formParam("affectsVersionId", version.id)
+                .post("/user/tickets/" + createdTicketId).then().statusCode(200)
+                .body("redirectTo", Matchers.equalTo("/tickets/" + createdTicketId));
+    }
+
 }

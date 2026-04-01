@@ -13,6 +13,7 @@ import MarkdownEditor from '../components/markdown/MarkdownEditor';
 import useJson from '../hooks/useJson';
 import DataState from '../components/common/DataState';
 import { postForm } from '../utils/api';
+import { resolvePostRedirectPath } from '../utils/routing';
 import type { FormMode, SessionPageProps } from '../types/app';
 import type { EntitlementRecord, LevelRecord } from '../types/domain';
 import type { FormEntries } from '../utils/api';
@@ -143,8 +144,8 @@ export default function EntitlementEditorPage({ sessionState, mode }: Entitlemen
           ['versionDates', version.date]
         ])
       ];
-      await postForm(isEdit ? `/entitlements/${id}` : '/entitlements', entries);
-      navigate('/entitlements');
+      const response = await postForm(isEdit ? `/entitlements/${id}` : '/entitlements', entries);
+      navigate(await resolvePostRedirectPath(response, '/entitlements'));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save entitlement.' });
       return;
@@ -158,8 +159,8 @@ export default function EntitlementEditorPage({ sessionState, mode }: Entitlemen
     }
     setSaveState({ saving: true, error: '' });
     try {
-      await postForm(`/entitlements/${id}/delete`, []);
-      navigate('/entitlements');
+      const response = await postForm(`/entitlements/${id}/delete`, []);
+      navigate(await resolvePostRedirectPath(response, '/entitlements'));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to delete entitlement.' });
       return;

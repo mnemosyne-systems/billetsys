@@ -844,4 +844,36 @@ class SupportAccessTest extends AccessTestSupport {
         Assertions.assertEquals("Closed", ticketEmailService.computeEffectiveStatus(ticket, "Closed"));
     }
 
+    @Test
+    void reactSupportMutationsReturnJsonRedirects() {
+        ensureUser("support-json", "support-json@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support-json");
+        ensureDefaultCategories();
+        String cookie = login("support-json", "support-json");
+        Long companyId = ensureCompany("Support Json Co");
+        Company company = Company.findById(companyId);
+        Entitlement entitlement = ensureEntitlement("Support Json Entitlement", "Support json detail");
+        Version version = ensureVersion(entitlement, "8.0.0", java.time.LocalDate.of(2026, 1, 1));
+        CompanyEntitlement entry = ensureCompanyEntitlement(companyId, entitlement);
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).header("X-Billetsys-Client", "react")
+                .multiPart("status", "Open").multiPart("message", "Support json redirect create")
+                .multiPart("companyId", company.id).multiPart("companyEntitlementId", entry.id)
+                .multiPart("categoryId", Category.findDefault().id).multiPart("affectsVersionId", version.id)
+                .post("/support/tickets").then().statusCode(200)
+                .body("redirectTo", Matchers.matchesPattern("/support/tickets/\\d+"));
+
+        Ticket createdTicket = findMessageByBody("Support json redirect create").ticket;
+        Assertions.assertNotNull(createdTicket);
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).header("X-Billetsys-Client", "react")
+                .contentType(ContentType.URLENC).formParam("status", "Assigned").formParam("companyId", company.id)
+                .formParam("companyEntitlementId", entry.id).formParam("categoryId", Category.findDefault().id)
+                .formParam("affectsVersionId", version.id).post("/support/tickets/" + createdTicket.id).then()
+                .statusCode(200).body("redirectTo", Matchers.equalTo("/support/tickets/" + createdTicket.id));
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).header("X-Billetsys-Client", "react")
+                .post("/support/tickets/" + createdTicket.id + "/assign").then().statusCode(200)
+                .body("redirectTo", Matchers.equalTo("/support/tickets/" + createdTicket.id));
+    }
+
 }

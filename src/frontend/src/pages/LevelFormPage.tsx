@@ -15,6 +15,7 @@ import useJson from '../hooks/useJson';
 import { PATHS } from '../routes/paths';
 import { postForm } from '../utils/api';
 import { levelColorMarker } from '../utils/formatting';
+import { resolvePostRedirectPath } from '../utils/routing';
 import type { FormMode, SessionPageProps } from '../types/app';
 import type { CountryOption, LevelRecord, TimezoneOption } from '../types/domain';
 
@@ -99,7 +100,7 @@ export default function LevelFormPage({ sessionState, mode }: LevelFormPageProps
     }
     setSaveState({ saving: true, error: '' });
     try {
-      await postForm(isEdit ? `${PATHS.levels}/${id}` : PATHS.levels, [
+      const response = await postForm(isEdit ? `${PATHS.levels}/${id}` : PATHS.levels, [
         ['name', formState.name],
         ['description', formState.description],
         ['level', formState.level],
@@ -111,7 +112,7 @@ export default function LevelFormPage({ sessionState, mode }: LevelFormPageProps
         ['countryId', formState.countryId],
         ['timezoneId', formState.timezoneId]
       ]);
-      navigate(PATHS.levels);
+      navigate(await resolvePostRedirectPath(response, PATHS.levels));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save level.' });
       return;
@@ -125,8 +126,8 @@ export default function LevelFormPage({ sessionState, mode }: LevelFormPageProps
     }
     setSaveState({ saving: true, error: '' });
     try {
-      await postForm(`${PATHS.levels}/${id}/delete`, []);
-      navigate(PATHS.levels);
+      const response = await postForm(`${PATHS.levels}/${id}/delete`, []);
+      navigate(await resolvePostRedirectPath(response, PATHS.levels));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to delete level.' });
       return;

@@ -22,6 +22,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -77,7 +78,8 @@ public class MessageResource {
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
-    public Response create(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, MultipartFormDataInput input) {
+    public Response create(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
         User user = requireSupport(auth);
         String body = AttachmentHelper.readFormValue(input, "body");
         String date = AttachmentHelper.readFormValue(input, "date");
@@ -88,7 +90,7 @@ public class MessageResource {
         message.persistAndFlush();
         AttachmentHelper.resolveInlineAttachmentUrls(message, attachments);
         ticketEmailService.notifyMessageChange(message.ticket, message, user);
-        return Response.seeOther(URI.create("/messages")).build();
+        return ReactRedirectSupport.redirect(client, "/messages");
     }
 
     @POST
@@ -96,7 +98,7 @@ public class MessageResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
     public Response update(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            MultipartFormDataInput input) {
+            @HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
         User user = requireSupport(auth);
         String body = AttachmentHelper.readFormValue(input, "body");
         String date = AttachmentHelper.readFormValue(input, "date");
@@ -110,20 +112,21 @@ public class MessageResource {
         AttachmentHelper.attachToMessage(message, attachments);
         AttachmentHelper.resolveInlineAttachmentUrls(message, attachments);
         ticketEmailService.notifyMessageChange(message.ticket, message, user);
-        return Response.seeOther(URI.create("/messages")).build();
+        return ReactRedirectSupport.redirect(client, "/messages");
     }
 
     @POST
     @Path("/{id}/delete")
     @Transactional
-    public Response delete(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
+    public Response delete(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
         requireSupport(auth);
         Message message = Message.findById(id);
         if (message == null) {
             throw new NotFoundException();
         }
         message.delete();
-        return Response.seeOther(URI.create("/messages")).build();
+        return ReactRedirectSupport.redirect(client, "/messages");
     }
 
     private Message buildMessage(Message existing, User author, String body, String date, Long ticketId) {

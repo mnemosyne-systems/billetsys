@@ -178,4 +178,31 @@ class SuperuserAccessTest extends AccessTestSupport {
                 .body("navigation.href", Matchers.hasItem("/superuser/tickets"));
     }
 
+    @Test
+    void reactSuperuserMutationsReturnJsonRedirects() {
+        ensureUser("superuser-json", "superuser-json@mnemosyne-systems.ai", User.TYPE_SUPERUSER, "superuser-json");
+        ensureDefaultCategories();
+        Long companyId = ensureCompany("Superuser Json Co");
+        ensureCompanyUsers(companyId, "superuser-json@mnemosyne-systems.ai");
+        String cookie = login("superuser-json", "superuser-json");
+        Entitlement entitlement = ensureEntitlement("Superuser Json Entitlement", "Superuser json detail");
+        Version version = ensureVersion(entitlement, "11.0.0", java.time.LocalDate.of(2026, 3, 1));
+        CompanyEntitlement entry = ensureCompanyEntitlement(companyId, entitlement);
+        Assertions.assertNotNull(entry);
+        Assertions.assertNotNull(version);
+
+        String redirectTo = RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie)
+                .header("X-Billetsys-Client", "react").multiPart("status", "Open")
+                .multiPart("message", "Superuser json redirect create").multiPart("companyId", companyId)
+                .multiPart("companyEntitlementId", entry.id).multiPart("categoryId", Category.findDefault().id)
+                .multiPart("affectsVersionId", version.id).post("/superuser/tickets").then().statusCode(200)
+                .body("redirectTo", Matchers.matchesPattern("/superuser/tickets/\\d+")).extract().path("redirectTo");
+        Long createdTicketId = Long.valueOf(redirectTo.substring(redirectTo.lastIndexOf('/') + 1));
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).header("X-Billetsys-Client", "react")
+                .contentType(ContentType.URLENC).formParam("affectsVersionId", version.id)
+                .post("/superuser/tickets/" + createdTicketId).then().statusCode(200)
+                .body("redirectTo", Matchers.equalTo("/superuser/tickets/" + createdTicketId));
+    }
+
 }
