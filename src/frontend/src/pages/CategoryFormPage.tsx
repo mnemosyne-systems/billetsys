@@ -10,6 +10,7 @@ import type { FormEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useJson from '../hooks/useJson';
+import useSubmissionGuard from '../hooks/useSubmissionGuard';
 import DataState from '../components/common/DataState';
 import MarkdownEditor from '../components/markdown/MarkdownEditor';
 import { postForm, postMultipart } from '../utils/api';
@@ -35,6 +36,7 @@ export default function CategoryFormPage({ sessionState, mode }: CategoryFormPag
   const [formState, setFormState] = useState<CategoryFormState | null>(null);
   const [saveState, setSaveState] = useState({ saving: false, error: '' });
   const descriptionInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const submissionGuard = useSubmissionGuard();
   const isEdit = mode === 'edit';
 
   const updateFormState = <K extends keyof CategoryFormState>(field: K, value: CategoryFormState[K]) => {
@@ -58,11 +60,11 @@ export default function CategoryFormPage({ sessionState, mode }: CategoryFormPag
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!formState) {
+    if (!formState || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     try {
+      setSaveState({ saving: true, error: '' });
       const response = await postMultipart(isEdit ? `/categories/${id}` : '/categories', [
         ['name', formState.name],
         ['description', formState.description],
@@ -72,21 +74,25 @@ export default function CategoryFormPage({ sessionState, mode }: CategoryFormPag
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save category.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };
 
   const deleteCategory = async () => {
-    if (!id || !window.confirm('Delete this category?')) {
+    if (!id || !window.confirm('Delete this category?') || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     try {
+      setSaveState({ saving: true, error: '' });
       const response = await postForm(`/categories/${id}/delete`, []);
       navigate(await resolvePostRedirectPath(response, '/categories'));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to delete category.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };

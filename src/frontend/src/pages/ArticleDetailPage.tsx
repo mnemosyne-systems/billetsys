@@ -10,6 +10,7 @@ import { useParams } from 'react-router-dom';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useJson from '../hooks/useJson';
+import useSubmissionGuard from '../hooks/useSubmissionGuard';
 import DataState from '../components/common/DataState';
 import MarkdownContent from '../components/markdown/MarkdownContent';
 import { resolvePostRedirectPath, SmartLink } from '../utils/routing';
@@ -26,20 +27,23 @@ function DeleteArticleButton({ articleId, label = 'Delete article' }: DeleteArti
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
+  const submissionGuard = useSubmissionGuard();
 
   const remove = async () => {
-    if (!window.confirm('Delete this article?')) {
+    if (!window.confirm('Delete this article?') || !submissionGuard.tryEnter()) {
       return;
     }
-    setDeleting(true);
-    setError('');
     try {
+      setDeleting(true);
+      setError('');
       const response = await postForm(`/articles/${articleId}/delete`, []);
       navigate(await resolvePostRedirectPath(response, '/articles'));
     } catch (submitError: unknown) {
       setDeleting(false);
       setError(submitError instanceof Error ? submitError.message : 'Unable to delete article.');
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setDeleting(false);
   };

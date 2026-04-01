@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import DataState from '../components/common/DataState';
 import useJson from '../hooks/useJson';
+import useSubmissionGuard from '../hooks/useSubmissionGuard';
 import { postForm } from '../utils/api';
 import { toQueryString } from '../utils/formatting';
 import { resolvePostRedirectPath, SmartLink } from '../utils/routing';
@@ -27,6 +28,7 @@ export default function TicketWorkbenchFormPage({ sessionState }: SessionPagePro
   const requestedCompanyId = query.get('companyId') || '';
   const [formState, setFormState] = useState<TicketWorkbenchFormState | null>(null);
   const [saveState, setSaveState] = useState({ saving: false, error: '' });
+  const submissionGuard = useSubmissionGuard();
   const bootstrapState = useJson<TicketWorkbenchBootstrap>(
     `/api/ticket-workbench/bootstrap${toQueryString({ ticketId: id, companyId: formState?.companyId || requestedCompanyId })}`
   );
@@ -74,11 +76,11 @@ export default function TicketWorkbenchFormPage({ sessionState }: SessionPagePro
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!formState || !bootstrap) {
+    if (!formState || !bootstrap || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     try {
+      setSaveState({ saving: true, error: '' });
       const response = await postForm(bootstrap.submitPath, [
         ['status', formState.status],
         ['companyId', formState.companyId],
@@ -92,21 +94,25 @@ export default function TicketWorkbenchFormPage({ sessionState }: SessionPagePro
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save ticket.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };
 
   const deleteTicket = async () => {
-    if (!id || !window.confirm('Delete this ticket?')) {
+    if (!id || !window.confirm('Delete this ticket?') || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     try {
+      setSaveState({ saving: true, error: '' });
       const response = await postForm(`/tickets/${id}/delete`, []);
       navigate(await resolvePostRedirectPath(response, '/tickets'));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to delete ticket.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };

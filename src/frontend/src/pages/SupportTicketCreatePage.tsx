@@ -13,6 +13,7 @@ import AttachmentPicker from '../components/common/AttachmentPicker';
 import DataState from '../components/common/DataState';
 import MarkdownEditor from '../components/markdown/MarkdownEditor';
 import useJson from '../hooks/useJson';
+import useSubmissionGuard from '../hooks/useSubmissionGuard';
 import { postMultipart } from '../utils/api';
 import { toQueryString } from '../utils/formatting';
 import { resolvePostRedirectPath, SmartLink } from '../utils/routing';
@@ -57,6 +58,7 @@ export default function SupportTicketCreatePage({
   const [files, setFiles] = useState<File[]>([]);
   const [saveState, setSaveState] = useState({ saving: false, error: '' });
   const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const submissionGuard = useSubmissionGuard();
   const showFixedCompany = sessionState.data?.role === 'superuser';
   const compactCreateHeader = apiBase === '/api/superuser/tickets/bootstrap';
 
@@ -101,11 +103,11 @@ export default function SupportTicketCreatePage({
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!formState) {
+    if (!formState || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     try {
+      setSaveState({ saving: true, error: '' });
       const entries: FormEntries = [
         ['status', 'Open'],
         ['message', formState.message],
@@ -126,6 +128,8 @@ export default function SupportTicketCreatePage({
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to create ticket.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };

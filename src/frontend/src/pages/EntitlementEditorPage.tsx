@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import MarkdownEditor from '../components/markdown/MarkdownEditor';
 import useJson from '../hooks/useJson';
+import useSubmissionGuard from '../hooks/useSubmissionGuard';
 import DataState from '../components/common/DataState';
 import { postForm } from '../utils/api';
 import { resolvePostRedirectPath } from '../utils/routing';
@@ -47,6 +48,7 @@ export default function EntitlementEditorPage({ sessionState, mode }: Entitlemen
   const entitlement = entitlementState.data;
   const [formState, setFormState] = useState<EntitlementFormState | null>(null);
   const [saveState, setSaveState] = useState({ saving: false, error: '' });
+  const submissionGuard = useSubmissionGuard();
   const isEdit = mode === 'edit';
 
   const updateFormState = <K extends keyof EntitlementFormState>(field: K, value: EntitlementFormState[K]) => {
@@ -129,11 +131,11 @@ export default function EntitlementEditorPage({ sessionState, mode }: Entitlemen
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!formState) {
+    if (!formState || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     try {
+      setSaveState({ saving: true, error: '' });
       const entries: FormEntries = [
         ['name', formState.name],
         ['description', formState.description],
@@ -149,21 +151,25 @@ export default function EntitlementEditorPage({ sessionState, mode }: Entitlemen
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save entitlement.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };
 
   const deleteEntitlement = async () => {
-    if (!id || !window.confirm('Delete this entitlement?')) {
+    if (!id || !window.confirm('Delete this entitlement?') || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     try {
+      setSaveState({ saving: true, error: '' });
       const response = await postForm(`/entitlements/${id}/delete`, []);
       navigate(await resolvePostRedirectPath(response, '/entitlements'));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to delete entitlement.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };

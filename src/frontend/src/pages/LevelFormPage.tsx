@@ -12,6 +12,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import DataState from '../components/common/DataState';
 import MarkdownEditor from '../components/markdown/MarkdownEditor';
 import useJson from '../hooks/useJson';
+import useSubmissionGuard from '../hooks/useSubmissionGuard';
 import { PATHS } from '../routes/paths';
 import { postForm } from '../utils/api';
 import { levelColorMarker } from '../utils/formatting';
@@ -67,6 +68,7 @@ export default function LevelFormPage({ sessionState, mode }: LevelFormPageProps
   const level = levelState.data;
   const [formState, setFormState] = useState<LevelFormState | null>(null);
   const [saveState, setSaveState] = useState({ saving: false, error: '' });
+  const submissionGuard = useSubmissionGuard();
   const isEdit = mode === 'edit';
 
   useEffect(() => {
@@ -95,11 +97,11 @@ export default function LevelFormPage({ sessionState, mode }: LevelFormPageProps
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!formState) {
+    if (!formState || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     try {
+      setSaveState({ saving: true, error: '' });
       const response = await postForm(isEdit ? `${PATHS.levels}/${id}` : PATHS.levels, [
         ['name', formState.name],
         ['description', formState.description],
@@ -116,21 +118,25 @@ export default function LevelFormPage({ sessionState, mode }: LevelFormPageProps
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save level.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };
 
   const deleteLevel = async () => {
-    if (!id || !window.confirm('Delete this level?')) {
+    if (!id || !window.confirm('Delete this level?') || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     try {
+      setSaveState({ saving: true, error: '' });
       const response = await postForm(`${PATHS.levels}/${id}/delete`, []);
       navigate(await resolvePostRedirectPath(response, PATHS.levels));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to delete level.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };

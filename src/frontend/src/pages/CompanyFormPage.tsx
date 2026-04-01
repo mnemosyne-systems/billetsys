@@ -10,6 +10,7 @@ import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useJson from '../hooks/useJson';
+import useSubmissionGuard from '../hooks/useSubmissionGuard';
 import DataState from '../components/common/DataState';
 import { SmartLink, resolvePostRedirectPath } from '../utils/routing';
 import { postForm } from '../utils/api';
@@ -56,6 +57,7 @@ export default function CompanyFormPage({ sessionState, mode }: CompanyFormPageP
   const company = companyState.data;
   const [formState, setFormState] = useState<CompanyFormState | null>(null);
   const [saveState, setSaveState] = useState({ saving: false, error: '' });
+  const submissionGuard = useSubmissionGuard();
   const isEdit = mode === 'edit';
 
   useEffect(() => {
@@ -165,10 +167,9 @@ export default function CompanyFormPage({ sessionState, mode }: CompanyFormPageP
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!formState) {
+    if (!formState || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     const entries: BrowserFormEntries = [
       ['name', formState.name],
       ['address1', formState.address1],
@@ -189,6 +190,7 @@ export default function CompanyFormPage({ sessionState, mode }: CompanyFormPageP
       ])
     ];
     try {
+      setSaveState({ saving: true, error: '' });
       if (isEdit) {
         entries.push(['superuserId', formState.superuserId]);
       } else {
@@ -210,26 +212,31 @@ export default function CompanyFormPage({ sessionState, mode }: CompanyFormPageP
     } catch (error: unknown) {
       if (isNetworkRequestError(error)) {
         setSaveState({ saving: false, error: '' });
+        submissionGuard.exit();
         submitBrowserForm(isEdit ? `/companies/${id}` : '/companies', entries);
         return;
       }
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save company.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };
 
   const deleteCompany = async () => {
-    if (!id || !window.confirm('Delete this company?')) {
+    if (!id || !window.confirm('Delete this company?') || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     try {
+      setSaveState({ saving: true, error: '' });
       const response = await postForm(`/companies/${id}/delete`, []);
       navigate(await resolvePostRedirectPath(response, '/companies'));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to delete company.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };

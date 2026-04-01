@@ -10,6 +10,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import DataState from '../components/common/DataState';
 import { UserDetailCard } from '../components/users/UserProfileSections';
 import useJson from '../hooks/useJson';
+import useSubmissionGuard from '../hooks/useSubmissionGuard';
 import { postForm } from '../utils/api';
 import { resolveClientPath, resolvePostRedirectPath, SmartLink } from '../utils/routing';
 import type { MouseEvent } from 'react';
@@ -27,6 +28,7 @@ export default function DirectoryUserDetailPage({ sessionState, apiBase, backFal
   const detailState = useJson<DirectoryUserDetail>(id ? `${apiBase}/${id}` : null);
   const detail = detailState.data;
   const resolvedBackHref = detail?.backPath || backFallback;
+  const submissionGuard = useSubmissionGuard();
 
   const handleBackClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (window.history.length > 1) {
@@ -36,7 +38,7 @@ export default function DirectoryUserDetailPage({ sessionState, apiBase, backFal
   };
 
   const deleteUser = async () => {
-    if (!detail?.deletePath || !window.confirm('Delete this user?')) {
+    if (!detail?.deletePath || !window.confirm('Delete this user?') || !submissionGuard.tryEnter()) {
       return;
     }
     try {
@@ -44,6 +46,8 @@ export default function DirectoryUserDetailPage({ sessionState, apiBase, backFal
       navigate(await resolvePostRedirectPath(response, resolveClientPath(detail.backPath, backFallback)));
     } catch (error: unknown) {
       window.alert(error instanceof Error ? error.message : 'Unable to delete user.');
+    } finally {
+      submissionGuard.exit();
     }
   };
 

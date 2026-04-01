@@ -14,6 +14,7 @@ import MarkdownContent from '../components/markdown/MarkdownContent';
 import MarkdownEditor from '../components/markdown/MarkdownEditor';
 import { UserHoverLink, UserReferenceInlineList } from '../components/users/UserComponents';
 import useJson from '../hooks/useJson';
+import useSubmissionGuard from '../hooks/useSubmissionGuard';
 import { postForm } from '../utils/api';
 import { formatFileSize, toQueryString, versionLabel } from '../utils/formatting';
 import { resolvePostRedirectPath, SmartLink } from '../utils/routing';
@@ -43,6 +44,7 @@ export default function SupportTicketDetailPage({
   const ticket = ticketState.data;
   const [formState, setFormState] = useState<SupportTicketDetailState | null>(null);
   const [saveState, setSaveState] = useState({ saving: false, error: '' });
+  const submissionGuard = useSubmissionGuard();
   const [replyState] = useState({ saving: false, error: '' });
   const [replyBody, setReplyBody] = useState('');
   const [files, setFiles] = useState<File[]>([]);
@@ -92,11 +94,11 @@ export default function SupportTicketDetailPage({
 
   const saveTicket = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!ticket || !formState) {
+    if (!ticket || !formState || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     try {
+      setSaveState({ saving: true, error: '' });
       const response = await postForm(ticket.actionPath || `${apiBase}/${id || ''}`, [
         ['status', formState.status],
         ['companyId', ticket.companyId],
@@ -117,6 +119,8 @@ export default function SupportTicketDetailPage({
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save ticket.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };

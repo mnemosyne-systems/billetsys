@@ -12,6 +12,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import AttachmentPicker from '../components/common/AttachmentPicker';
 import DataState from '../components/common/DataState';
 import useJson from '../hooks/useJson';
+import useSubmissionGuard from '../hooks/useSubmissionGuard';
 import { postForm, postMultipart } from '../utils/api';
 import { toQueryString } from '../utils/formatting';
 import { PATHS } from '../routes/paths';
@@ -33,6 +34,7 @@ export default function MessageFormPage({ sessionState }: SessionPageProps) {
   const bootstrap = bootstrapState.data;
   const [formState, setFormState] = useState<MessageFormState | null>(null);
   const [saveState, setSaveState] = useState({ saving: false, error: '' });
+  const submissionGuard = useSubmissionGuard();
 
   const updateFormState = <K extends keyof MessageFormState>(field: K, value: MessageFormState[K]) => {
     setFormState(current => (current ? { ...current, [field]: value } : current));
@@ -52,11 +54,11 @@ export default function MessageFormPage({ sessionState }: SessionPageProps) {
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!bootstrap || !formState) {
+    if (!bootstrap || !formState || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     try {
+      setSaveState({ saving: true, error: '' });
       const response = await postMultipart(bootstrap.submitPath, [
         ['body', formState.body],
         ['date', formState.date],
@@ -67,21 +69,25 @@ export default function MessageFormPage({ sessionState }: SessionPageProps) {
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save message.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };
 
   const deleteMessage = async () => {
-    if (!id || !window.confirm('Delete this message?')) {
+    if (!id || !window.confirm('Delete this message?') || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     try {
+      setSaveState({ saving: true, error: '' });
       const response = await postForm(`/messages/${id}/delete`, []);
       navigate(await resolvePostRedirectPath(response, PATHS.messages));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to delete message.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };

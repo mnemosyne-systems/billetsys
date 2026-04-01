@@ -10,6 +10,7 @@ import type { FormEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useJson from '../hooks/useJson';
+import useSubmissionGuard from '../hooks/useSubmissionGuard';
 import DataState from '../components/common/DataState';
 import MarkdownEditor from '../components/markdown/MarkdownEditor';
 import AttachmentPicker from '../components/common/AttachmentPicker';
@@ -38,6 +39,7 @@ export default function ArticleFormPage({ sessionState, mode }: ArticleFormPageP
   const [saveState, setSaveState] = useState({ saving: false, error: '' });
   const [files, setFiles] = useState<File[]>([]);
   const bodyInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const submissionGuard = useSubmissionGuard();
   const isEdit = mode === 'edit';
 
   const updateFormState = (field: keyof ArticleFormState, value: string) => {
@@ -61,11 +63,11 @@ export default function ArticleFormPage({ sessionState, mode }: ArticleFormPageP
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!formState) {
+    if (!formState || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     try {
+      setSaveState({ saving: true, error: '' });
       const response = await postMultipart(isEdit ? `/articles/${id}` : '/articles', [
         ['title', formState.title],
         ['tags', formState.tags],
@@ -76,6 +78,8 @@ export default function ArticleFormPage({ sessionState, mode }: ArticleFormPageP
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save article.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };

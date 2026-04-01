@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import DataState from '../components/common/DataState';
 import useJson from '../hooks/useJson';
+import useSubmissionGuard from '../hooks/useSubmissionGuard';
 import { postForm } from '../utils/api';
 import { createDirectoryUserFormState } from '../utils/forms';
 import { toQueryString } from '../utils/formatting';
@@ -39,6 +40,7 @@ export default function DirectoryUserFormPage({ sessionState, bootstrapBase, nav
   const isAdminCreate = !isEdit && bootstrapBase === '/api/admin/users/bootstrap';
   const [formState, setFormState] = useState<DirectoryUserFormState | null>(null);
   const [saveState, setSaveState] = useState({ saving: false, error: '' });
+  const submissionGuard = useSubmissionGuard();
   const selectedCountryId = formState?.countryId || '';
   const bootstrapState = useJson<DirectoryUserBootstrap>(
     `${bootstrapBase}${toQueryString({
@@ -74,11 +76,11 @@ export default function DirectoryUserFormPage({ sessionState, bootstrapBase, nav
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!formState || !bootstrap) {
+    if (!formState || !bootstrap || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     try {
+      setSaveState({ saving: true, error: '' });
       const response = await postForm(bootstrap.submitPath, [
         ['name', formState.name],
         ['fullName', formState.fullName],
@@ -96,21 +98,25 @@ export default function DirectoryUserFormPage({ sessionState, bootstrapBase, nav
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save user.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };
 
   const deleteUser = async () => {
-    if (!id || !bootstrap?.submitPath?.startsWith('/user/') || !window.confirm('Delete this user?')) {
+    if (!id || !bootstrap?.submitPath?.startsWith('/user/') || !window.confirm('Delete this user?') || !submissionGuard.tryEnter()) {
       return;
     }
-    setSaveState({ saving: true, error: '' });
     try {
+      setSaveState({ saving: true, error: '' });
       const response = await postForm(`/user/${id}/delete`, []);
       navigate(await resolvePostRedirectPath(response, resolveClientPath(bootstrap.cancelPath, navigateFallback)));
     } catch (error: unknown) {
       setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to delete user.' });
       return;
+    } finally {
+      submissionGuard.exit();
     }
     setSaveState({ saving: false, error: '' });
   };
