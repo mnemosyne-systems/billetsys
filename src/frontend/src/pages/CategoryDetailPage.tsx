@@ -47,31 +47,6 @@ export default function CategoryDetailPage({ sessionState }: SessionPageProps) {
                     Description
                     <textarea value={category.description || '—'} readOnly rows={10} />
                   </label>
-                  <div className="owner-detail-panel form-span-2">
-                    <div className="owner-detail-panel-label">Attachments</div>
-                    <div className="owner-detail-panel-body">
-                      {category.attachments.length === 0 ? (
-                        <p className="muted-text">No attachments.</p>
-                      ) : (
-                        <div className="attachment-table">
-                          <div className="attachment-row attachment-header-row">
-                            <span>Name</span>
-                            <span>Mimetype</span>
-                            <span>Size</span>
-                          </div>
-                          {category.attachments.map(attachment => (
-                            <div key={attachment.id} className="attachment-row">
-                              <a href={attachment.downloadPath} target="_blank" rel="noreferrer">
-                                {attachment.name}
-                              </a>
-                              <span>{attachment.mimeType}</span>
-                              <span>{attachment.sizeLabel}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -89,4 +64,3 @@ export default function CategoryDetailPage({ sessionState }: SessionPageProps) {
     </section>
   );
 }
-

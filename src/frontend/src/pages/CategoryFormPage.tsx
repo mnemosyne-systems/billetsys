@@ -12,8 +12,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import useJson from '../hooks/useJson';
 import DataState from '../components/common/DataState';
 import MarkdownEditor from '../components/markdown/MarkdownEditor';
-import AttachmentPicker from '../components/common/AttachmentPicker';
-import { SmartLink } from '../utils/routing';
 import { postForm, postMultipart } from '../utils/api';
 import type { FormMode, SessionPageProps } from '../types/app';
 import type { CategoryRecord } from '../types/domain';
@@ -35,7 +33,6 @@ export default function CategoryFormPage({ sessionState, mode }: CategoryFormPag
   const category = categoryState.data;
   const [formState, setFormState] = useState<CategoryFormState | null>(null);
   const [saveState, setSaveState] = useState({ saving: false, error: '' });
-  const [files, setFiles] = useState<File[]>([]);
   const descriptionInputRef = useRef<HTMLTextAreaElement | null>(null);
   const isEdit = mode === 'edit';
 
@@ -68,8 +65,7 @@ export default function CategoryFormPage({ sessionState, mode }: CategoryFormPag
       await postMultipart(isEdit ? `/categories/${id}` : '/categories', [
         ['name', formState.name],
         ['description', formState.description],
-        ['isDefault', String(formState.isDefault)],
-        ...files.map((file): ['attachments', File] => ['attachments', file])
+        ['isDefault', String(formState.isDefault)]
       ]);
       navigate(isEdit && id ? `/categories/${id}` : '/categories');
     } catch (error: unknown) {
@@ -98,51 +94,49 @@ export default function CategoryFormPage({ sessionState, mode }: CategoryFormPag
     <section className="panel">
       <DataState state={categoryState} emptyMessage="Category unavailable." signInHref={sessionState.data?.homePath || '/login'}>
         {formState && (
-          <form className="owner-form" onSubmit={submit}>
-            <div className="owner-form-grid">
-              <label>
-                Name
-                <input value={formState.name} onChange={event => updateFormState('name', event.target.value)} required />
-              </label>
-              <label>
-                Default
-                <select
-                  value={String(formState.isDefault)}
-                  onChange={event => updateFormState('isDefault', event.target.value === 'true')}
-                >
-                  <option value="false">No</option>
-                  <option value="true">Yes</option>
-                </select>
-              </label>
-              <label className="form-span-2">
-                Description
-                <MarkdownEditor
-                  value={formState.description}
-                  onChange={value => updateFormState('description', value)}
-                  inputRef={descriptionInputRef}
-                  rows={10}
-                />
-              </label>
-            </div>
+          <div className="form-card ticket-detail-card">
+            <form className="owner-form" onSubmit={submit}>
+              <div className="owner-form-grid ticket-detail-grid">
+                <label>
+                  Name
+                  <input value={formState.name} onChange={event => updateFormState('name', event.target.value)} required />
+                </label>
+                <label>
+                  Default
+                  <select
+                    value={String(formState.isDefault)}
+                    onChange={event => updateFormState('isDefault', event.target.value === 'true')}
+                  >
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                  </select>
+                </label>
+                <label className="form-span-2">
+                  Description
+                  <MarkdownEditor
+                    value={formState.description}
+                    onChange={value => updateFormState('description', value)}
+                    inputRef={descriptionInputRef}
+                    rows={10}
+                  />
+                </label>
+              </div>
+              {saveState.error && <p className="error-text">{saveState.error}</p>}
 
-            <AttachmentPicker files={files} onFilesChange={setFiles} existingAttachments={category?.attachments || []} />
-
-            {saveState.error && <p className="error-text">{saveState.error}</p>}
-
-            <div className={`button-row${isEdit ? ' button-row-split' : ''}`}>
-              {isEdit && (
-                <button type="button" className="secondary-button danger-button" onClick={deleteCategory} disabled={saveState.saving}>
-                  Delete
+              <div className={`button-row${isEdit ? ' button-row-split' : ' button-row-end'}`}>
+                {isEdit && (
+                  <button type="button" className="secondary-button danger-button" onClick={deleteCategory} disabled={saveState.saving}>
+                    Delete
+                  </button>
+                )}
+                <button type="submit" className="primary-button" disabled={saveState.saving}>
+                  {saveState.saving ? 'Saving...' : isEdit ? 'Save' : 'Create'}
                 </button>
-              )}
-              <button type="submit" className="primary-button" disabled={saveState.saving}>
-                {saveState.saving ? 'Saving...' : isEdit ? 'Save' : 'Create'}
-              </button>
-            </div>
-          </form>
+              </div>
+            </form>
+          </div>
         )}
       </DataState>
     </section>
   );
 }
-

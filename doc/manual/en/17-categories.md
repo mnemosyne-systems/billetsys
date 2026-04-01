@@ -46,6 +46,8 @@ In addition to a name, categories can carry richer descriptive context. This mak
 
 That context can help administrators keep the classification system understandable as the support operation grows.
 
+Categories do not include attachments. If supporting files are needed, they belong in ticket messages or articles rather than in the category definition itself.
+
 ## Role perspective
 
 Categories are mostly maintained by administrative roles, but they affect many other parts of the application. Users, support staff, TAMs, and superusers all benefit from clearer ticket classification even if they are not the ones managing the category definitions directly.

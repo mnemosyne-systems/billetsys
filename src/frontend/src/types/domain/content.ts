@@ -6,7 +6,6 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { AttachmentReference } from './attachments';
 import type { VersionInfo, NamedEntity } from './common';
 
 export interface ArticleRecord extends NamedEntity {
@@ -25,7 +24,6 @@ export interface CategoryRecord extends NamedEntity {
   description?: string;
   descriptionPreview?: string;
   isDefault?: boolean;
-  attachments: AttachmentReference[];
   canCreate?: boolean;
   createPath?: string;
   editPath?: string;
