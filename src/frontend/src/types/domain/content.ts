@@ -48,7 +48,6 @@ export interface EntitlementRecord extends NamedEntity {
   description?: string;
   descriptionPreview?: string;
   versions?: VersionInfo[];
-  supportLevels?: LevelRecord[];
+  supportLevels?: Array<LevelRecord | string>;
   editPath?: string;
 }
-

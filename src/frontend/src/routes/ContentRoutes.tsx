@@ -20,8 +20,8 @@ const CompaniesPage = lazy(() => import('../pages/CompaniesPage'));
 const CompanyDetailPage = lazy(() => import('../pages/CompanyDetailPage'));
 const CompanyFormPage = lazy(() => import('../pages/CompanyFormPage'));
 const EntitlementDetailPage = lazy(() => import('../pages/EntitlementDetailPage'));
-const EntitlementFormPage = lazy(() => import('../pages/EntitlementFormPage'));
-const EntitlementsPage = lazy(() => import('../pages/EntitlementsPage'));
+const EntitlementFormPage = lazy(() => import('../pages/EntitlementEditorPage'));
+const EntitlementsPage = lazy(() => import('../pages/EntitlementsListPage'));
 const LevelDetailPage = lazy(() => import('../pages/LevelDetailPage'));
 const LevelFormPage = lazy(() => import('../pages/LevelFormPage'));
 const LevelsPage = lazy(() => import('../pages/LevelsPage'));
@@ -54,4 +54,3 @@ export function getContentRoutes(sessionState: SessionState): AppRoute[] {
     { path: `${PATHS.levels}/:id/edit`, element: <LevelFormPage sessionState={sessionState} mode="edit" />, requiresAuth: true }
   ];
 }
-

@@ -1227,6 +1227,50 @@ pre code {
   margin-bottom: 16px;
 }
 
+.entitlement-support-level-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.entitlement-support-level-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.8fr) minmax(260px, 1.6fr) auto;
+  gap: 1rem;
+  align-items: center;
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 0.85rem 0.9rem;
+  background: #fff;
+  font-weight: 400;
+}
+
+.entitlement-support-level-name {
+  font-weight: 600;
+}
+
+.entitlement-support-level-window {
+  color: var(--muted-text);
+}
+
+.entitlement-support-level-row input {
+  justify-self: end;
+}
+
+.entitlement-version-card {
+  padding: 1rem;
+}
+
+.entitlement-version-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(180px, 1fr) auto;
+  gap: 1rem;
+  align-items: end;
+}
+
+.entitlement-version-actions {
+  align-self: end;
+}
+
 .support-ticket-tab {
   display: inline-flex;
   align-items: center;

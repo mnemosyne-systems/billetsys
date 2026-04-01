@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -39,7 +39,7 @@ interface EntitlementFormBootstrap extends EntitlementRecord {
   todayDate?: string;
 }
 
-export default function EntitlementFormPage({ sessionState, mode }: EntitlementFormPageProps) {
+export default function EntitlementEditorPage({ sessionState, mode }: EntitlementFormPageProps) {
   const navigate = useNavigate();
   const { id } = useParams();
   const entitlementState = useJson<EntitlementFormBootstrap>(mode === 'edit' && id ? `/api/entitlements/${id}` : '/api/entitlements/bootstrap');

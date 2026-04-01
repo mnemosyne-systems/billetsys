@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -13,17 +13,19 @@ import { SmartLink } from '../utils/routing';
 import type { SessionPageProps } from '../types/app';
 import type { CollectionResponse, EntitlementRecord } from '../types/domain';
 
-function supportLevelLabel(level: EntitlementRecord['supportLevels'] extends Array<infer T> ? T : never): string {
+type SupportLevelListItem = string | { id?: string | number; name?: string };
+
+function supportLevelLabel(level: SupportLevelListItem): string {
   return typeof level === 'string' ? level : level.name || 'Unnamed level';
 }
 
-function sortedSupportLevels(supportLevels: EntitlementRecord['supportLevels']): Array<string | NonNullable<EntitlementRecord['supportLevels']>[number]> {
+function sortedSupportLevels(supportLevels?: Array<SupportLevelListItem>): SupportLevelListItem[] {
   return [...(supportLevels || [])].sort((left, right) =>
     supportLevelLabel(left).localeCompare(supportLevelLabel(right), undefined, { sensitivity: 'base' })
   );
 }
 
-export default function EntitlementsPage({ sessionState }: SessionPageProps) {
+export default function EntitlementsListPage({ sessionState }: SessionPageProps) {
   const entitlementsState = useJson<CollectionResponse<EntitlementRecord>>('/api/entitlements');
 
   return (
@@ -52,7 +54,7 @@ export default function EntitlementsPage({ sessionState }: SessionPageProps) {
                   </h3>
                   <p className="tag-copy">{entitlement.descriptionPreview || 'No description'}</p>
                   <div className="pill-row">
-                    {sortedSupportLevels(entitlement.supportLevels).map(level => (
+                    {sortedSupportLevels((entitlement.supportLevels || []) as Array<SupportLevelListItem>).map(level => (
                       <span key={typeof level === 'string' ? level : String(level.id)} className="status-pill">
                         {supportLevelLabel(level)}
                       </span>
