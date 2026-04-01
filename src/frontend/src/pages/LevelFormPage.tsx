@@ -10,11 +10,11 @@ import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DataState from '../components/common/DataState';
+import MarkdownEditor from '../components/markdown/MarkdownEditor';
 import useJson from '../hooks/useJson';
 import { PATHS } from '../routes/paths';
 import { postForm } from '../utils/api';
 import { levelColorMarker } from '../utils/formatting';
-import { SmartLink } from '../utils/routing';
 import type { FormMode, SessionPageProps } from '../types/app';
 import type { CountryOption, LevelRecord, TimezoneOption } from '../types/domain';
 
@@ -136,143 +136,129 @@ export default function LevelFormPage({ sessionState, mode }: LevelFormPageProps
 
   return (
     <section className="panel">
-      <div className="section-header">
-        <div>
-          <h2>{isEdit ? 'Edit level' : 'New level'}</h2>
-        </div>
-      </div>
-
       <DataState state={levelState} emptyMessage="Level not found." signInHref={sessionState.data?.homePath || '/login'}>
         {formState && level && (
-          <form className="owner-form" onSubmit={submit}>
-            <div className={isEdit ? 'form-card ticket-detail-card' : ''}>
-              <div className={isEdit ? 'owner-form owner-detail-form' : ''}>
-                <div className={`owner-form-grid${isEdit ? ' ticket-detail-grid' : ''}`}>
-                  <label>
-                    Name
-                    <input value={formState.name} onChange={event => updateFormState('name', event.target.value)} required />
-                  </label>
-                  <label>
-                    Level
-                    <input type="number" min="0" value={formState.level} onChange={event => updateFormState('level', event.target.value)} required />
-                  </label>
-                  <label>
-                    Color
-                    <select value={formState.color} onChange={event => updateFormState('color', event.target.value)}>
-                      {(level.colorOptions || []).map((option: LevelOption) => (
-                        <option key={option.value} value={option.value}>
-                          {`${levelColorMarker(String(option.value ?? ''))} ${option.display || `(${option.value ?? ''})`}`}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Country
-                    <select
-                      value={formState.countryId}
-                      onChange={event => {
-                        const nextCountryId = event.target.value;
-                        const timezoneStillValid = availableTimezones.some(timezone => String(timezone.id) === formState.timezoneId);
-                        setFormState(current =>
-                          current
-                            ? {
-                                ...current,
-                                countryId: nextCountryId,
-                                timezoneId: timezoneStillValid ? current.timezoneId : ''
-                              }
-                            : current
-                        );
-                      }}
-                    >
-                      <option value="">Select a country</option>
-                      {(level.countries || []).map((country: CountryOption) => (
-                        <option key={country.id} value={country.id}>
-                          {country.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    From day
-                    <select value={formState.fromDay} onChange={event => updateFormState('fromDay', event.target.value)}>
-                      {(level.dayOptions || []).map((option: LevelOption) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    To day
-                    <select value={formState.toDay} onChange={event => updateFormState('toDay', event.target.value)}>
-                      {(level.dayOptions || []).map((option: LevelOption) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Time zone
-                    <select value={formState.timezoneId} onChange={event => updateFormState('timezoneId', event.target.value)}>
-                      <option value="">Select a time zone</option>
-                      {availableTimezones.map((timezone: TimezoneOption) => (
-                        <option key={timezone.id} value={timezone.id}>
-                          {timezone.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <div className="detail-card-spacer" aria-hidden="true" />
-                  <label>
-                    From time
-                    <select value={formState.fromTime} onChange={event => updateFormState('fromTime', event.target.value)}>
-                      {(level.hourOptions || []).map((option: LevelOption) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    To time
-                    <select value={formState.toTime} onChange={event => updateFormState('toTime', event.target.value)}>
-                      {(level.hourOptions || []).map((option: LevelOption) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="form-span-2">
-                    Description
-                    <textarea rows={6} value={formState.description} onChange={event => updateFormState('description', event.target.value)} required />
-                  </label>
-                </div>
+          <div className="form-card ticket-detail-card">
+            <form className="owner-form" onSubmit={submit}>
+              <div className="owner-form-grid ticket-detail-grid">
+                <label>
+                  Name
+                  <input value={formState.name} onChange={event => updateFormState('name', event.target.value)} required />
+                </label>
+                <label>
+                  Level
+                  <input type="number" min="0" value={formState.level} onChange={event => updateFormState('level', event.target.value)} required />
+                </label>
+                <label>
+                  Color
+                  <select value={formState.color} onChange={event => updateFormState('color', event.target.value)}>
+                    {(level.colorOptions || []).map((option: LevelOption) => (
+                      <option key={option.value} value={option.value}>
+                        {`${levelColorMarker(String(option.value ?? ''))} ${option.display || `(${option.value ?? ''})`}`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Country
+                  <select
+                    value={formState.countryId}
+                    onChange={event => {
+                      const nextCountryId = event.target.value;
+                      const timezoneStillValid = availableTimezones.some(timezone => String(timezone.id) === formState.timezoneId);
+                      setFormState(current =>
+                        current
+                          ? {
+                              ...current,
+                              countryId: nextCountryId,
+                              timezoneId: timezoneStillValid ? current.timezoneId : ''
+                            }
+                          : current
+                      );
+                    }}
+                  >
+                    <option value="">Select a country</option>
+                    {(level.countries || []).map((country: CountryOption) => (
+                      <option key={country.id} value={country.id}>
+                        {country.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  From day
+                  <select value={formState.fromDay} onChange={event => updateFormState('fromDay', event.target.value)}>
+                    {(level.dayOptions || []).map((option: LevelOption) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  To day
+                  <select value={formState.toDay} onChange={event => updateFormState('toDay', event.target.value)}>
+                    {(level.dayOptions || []).map((option: LevelOption) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Time zone
+                  <select value={formState.timezoneId} onChange={event => updateFormState('timezoneId', event.target.value)}>
+                    <option value="">Select a time zone</option>
+                    {availableTimezones.map((timezone: TimezoneOption) => (
+                      <option key={timezone.id} value={timezone.id}>
+                        {timezone.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="detail-card-spacer" aria-hidden="true" />
+                <label>
+                  From time
+                  <select value={formState.fromTime} onChange={event => updateFormState('fromTime', event.target.value)}>
+                    {(level.hourOptions || []).map((option: LevelOption) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  To time
+                  <select value={formState.toTime} onChange={event => updateFormState('toTime', event.target.value)}>
+                    {(level.hourOptions || []).map((option: LevelOption) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="form-span-2">
+                  Description
+                  <MarkdownEditor value={formState.description} onChange={value => updateFormState('description', value)} rows={10} required />
+                </label>
               </div>
-            </div>
 
-            {saveState.error && <p className="error-text">{saveState.error}</p>}
+              {saveState.error && <p className="error-text">{saveState.error}</p>}
 
-            <div className={`button-row${isEdit ? ' button-row-split' : ''}`}>
-              {isEdit && (
-                <button type="button" className="secondary-button danger-button" onClick={deleteLevel} disabled={saveState.saving}>
-                  Delete
+              <div className={`button-row${isEdit ? ' button-row-split' : ' button-row-end'}`}>
+                {isEdit && (
+                  <button type="button" className="secondary-button danger-button" onClick={deleteLevel} disabled={saveState.saving}>
+                    Delete
+                  </button>
+                )}
+                <button type="submit" className="primary-button" disabled={saveState.saving}>
+                  {saveState.saving ? 'Saving...' : isEdit ? 'Save' : 'Create'}
                 </button>
-              )}
-              <button type="submit" className="primary-button" disabled={saveState.saving}>
-                {saveState.saving ? 'Saving...' : isEdit ? 'Save' : 'Create level'}
-              </button>
-              {!isEdit && (
-                <SmartLink className="secondary-button" href={isEdit && id ? `${PATHS.levels}/${id}` : PATHS.levels}>
-                  Cancel
-                </SmartLink>
-              )}
-            </div>
-          </form>
+              </div>
+            </form>
+          </div>
         )}
       </DataState>
     </section>
   );
 }
-

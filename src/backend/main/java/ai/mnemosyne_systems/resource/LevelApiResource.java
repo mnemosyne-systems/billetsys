@@ -49,7 +49,7 @@ public class LevelApiResource {
     }
 
     private LevelListItem toListItem(Level level) {
-        return new LevelListItem(level.id, level.name, firstLinePlainText(level.description), level.level,
+        return new LevelListItem(level.id, level.name, firstLinePlainText(level.description), level.level, level.color,
                 formatColorDisplay(level.color), formatDayTime(level.fromDay, level.fromTime),
                 formatDayTime(level.toDay, level.toTime), level.country == null ? null : level.country.name,
                 level.timezone == null ? null : level.timezone.name, "/levels/" + level.id,
@@ -146,9 +146,9 @@ public class LevelApiResource {
     public record LevelListResponse(String createPath, List<LevelListItem> items) {
     }
 
-    public record LevelListItem(Long id, String name, String descriptionPreview, Integer level, String colorDisplay,
-            String fromLabel, String toLabel, String countryName, String timezoneName, String detailPath,
-            String editPath) {
+    public record LevelListItem(Long id, String name, String descriptionPreview, Integer level, String color,
+            String colorDisplay, String fromLabel, String toLabel, String countryName, String timezoneName,
+            String detailPath, String editPath) {
     }
 
     public record LevelBootstrapResponse(List<NumericOption> dayOptions, List<NumericOption> hourOptions,
