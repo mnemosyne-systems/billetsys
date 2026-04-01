@@ -66,11 +66,11 @@ export function UserDetailCard({ user, companyHref, companyLabel = 'Company', ac
           <div className="owner-form-grid ticket-detail-grid">
             <label>
               Username
-              <input value={user.username || 'â€”'} readOnly />
+              <input value={user.username || '—'} readOnly />
             </label>
             <label>
               Full name
-              <input value={user.fullName || 'â€”'} readOnly />
+              <input value={user.fullName || '—'} readOnly />
             </label>
             <label>
               Type
@@ -78,11 +78,11 @@ export function UserDetailCard({ user, companyHref, companyLabel = 'Company', ac
             </label>
             <label>
               Email
-              <input value={user.email || 'â€”'} readOnly />
+              <input value={user.email || '—'} readOnly />
             </label>
             <label>
               Social
-              <input value={user.social || 'â€”'} readOnly />
+              <input value={user.social || '—'} readOnly />
             </label>
             <label>
               Phone
@@ -90,23 +90,23 @@ export function UserDetailCard({ user, companyHref, companyLabel = 'Company', ac
             </label>
             <label>
               Country
-              <input value={user.countryName || 'â€”'} readOnly />
+              <input value={user.countryName || '—'} readOnly />
             </label>
             <label>
               Time zone
-              <input value={user.timezoneName || 'â€”'} readOnly />
+              <input value={user.timezoneName || '—'} readOnly />
             </label>
             <label>
               {companyLabel}
               {companyHref ? (
                 <div className="readonly-link-field">
-                  <input value={user.companyName || 'â€”'} readOnly />
+                  <input value={user.companyName || '—'} readOnly />
                   <SmartLink className="readonly-link-field-link" href={companyHref}>
                     {user.companyName || 'Open company'}
                   </SmartLink>
                 </div>
               ) : (
-                <input value={hasCompany ? user.companyName : 'â€”'} readOnly />
+                <input value={hasCompany ? user.companyName : '—'} readOnly />
               )}
             </label>
             <div className="owner-detail-panel">

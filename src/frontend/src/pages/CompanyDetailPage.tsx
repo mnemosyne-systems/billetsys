@@ -34,50 +34,50 @@ export default function CompanyDetailPage({ sessionState }: SessionPageProps) {
                 <div className="owner-form-grid ticket-detail-grid">
                   <label>
                     Name
-                    <input value={company.name || 'â€”'} readOnly />
+                    <input value={company.name || '—'} readOnly />
                   </label>
                   <label>
                     Phone
-                    <input value={company.phoneNumber || 'â€”'} readOnly />
+                    <input value={company.phoneNumber || '—'} readOnly />
                   </label>
                   <label>
                     Country
-                    <input value={company.countryName || 'â€”'} readOnly />
+                    <input value={company.countryName || '—'} readOnly />
                   </label>
                   <label>
                     Time zone
-                    <input value={company.timezoneName || 'â€”'} readOnly />
+                    <input value={company.timezoneName || '—'} readOnly />
                   </label>
                   <label>
                     Address1
-                    <input value={company.address1 || 'â€”'} readOnly />
+                    <input value={company.address1 || '—'} readOnly />
                   </label>
                   <label>
                     Address2
-                    <input value={company.address2 || 'â€”'} readOnly />
+                    <input value={company.address2 || '—'} readOnly />
                   </label>
                   <label>
                     City
-                    <input value={company.city || 'â€”'} readOnly />
+                    <input value={company.city || '—'} readOnly />
                   </label>
                   <label>
                     State
-                    <input value={company.state || 'â€”'} readOnly />
+                    <input value={company.state || '—'} readOnly />
                   </label>
                   <label>
                     Zip
-                    <input value={company.zip || 'â€”'} readOnly />
+                    <input value={company.zip || '—'} readOnly />
                   </label>
                   <div className="owner-detail-panel">
                     <div className="owner-detail-panel-label">Entitlements</div>
                     <div className="owner-detail-panel-body">
                       {sortedEntitlements.length === 0 ? (
-                        <p className="muted-text">â€”</p>
+                        <p className="muted-text">—</p>
                       ) : (
                         <ul className="plain-list">
                           {sortedEntitlements.map((entry: CompanyAssignment, index) => (
                             <li key={`${entry.entitlementId}-${entry.levelId}-${index}`}>
-                              {entry.entitlementName} â€¢ {entry.levelName}
+                              {entry.entitlementName} • {entry.levelName}
                             </li>
                           ))}
                         </ul>

@@ -37,16 +37,16 @@ const EMPTY_COMPANY_FORM_STATE: CompanyFormState = {
   selectedUserIds: [],
   selectedTamIds: [],
   entitlements: [],
-  primaryContactId: '',
-  primaryContactUsername: '',
-  primaryContactFullName: '',
-  primaryContactEmail: '',
-  primaryContactSocial: '',
-  primaryContactPhoneNumber: '',
-  primaryPhoneNumberExtension: '',
-  primaryContactCountry: '',
-  primaryContactTimeZone: '',
-  primaryContactPassword: ''
+  superuserId: '',
+  superuserUsername: '',
+  superuserFullName: '',
+  superuserEmail: '',
+  superuserSocial: '',
+  superuserPhoneNumber: '',
+  superuserPhoneExtension: '',
+  superuserCountryId: '',
+  superuserTimezoneId: '',
+  superuserPassword: ''
 };
 
 export default function CompanyFormPage({ sessionState, mode }: CompanyFormPageProps) {
@@ -83,7 +83,7 @@ export default function CompanyFormPage({ sessionState, mode }: CompanyFormPageP
             date: entry.date || company.todayDate || '',
             duration: entry.duration ? String(entry.duration) : String(2)
           })) || [],
-        primaryContactId: company.primaryContactId ? String(company.primaryContactId) : ''
+        superuserId: company.superuserId ? String(company.superuserId) : ''
       });
       return;
     }
@@ -91,16 +91,16 @@ export default function CompanyFormPage({ sessionState, mode }: CompanyFormPageP
       ...EMPTY_COMPANY_FORM_STATE,
       countryId: company.defaultCountryId ? String(company.defaultCountryId) : '',
       timezoneId: company.defaultTimezoneId ? String(company.defaultTimezoneId) : '',
-      primaryContactCountry: company.defaultCountryId ? String(company.defaultCountryId) : '',
-      primaryContactTimeZone: company.defaultTimezoneId ? String(company.defaultTimezoneId) : ''
+      superuserCountryId: company.defaultCountryId ? String(company.defaultCountryId) : '',
+      superuserTimezoneId: company.defaultTimezoneId ? String(company.defaultTimezoneId) : ''
     });
   }, [company, isEdit]);
 
   const availableTimezones =
     company?.timezones?.filter(timezone => !formState?.countryId || String(timezone.countryId) === formState.countryId) || [];
-  const availablePrimaryContactTimezones =
+  const availableSuperuserTimezones =
     company?.timezones?.filter(
-      timezone => !formState?.primaryContactCountry || String(timezone.countryId) === formState.primaryContactCountry
+      timezone => !formState?.superuserCountryId || String(timezone.countryId) === formState.superuserCountryId
     ) || [];
 
   const updateFormState = <K extends keyof CompanyFormState>(field: K, value: CompanyFormState[K]) => {
@@ -190,18 +190,18 @@ export default function CompanyFormPage({ sessionState, mode }: CompanyFormPageP
     ];
     try {
       if (isEdit) {
-        entries.push(['primaryContact', formState.primaryContactId]);
+        entries.push(['superuserId', formState.superuserId]);
       } else {
         entries.push(
-          ['primaryContactUsername', formState.primaryContactUsername],
-          ['primaryContactFullName', formState.primaryContactFullName],
-          ['primaryContactEmail', formState.primaryContactEmail],
-          ['primaryContactSocial', formState.primaryContactSocial],
-          ['primaryContactPhoneNumber', formState.primaryContactPhoneNumber],
-          ['primaryPhoneNumberExtension', formState.primaryPhoneNumberExtension],
-          ['primaryContactCountry', formState.primaryContactCountry],
-          ['primaryContactTimeZone', formState.primaryContactTimeZone],
-          ['primaryContactPassword', formState.primaryContactPassword]
+          ['superuserUsername', formState.superuserUsername],
+          ['superuserFullName', formState.superuserFullName],
+          ['superuserEmail', formState.superuserEmail],
+          ['superuserSocial', formState.superuserSocial],
+          ['superuserPhoneNumber', formState.superuserPhoneNumber],
+          ['superuserPhoneExtension', formState.superuserPhoneExtension],
+          ['superuserCountryId', formState.superuserCountryId],
+          ['superuserTimezoneId', formState.superuserTimezoneId],
+          ['superuserPassword', formState.superuserPassword]
         );
       }
 
@@ -238,7 +238,7 @@ export default function CompanyFormPage({ sessionState, mode }: CompanyFormPageP
     <section className="panel">
       <DataState state={companyState} emptyMessage="Company not found." signInHref={sessionState.data?.homePath || '/login'}>
         {formState && company && (
-          <form className="owner-form" onSubmit={submit}>
+          <form className={`owner-form${!isEdit ? ' owner-detail-form' : ''}`} onSubmit={submit}>
             {isEdit ? (
               <div className="form-card ticket-detail-card">
                 <div className="owner-form owner-detail-form">
@@ -395,244 +395,251 @@ export default function CompanyFormPage({ sessionState, mode }: CompanyFormPageP
                 </div>
               </div>
             ) : (
-              <>
-                <div className="owner-form-grid">
+              <div className="form-card ticket-detail-card">
+                <div className="owner-form owner-detail-form">
+                  <p className="required-fields-note">
+                    Required fields are marked <span className="required-indicator">*</span>.
+                  </p>
+                  <div className="owner-form-grid ticket-detail-grid">
                     <label>
-                      Name
-                    <input value={formState.name} onChange={event => updateFormState('name', event.target.value)} required />
-                  </label>
-                  <label>
-                    Phone number
-                    <input value={formState.phoneNumber} onChange={event => updateFormState('phoneNumber', event.target.value)} />
-                  </label>
-                  <label>
-                    Address1
-                    <input value={formState.address1} onChange={event => updateFormState('address1', event.target.value)} />
-                  </label>
-                  <label>
-                    Address2
-                    <input value={formState.address2} onChange={event => updateFormState('address2', event.target.value)} />
-                  </label>
-                  <label>
-                    City
-                    <input value={formState.city} onChange={event => updateFormState('city', event.target.value)} />
-                  </label>
-                  <label>
-                    State
-                    <input value={formState.state} onChange={event => updateFormState('state', event.target.value)} />
-                  </label>
-                  <label>
-                    Zip
-                    <input value={formState.zip} onChange={event => updateFormState('zip', event.target.value)} />
-                  </label>
-                  <label>
-                    Country
-                    <select
-                      value={formState.countryId}
-                      onChange={event => {
-                        const nextCountryId = event.target.value;
-                        const timezoneStillValid = (company.timezones || []).some(
-                          timezone => String(timezone.id) === formState.timezoneId && String(timezone.countryId) === nextCountryId
-                        );
-                        setFormState(current =>
-                          current
-                            ? {
-                                ...current,
-                                countryId: nextCountryId,
-                                timezoneId: timezoneStillValid ? current.timezoneId : ''
-                              }
-                            : current
-                        );
-                      }}
-                    >
-                      <option value="">Select a country</option>
-                      {(company.countries || []).map(country => (
-                        <option key={country.id} value={country.id}>
-                          {country.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Time zone
-                    <select value={formState.timezoneId} onChange={event => updateFormState('timezoneId', event.target.value)}>
-                      <option value="">Select a time zone</option>
-                      {availableTimezones.map(timezone => (
-                        <option key={timezone.id} value={timezone.id}>
-                          {timezone.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Username
-                    <input value={formState.primaryContactUsername} onChange={event => updateFormState('primaryContactUsername', event.target.value)} required />
-                  </label>
-                  <label>
-                    Full name
-                    <input value={formState.primaryContactFullName} onChange={event => updateFormState('primaryContactFullName', event.target.value)} />
-                  </label>
-                  <label>
-                    Email
-                    <input type="email" value={formState.primaryContactEmail} onChange={event => updateFormState('primaryContactEmail', event.target.value)} required />
-                  </label>
-                  <label>
-                    Social
-                    <input value={formState.primaryContactSocial} onChange={event => updateFormState('primaryContactSocial', event.target.value)} />
-                  </label>
-                  <label>
-                    Phone number
-                    <input value={formState.primaryContactPhoneNumber} onChange={event => updateFormState('primaryContactPhoneNumber', event.target.value)} />
-                  </label>
-                  <label>
-                    Phone extension
-                    <input value={formState.primaryPhoneNumberExtension} onChange={event => updateFormState('primaryPhoneNumberExtension', event.target.value)} />
-                  </label>
-                  <label>
-                    Country
-                    <select
-                      value={formState.primaryContactCountry}
-                      onChange={event => {
-                        const nextCountryId = event.target.value;
-                        const timezoneStillValid = (company.timezones || []).some(
-                          timezone =>
-                            String(timezone.id) === formState.primaryContactTimeZone &&
-                            String(timezone.countryId) === nextCountryId
-                        );
-                        setFormState(current =>
-                          current
-                            ? {
-                                ...current,
-                                primaryContactCountry: nextCountryId,
-                                primaryContactTimeZone: timezoneStillValid ? current.primaryContactTimeZone : ''
-                              }
-                            : current
-                        );
-                      }}
-                    >
-                      <option value="">Select a country</option>
-                      {(company.countries || []).map(country => (
-                        <option key={country.id} value={country.id}>
-                          {country.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Time zone
-                    <select
-                      value={formState.primaryContactTimeZone}
-                      onChange={event => updateFormState('primaryContactTimeZone', event.target.value)}
-                    >
-                      <option value="">Select a time zone</option>
-                      {availablePrimaryContactTimezones.map(timezone => (
-                        <option key={timezone.id} value={timezone.id}>
-                          {timezone.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Password
-                    <input
-                      type="password"
-                      value={formState.primaryContactPassword}
-                      onChange={event => updateFormState('primaryContactPassword', event.target.value)}
-                      required
+                      Name <span className="required-indicator">*</span>
+                      <input value={formState.name} onChange={event => updateFormState('name', event.target.value)} required />
+                    </label>
+                    <label>
+                      Phone number
+                      <input value={formState.phoneNumber} onChange={event => updateFormState('phoneNumber', event.target.value)} />
+                    </label>
+                    <label>
+                      Address 1
+                      <input value={formState.address1} onChange={event => updateFormState('address1', event.target.value)} />
+                    </label>
+                    <label>
+                      Address 2
+                      <input value={formState.address2} onChange={event => updateFormState('address2', event.target.value)} />
+                    </label>
+                    <label>
+                      City
+                      <input value={formState.city} onChange={event => updateFormState('city', event.target.value)} />
+                    </label>
+                    <label>
+                      State
+                      <input value={formState.state} onChange={event => updateFormState('state', event.target.value)} />
+                    </label>
+                    <label>
+                      Zip
+                      <input value={formState.zip} onChange={event => updateFormState('zip', event.target.value)} />
+                    </label>
+                    <label>
+                      Country
+                      <select
+                        value={formState.countryId}
+                        onChange={event => {
+                          const nextCountryId = event.target.value;
+                          const timezoneStillValid = (company.timezones || []).some(
+                            timezone => String(timezone.id) === formState.timezoneId && String(timezone.countryId) === nextCountryId
+                          );
+                          setFormState(current =>
+                            current
+                              ? {
+                                  ...current,
+                                  countryId: nextCountryId,
+                                  timezoneId: timezoneStillValid ? current.timezoneId : ''
+                                }
+                              : current
+                          );
+                        }}
+                      >
+                        <option value="">Select a country</option>
+                        {(company.countries || []).map(country => (
+                          <option key={country.id} value={country.id}>
+                            {country.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Time zone
+                      <select value={formState.timezoneId} onChange={event => updateFormState('timezoneId', event.target.value)}>
+                        <option value="">Select a time zone</option>
+                        {availableTimezones.map(timezone => (
+                          <option key={timezone.id} value={timezone.id}>
+                            {timezone.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <div className="detail-card-spacer" aria-hidden="true" />
+                    <SelectableUserPicker
+                      title="Users"
+                      users={company.userOptions || []}
+                      selectedIds={formState.selectedUserIds}
+                      onToggle={userId => toggleSelection('selectedUserIds', userId)}
                     />
-                  </label>
-                </div>
-                <div className="owner-picker-grid">
-                  <SelectableUserPicker
-                    title="Users"
-                    users={company.userOptions || []}
-                    selectedIds={formState.selectedUserIds}
-                    onToggle={userId => toggleSelection('selectedUserIds', userId)}
-                  />
-                  <SelectableUserPicker
-                    title="TAMs"
-                    users={company.tamOptions || []}
-                    selectedIds={formState.selectedTamIds}
-                    onToggle={userId => toggleSelection('selectedTamIds', userId)}
-                  />
-                </div>
-                <section className="detail-card">
-                  <div className="section-header compact-header">
-                    <div>
-                      <h3>Entitlements</h3>
-                    </div>
-                  </div>
-                  <div className="version-editor-list">
-                    {formState.entitlements.map((entry, index) => (
-                      <div key={`${entry.entitlementId || 'new'}-${entry.levelId || 'level'}-${index}`} className="version-editor-card">
-                        <div className="owner-form-grid">
-                          <label>
-                            Entitlement
-                            <select value={entry.entitlementId} onChange={event => updateEntitlement(index, 'entitlementId', event.target.value)} required>
-                              <option value="">Select entitlement</option>
-                              {(company.entitlements || []).map(option => (
-                                <option key={option.id} value={option.id}>
-                                  {option.name}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                          <label>
-                            Level
-                            <select value={entry.levelId} onChange={event => updateEntitlement(index, 'levelId', event.target.value)} required>
-                              <option value="">Select level</option>
-                              {(company.levels || []).map(option => (
-                                <option key={option.id} value={option.id}>
-                                  {option.name} ({option.level})
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                          <label>
-                            Date
-                            <input type="date" value={entry.date} onChange={event => updateEntitlement(index, 'date', event.target.value)} required />
-                          </label>
-                          <label>
-                            Duration
-                            <select value={entry.duration} onChange={event => updateEntitlement(index, 'duration', event.target.value)} required>
-                              {(company.durations || []).map(option => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                        </div>
-                        <div className="button-row button-row-end">
-                          <button type="button" className="secondary-button danger-button" onClick={() => removeEntitlement(index)}>
-                            Remove
-                          </button>
-                        </div>
+                    <section className="detail-card">
+                      <h3>Superuser</h3>
+                      <div className="owner-form-grid">
+                        <label>
+                          Username <span className="required-indicator">*</span>
+                          <input value={formState.superuserUsername} onChange={event => updateFormState('superuserUsername', event.target.value)} required />
+                        </label>
+                        <label>
+                          Full name
+                          <input value={formState.superuserFullName} onChange={event => updateFormState('superuserFullName', event.target.value)} />
+                        </label>
+                        <label>
+                          Email <span className="required-indicator">*</span>
+                          <input type="email" value={formState.superuserEmail} onChange={event => updateFormState('superuserEmail', event.target.value)} required />
+                        </label>
+                        <label>
+                          Social
+                          <input value={formState.superuserSocial} onChange={event => updateFormState('superuserSocial', event.target.value)} />
+                        </label>
+                        <label>
+                          Phone number
+                          <input value={formState.superuserPhoneNumber} onChange={event => updateFormState('superuserPhoneNumber', event.target.value)} />
+                        </label>
+                        <label>
+                          Phone extension
+                          <input value={formState.superuserPhoneExtension} onChange={event => updateFormState('superuserPhoneExtension', event.target.value)} />
+                        </label>
+                        <label>
+                          Country
+                          <select
+                            value={formState.superuserCountryId}
+                            onChange={event => {
+                              const nextCountryId = event.target.value;
+                              const timezoneStillValid = (company.timezones || []).some(
+                                timezone =>
+                                  String(timezone.id) === formState.superuserTimezoneId &&
+                                  String(timezone.countryId) === nextCountryId
+                              );
+                              setFormState(current =>
+                                current
+                                  ? {
+                                      ...current,
+                                      superuserCountryId: nextCountryId,
+                                      superuserTimezoneId: timezoneStillValid ? current.superuserTimezoneId : ''
+                                    }
+                                  : current
+                              );
+                            }}
+                          >
+                            <option value="">Select a country</option>
+                            {(company.countries || []).map(country => (
+                              <option key={country.id} value={country.id}>
+                                {country.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label>
+                          Time zone
+                          <select
+                            value={formState.superuserTimezoneId}
+                            onChange={event => updateFormState('superuserTimezoneId', event.target.value)}
+                          >
+                            <option value="">Select a time zone</option>
+                            {availableSuperuserTimezones.map(timezone => (
+                              <option key={timezone.id} value={timezone.id}>
+                                {timezone.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="form-span-2">
+                          Password <span className="required-indicator">*</span>
+                          <input
+                            type="password"
+                            value={formState.superuserPassword}
+                            onChange={event => updateFormState('superuserPassword', event.target.value)}
+                            required
+                          />
+                        </label>
                       </div>
-                    ))}
-                    {formState.entitlements.length === 0 && <p className="muted-text">No entitlements selected yet.</p>}
+                    </section>
+                    <SelectableUserPicker
+                      title="TAMs"
+                      users={company.tamOptions || []}
+                      selectedIds={formState.selectedTamIds}
+                      onToggle={userId => toggleSelection('selectedTamIds', userId)}
+                    />
+                    <div className="detail-card-spacer" aria-hidden="true" />
                   </div>
-                  <div className="button-row button-row-end">
-                    <button type="button" className="secondary-button" onClick={addEntitlement}>
-                      Add entitlement
-                    </button>
-                  </div>
-                </section>
-              </>
+
+                  <section className="detail-card">
+                    <div className="section-header compact-header">
+                      <div>
+                        <h3>Entitlements</h3>
+                      </div>
+                    </div>
+                    <div className="version-editor-list">
+                      {formState.entitlements.map((entry, index) => (
+                        <div key={`${entry.entitlementId || 'new'}-${entry.levelId || 'level'}-${index}`} className="version-editor-card">
+                          <div className="owner-form-grid">
+                            <label>
+                              Entitlement
+                              <select value={entry.entitlementId} onChange={event => updateEntitlement(index, 'entitlementId', event.target.value)} required>
+                                <option value="">Select entitlement</option>
+                                {(company.entitlements || []).map(option => (
+                                  <option key={option.id} value={option.id}>
+                                    {option.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label>
+                              Level
+                              <select value={entry.levelId} onChange={event => updateEntitlement(index, 'levelId', event.target.value)} required>
+                                <option value="">Select level</option>
+                                {(company.levels || []).map(option => (
+                                  <option key={option.id} value={option.id}>
+                                    {option.name} ({option.level})
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label>
+                              Date
+                              <input type="date" value={entry.date} onChange={event => updateEntitlement(index, 'date', event.target.value)} required />
+                            </label>
+                            <label>
+                              Duration
+                              <select value={entry.duration} onChange={event => updateEntitlement(index, 'duration', event.target.value)} required>
+                                {(company.durations || []).map(option => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
+                          <div className="button-row button-row-end">
+                            <button type="button" className="secondary-button danger-button" onClick={() => removeEntitlement(index)}>
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      {formState.entitlements.length === 0 && <p className="muted-text">No entitlements selected yet.</p>}
+                    </div>
+                    <div className="button-row button-row-end">
+                      <button type="button" className="secondary-button danger-button" onClick={addEntitlement}>
+                        Add
+                      </button>
+                    </div>
+                  </section>
+                </div>
+              </div>
             )}
 
             {saveState.error && <p className="error-text">{saveState.error}</p>}
 
-            <div className={`button-row${isEdit ? ' button-row-split' : ''}`}>
+            <div className={`button-row${isEdit ? ' button-row-split' : ' button-row-end'}`}>
               {isEdit ? (
                 <button type="button" className="secondary-button danger-button" onClick={deleteCompany} disabled={saveState.saving}>
                   Delete
                 </button>
-              ) : (
-                <SmartLink className="secondary-button" href={isEdit && id ? `/companies/${id}` : '/companies'}>
-                  Cancel
-                </SmartLink>
-              )}
+              ) : null}
               <button type="submit" className="primary-button" disabled={saveState.saving}>
                 {saveState.saving ? 'Saving...' : isEdit ? 'Save' : 'Create'}
               </button>
@@ -643,4 +650,3 @@ export default function CompanyFormPage({ sessionState, mode }: CompanyFormPageP
     </section>
   );
 }
-

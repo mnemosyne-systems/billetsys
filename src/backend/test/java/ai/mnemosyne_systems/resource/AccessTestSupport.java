@@ -494,13 +494,13 @@ abstract class AccessTestSupport {
         if (normalized.isBlank()) {
             normalized = "company";
         }
-        String primaryContactUsername = normalized + "-contact";
-        String primaryContactEmail = normalized + "@testing.com";
+        String superuserUsername = normalized + "-superuser";
+        String superuserEmail = normalized + "@testing.com";
         String location = RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .contentType(ContentType.URLENC).formParam("name", name)
-                .formParam("primaryContactUsername", primaryContactUsername)
-                .formParam("primaryContactEmail", primaryContactEmail).formParam("primaryContactPassword", "pass")
-                .post("/companies").then().statusCode(303).extract().header("Location");
+                .formParam("superuserUsername", superuserUsername).formParam("superuserEmail", superuserEmail)
+                .formParam("superuserPassword", "pass").post("/companies").then().statusCode(303).extract()
+                .header("Location");
         ai.mnemosyne_systems.model.Company company = ai.mnemosyne_systems.model.Company.find("name", name)
                 .firstResult();
         return company == null ? null : company.id;

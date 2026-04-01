@@ -66,7 +66,7 @@ export interface CompanyFormBootstrap extends NamedEntity {
   defaultTimezoneId?: string | number;
   selectedUserIds?: Array<string | number>;
   selectedTamIds?: Array<string | number>;
-  primaryContactId?: string | number;
+  superuserId?: string | number;
   selectedSuperusers?: UserReference[];
   userOptions?: UserReference[];
   tamOptions?: UserReference[];
@@ -83,4 +83,3 @@ export interface CompanyFormBootstrap extends NamedEntity {
     duration?: string | number;
   }>;
 }
-

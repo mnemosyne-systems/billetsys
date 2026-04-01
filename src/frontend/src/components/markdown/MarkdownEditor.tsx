@@ -115,7 +115,7 @@ export default function MarkdownEditor({ value, onChange, inputRef, rows = 10, n
           H
         </button>
         <button type="button" onClick={() => applyAction('list')} aria-label="List">
-          â€¢
+          •
         </button>
         <button type="button" onClick={() => applyAction('quote')} aria-label="Quote">
           "

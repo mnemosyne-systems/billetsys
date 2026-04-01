@@ -90,31 +90,31 @@ export function profileInitial(fullName?: string | null, username?: string | nul
 export function levelColorMarker(color?: string | null): string {
   switch ((color || '').toLowerCase()) {
     case 'black':
-      return 'â¬›';
+      return '⬛';
     case 'silver':
     case 'white':
-      return 'â¬œ';
+      return '⬜';
     case 'gray':
-      return 'â—»ï¸';
+      return '◻️';
     case 'maroon':
     case 'red':
-      return 'ðŸŸ¥';
+      return '🟥';
     case 'purple':
     case 'fuchsia':
-      return 'ðŸŸª';
+      return '🟪';
     case 'green':
     case 'lime':
-      return 'ðŸŸ©';
+      return '🟩';
     case 'olive':
     case 'yellow':
-      return 'ðŸŸ¨';
+      return '🟨';
     case 'navy':
     case 'blue':
     case 'teal':
     case 'aqua':
-      return 'ðŸŸ¦';
+      return '🟦';
     default:
-      return 'â—»ï¸';
+      return '◻️';
   }
 }
 

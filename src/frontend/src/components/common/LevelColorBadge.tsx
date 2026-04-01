@@ -24,7 +24,7 @@ export function LevelColorFieldValue({ color, display }: LevelColorProps) {
   return (
     <div className="level-color-field-value">
       <span className="level-color-swatch" style={{ backgroundColor: color || 'transparent' }} aria-hidden="true" />
-      <span>{display || 'â€”'}</span>
+      <span>{display || '—'}</span>
     </div>
   );
 }

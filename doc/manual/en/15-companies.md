@@ -19,7 +19,7 @@ A company record can describe the core identity and context of an organization, 
 * Company name
 * Address information
 * Country and timezone
-* Primary contact
+* Superusers and related users
 * Related users
 * Related TAMs
 * Support entitlements
@@ -35,7 +35,7 @@ This is important because many workflows in billetsys are company-aware rather t
 
 ## Contacts and coordination
 
-Each company can have a primary contact and a wider set of associated users. This helps support teams understand who represents the organization and who participates in ticket activity.
+Each company can have superusers and a wider set of associated users. This helps support teams understand who represents the organization and who participates in ticket activity.
 
 It also helps customer-side coordination roles work from a shared account view rather than isolated ticket records.
 

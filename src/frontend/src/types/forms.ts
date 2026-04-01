@@ -26,16 +26,16 @@ export interface CompanyFormState {
   selectedUserIds: Array<string | number>;
   selectedTamIds: Array<string | number>;
   entitlements: CompanyEntitlementEntry[];
-  primaryContactId: string;
-  primaryContactUsername: string;
-  primaryContactFullName: string;
-  primaryContactEmail: string;
-  primaryContactSocial: string;
-  primaryContactPhoneNumber: string;
-  primaryPhoneNumberExtension: string;
-  primaryContactCountry: string;
-  primaryContactTimeZone: string;
-  primaryContactPassword: string;
+  superuserId: string;
+  superuserUsername: string;
+  superuserFullName: string;
+  superuserEmail: string;
+  superuserSocial: string;
+  superuserPhoneNumber: string;
+  superuserPhoneExtension: string;
+  superuserCountryId: string;
+  superuserTimezoneId: string;
+  superuserPassword: string;
 }
 
 export interface SupportTicketCreateFormState {
@@ -65,4 +65,3 @@ export interface TicketWorkbenchFormState {
   affectsVersionId: string;
   resolvedVersionId: string;
 }
-

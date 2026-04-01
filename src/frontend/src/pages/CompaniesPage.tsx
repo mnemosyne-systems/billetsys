@@ -41,10 +41,10 @@ export default function CompaniesPage({ sessionState }: SessionPageProps) {
                     </Link>
                   </h3>
                   <p className="muted-text">
-                    {[company.countryName, company.timezoneName].filter(Boolean).join(' â€¢ ') || 'No locale configured'}
+                    {[company.countryName, company.timezoneName].filter(Boolean).join(' • ') || 'No locale configured'}
                   </p>
                   <p className="muted-text">
-                    {company.superuserCount} superuser{company.superuserCount === 1 ? '' : 's'} â€¢ {company.userCount} users â€¢ {company.tamCount} TAMs
+                    {company.superuserCount} superuser{company.superuserCount === 1 ? '' : 's'} • {company.userCount} users • {company.tamCount} TAMs
                   </p>
                 </div>
               </div>

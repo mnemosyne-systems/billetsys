@@ -48,7 +48,7 @@ export default function ArticlesPage({ sessionState }: SessionPageProps) {
                       {article.title}
                     </Link>
                   </td>
-                  <td>{article.tags || 'â€”'}</td>
+                  <td>{article.tags || '—'}</td>
                 </tr>
               ))}
             </tbody>

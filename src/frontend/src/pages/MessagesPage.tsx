@@ -43,7 +43,7 @@ export default function MessagesPage({ sessionState }: SessionPageProps) {
                   </div>
                   <p className="tag-copy">{message.preview}</p>
                   <p className="muted-text">
-                    {message.authorName || 'Unknown author'} â€¢ {message.attachmentCount} attachment(s)
+                    {message.authorName || 'Unknown author'} • {message.attachmentCount} attachment(s)
                   </p>
                 </div>
                 <SmartLink className="inline-link" href={message.editPath}>

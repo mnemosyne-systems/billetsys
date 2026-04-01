@@ -573,7 +573,7 @@ class SupportAccessTest extends AccessTestSupport {
         Response response = RestAssured.given().redirects().follow(false).get("/app/");
         int statusCode = response.statusCode();
         if (statusCode == 200) {
-            response.then().body(Matchers.containsString("id=\"root\"")).body(Matchers.containsString("/app/assets/"));
+            response.then().body(Matchers.containsString("id=\"root\"")).body(Matchers.containsString("/assets/"));
             return;
         }
         response.then().statusCode(Matchers.anyOf(Matchers.equalTo(302), Matchers.equalTo(303))).header("Location",

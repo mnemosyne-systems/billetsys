@@ -77,15 +77,15 @@ export default function DirectoryCompanyDetailPage({ sessionState, apiBase, back
             <section className="detail-grid">
               <div className="detail-card">
                 <h3>Phone</h3>
-                <p>{company.phoneNumber || 'â€”'}</p>
+                <p>{company.phoneNumber || '—'}</p>
               </div>
               <div className="detail-card">
                 <h3>Country</h3>
-                <p>{company.countryName || 'â€”'}</p>
+                <p>{company.countryName || '—'}</p>
               </div>
               <div className="detail-card">
                 <h3>Time zone</h3>
-                <p>{company.timezoneName || 'â€”'}</p>
+                <p>{company.timezoneName || '—'}</p>
               </div>
             </section>
 
@@ -94,7 +94,7 @@ export default function DirectoryCompanyDetailPage({ sessionState, apiBase, back
                 <h3>Address</h3>
                 <ul className="plain-list">
                   {[company.address1, company.address2, company.city, company.state, company.zip].filter(Boolean).length === 0 ? (
-                    <li>â€”</li>
+                    <li>—</li>
                   ) : (
                     [company.address1, company.address2, company.city, company.state, company.zip]
                       .filter(Boolean)

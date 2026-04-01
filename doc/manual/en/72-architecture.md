@@ -55,7 +55,7 @@ erDiagram
         STRING zip
         BIGINT country_id FK
         BIGINT timezone_id FK
-        BIGINT primary_contact_id FK
+        BIGINT superuser_id FK
     }
 
     INSTALLATION {

@@ -43,15 +43,15 @@ export default function AttachmentPage({ sessionState }: SessionPageProps) {
             <section className="detail-grid">
               <div className="detail-card">
                 <h3>Type</h3>
-                <p>{attachment.mimeType || 'â€”'}</p>
+                <p>{attachment.mimeType || '—'}</p>
               </div>
               <div className="detail-card">
                 <h3>Size</h3>
-                <p>{attachment.sizeLabel || 'â€”'}</p>
+                <p>{attachment.sizeLabel || '—'}</p>
               </div>
               <div className="detail-card">
                 <h3>Ticket</h3>
-                <p>{attachment.ticketName || 'â€”'}</p>
+                <p>{attachment.ticketName || '—'}</p>
               </div>
             </section>
 

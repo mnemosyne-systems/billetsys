@@ -46,10 +46,10 @@ export default function LevelsPage({ sessionState }: SessionPageProps) {
                   </div>
                   <p className="tag-copy">{level.descriptionPreview || 'No description'}</p>
                   <p className="muted-text">
-                    Level {level.level} â€¢ {level.fromLabel} - {level.toLabel}
+                    Level {level.level} • {level.fromLabel} - {level.toLabel}
                   </p>
                   <p className="muted-text">
-                    {level.countryName || 'No country'} â€¢ {level.timezoneName || 'No time zone'}
+                    {level.countryName || 'No country'} • {level.timezoneName || 'No time zone'}
                   </p>
                 </div>
               </div>

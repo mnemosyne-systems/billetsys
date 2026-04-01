@@ -72,11 +72,11 @@ export default function ArticleDetailPage({ sessionState }: SessionPageProps) {
                 <div className="owner-form-grid ticket-detail-grid">
                   <label>
                     Title
-                    <input value={article.title || 'â€”'} readOnly />
+                    <input value={article.title || '—'} readOnly />
                   </label>
                   <label>
                     Tags
-                    <input value={article.tags || 'â€”'} readOnly />
+                    <input value={article.tags || '—'} readOnly />
                   </label>
                   <div className="owner-detail-panel form-span-2">
                     <div className="owner-detail-panel-label">Body</div>

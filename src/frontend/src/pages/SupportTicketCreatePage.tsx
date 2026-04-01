@@ -199,7 +199,7 @@ export default function SupportTicketCreatePage({
                   {(bootstrap.companyEntitlements || []).map((entry: CompanyEntitlementOption) => (
                     <option key={entry.id} value={entry.id}>
                       {entry.name}
-                      {!hideEntitlementLevel && entry.levelName ? ` â€¢ ${entry.levelName}` : ''}
+                      {!hideEntitlementLevel && entry.levelName ? ` • ${entry.levelName}` : ''}
                     </option>
                   ))}
                 </select>

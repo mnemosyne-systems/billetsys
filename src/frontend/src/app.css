@@ -871,6 +871,15 @@ pre code {
   font-weight: 600;
 }
 
+.required-fields-note {
+  margin: 0;
+  color: var(--muted-text);
+}
+
+.required-indicator {
+  color: #b91c1c;
+}
+
 .owner-form input,
 .owner-form select,
 .owner-form textarea {
@@ -986,6 +995,7 @@ pre code {
   border: 1px solid var(--card-border);
   border-radius: 6px;
   background: #fff;
+  font-weight: 400;
 }
 
 .login-actions {

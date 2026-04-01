@@ -86,7 +86,7 @@ export default function SupportTicketsPage({
                           {ticket.supportUser.displayName || ticket.supportUser.username}
                         </a>
                       ) : (
-                        'â€”'
+                        '—'
                       )}
                     </td>
                     <td>
@@ -95,7 +95,7 @@ export default function SupportTicketsPage({
                           {ticket.companyName}
                         </a>
                       ) : (
-                        ticket.companyName || 'â€”'
+                        ticket.companyName || '—'
                       )}
                     </td>
                     <td>{ticket.entitlementName || '-'}</td>

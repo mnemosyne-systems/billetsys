@@ -35,11 +35,11 @@ export default function LevelDetailPage({ sessionState }: SessionPageProps) {
                 <div className="owner-form-grid ticket-detail-grid">
                   <label>
                     Name
-                    <input value={level.name || 'â€”'} readOnly />
+                    <input value={level.name || '—'} readOnly />
                   </label>
                   <label>
                     Business level
-                    <input value={level.level ?? 'â€”'} readOnly />
+                    <input value={level.level ?? '—'} readOnly />
                   </label>
                   <label>
                     Color
@@ -47,24 +47,24 @@ export default function LevelDetailPage({ sessionState }: SessionPageProps) {
                   </label>
                   <label>
                     Country
-                    <input value={level.countryName || 'â€”'} readOnly />
+                    <input value={level.countryName || '—'} readOnly />
                   </label>
                   <label>
                     From
-                    <input value={level.fromLabel || 'â€”'} readOnly />
+                    <input value={level.fromLabel || '—'} readOnly />
                   </label>
                   <label>
                     To
-                    <input value={level.toLabel || 'â€”'} readOnly />
+                    <input value={level.toLabel || '—'} readOnly />
                   </label>
                   <label>
                     Time zone
-                    <input value={level.timezoneName || 'â€”'} readOnly />
+                    <input value={level.timezoneName || '—'} readOnly />
                   </label>
                   <div className="detail-card-spacer" aria-hidden="true" />
                   <label className="form-span-2">
                     Description
-                    <textarea value={level.description || 'â€”'} readOnly rows={6} />
+                    <textarea value={level.description || '—'} readOnly rows={6} />
                   </label>
                 </div>
               </div>

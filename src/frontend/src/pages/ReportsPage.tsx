@@ -377,7 +377,7 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
                         <td>{bucket.count}</td>
                         <td>
                           {bucket.tickets.length === 0 ? (
-                            'â€”'
+                            '—'
                           ) : (
                             bucket.tickets.map((ticket: TicketListItem, index: number) => (
                               <span key={ticket.id}>

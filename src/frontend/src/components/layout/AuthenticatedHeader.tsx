@@ -111,7 +111,7 @@ export default function AuthenticatedHeader({ session }: AuthenticatedHeaderProp
                         aria-hidden={!showTicketAlarm}
                         title="SLA alarm"
                       >
-                        ðŸš¨
+                        🚨
                       </span>
                     </summary>
                     <div className="shell-nav-dropdown">
@@ -138,7 +138,7 @@ export default function AuthenticatedHeader({ session }: AuthenticatedHeaderProp
                       aria-hidden={!showTicketAlarm}
                       title="SLA alarm"
                     >
-                      ðŸš¨
+                      🚨
                     </span>
                   </SmartLink>
                 );
@@ -202,4 +202,3 @@ export default function AuthenticatedHeader({ session }: AuthenticatedHeaderProp
     </header>
   );
 }
-

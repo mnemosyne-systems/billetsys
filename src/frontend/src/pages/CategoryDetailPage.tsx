@@ -37,7 +37,7 @@ export default function CategoryDetailPage({ sessionState }: SessionPageProps) {
                 <div className="owner-form-grid ticket-detail-grid">
                   <label>
                     Name
-                    <input value={category.name || 'â€”'} readOnly />
+                    <input value={category.name || '—'} readOnly />
                   </label>
                   <label>
                     Default
@@ -45,7 +45,7 @@ export default function CategoryDetailPage({ sessionState }: SessionPageProps) {
                   </label>
                   <label className="form-span-2">
                     Description
-                    <textarea value={category.description || 'â€”'} readOnly rows={10} />
+                    <textarea value={category.description || '—'} readOnly rows={10} />
                   </label>
                   <div className="owner-detail-panel form-span-2">
                     <div className="owner-detail-panel-label">Attachments</div>

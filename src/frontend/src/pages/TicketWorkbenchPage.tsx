@@ -43,7 +43,7 @@ export default function TicketWorkbenchPage({ sessionState }: SessionPageProps) 
                   </div>
                   <p className="tag-copy">{ticket.companyName || 'No company'}</p>
                   <p className="muted-text">
-                    {ticket.requesterName || 'No requester'} â€¢ {ticket.categoryName || 'No category'}
+                    {ticket.requesterName || 'No requester'} • {ticket.categoryName || 'No category'}
                   </p>
                   <p className="muted-text">Latest message: {ticket.lastMessageLabel || '-'}</p>
                   {ticket.externalIssueLink && (

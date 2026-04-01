@@ -89,28 +89,26 @@ public class CompanyResource {
             @FormParam("levelIds") java.util.List<Long> levelIds,
             @FormParam("entitlementDates") java.util.List<String> entitlementDates,
             @FormParam("entitlementDurations") java.util.List<Integer> entitlementDurations,
-            @FormParam("phoneNumber") String phoneNumber,
-            @FormParam("primaryContactUsername") String primaryContactUsername,
-            @FormParam("primaryContactPhoneNumber") String primaryContactPhoneNumber,
-            @FormParam("primaryPhoneNumberExtension") String primaryPhoneNumberExtension,
-            @FormParam("primaryContactEmail") String primaryContactEmail,
-            @FormParam("primaryContactPassword") String primaryContactPassword,
-            @FormParam("primaryContactCountry") Long primaryContactCountryId,
-            @FormParam("primaryContactTimeZone") Long primaryContactTZ,
-            @FormParam("primaryContactSocial") String primaryContactSocial,
-            @FormParam("primaryContactFullName") String primaryContactFullName) {
+            @FormParam("phoneNumber") String phoneNumber, @FormParam("superuserUsername") String superuserUsername,
+            @FormParam("superuserPhoneNumber") String superuserPhoneNumber,
+            @FormParam("superuserPhoneExtension") String superuserPhoneExtension,
+            @FormParam("superuserEmail") String superuserEmail,
+            @FormParam("superuserPassword") String superuserPassword,
+            @FormParam("superuserCountryId") Long superuserCountryId,
+            @FormParam("superuserTimezoneId") Long superuserTimezoneId,
+            @FormParam("superuserSocial") String superuserSocial,
+            @FormParam("superuserFullName") String superuserFullName) {
         requireAdmin(auth);
         if (name == null || name.isBlank()) {
             throw new BadRequestException("Name is required");
         }
         Company company = new Company();
-        validatePrimaryContactUser(primaryContactUsername, primaryContactEmail, primaryContactPassword);
-        User primaryContact = buildPrimaryContact(primaryContactUsername, primaryContactFullName, primaryContactEmail,
-                primaryContactPhoneNumber, primaryPhoneNumberExtension, primaryContactSocial, primaryContactTZ,
-                primaryContactPassword, primaryContactCountryId);
-        primaryContact.persist();
+        validateSuperuserUser(superuserUsername, superuserEmail, superuserPassword);
+        User superuser = buildSuperuser(superuserUsername, superuserFullName, superuserEmail, superuserPhoneNumber,
+                superuserPhoneExtension, superuserSocial, superuserTimezoneId, superuserPassword, superuserCountryId);
+        superuser.persist();
         List<Long> userIdsModified = userIds == null ? new ArrayList<>() : new ArrayList<>(userIds);
-        userIdsModified.add(primaryContact.id);
+        userIdsModified.add(superuser.id);
         company.name = name;
         company.address1 = address1;
         company.address2 = address2;
@@ -121,7 +119,7 @@ public class CompanyResource {
         company.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
         company.users = resolveUsers(userIdsModified, tamIds);
         company.phoneNumber = phoneNumber;
-        company.primaryContact = primaryContact;
+        company.superuser = superuser;
         company.persist();
         applyEntitlements(company, entitlementIds, levelIds, entitlementDates, entitlementDurations,
                 java.util.List.of());
@@ -141,7 +139,7 @@ public class CompanyResource {
             @FormParam("levelIds") java.util.List<Long> levelIds,
             @FormParam("entitlementDates") java.util.List<String> entitlementDates,
             @FormParam("entitlementDurations") java.util.List<Integer> entitlementDurations,
-            @FormParam("phoneNumber") String phoneNumber, @FormParam("primaryContact") Long primaryContactId) {
+            @FormParam("phoneNumber") String phoneNumber, @FormParam("superuserId") Long superuserId) {
         requireAdmin(auth);
         Company company = Company.findById(id);
         if (company == null) {
@@ -150,23 +148,23 @@ public class CompanyResource {
         if (name == null || name.isBlank()) {
             throw new BadRequestException("Name is required");
         }
-        if (company.primaryContact == null) {
+        if (company.superuser == null) {
             throw new NotFoundException();
         }
         List<Long> userIdsModified = userIds == null ? new ArrayList<>() : new ArrayList<>(userIds);
-        if (primaryContactId == null) {
-            throw new BadRequestException("Primary contact id is required");
+        if (superuserId == null) {
+            throw new BadRequestException("Superuser id is required");
         } else {
-            if (!primaryContactId.equals(company.primaryContact.id)) {
-                User updatedPrimaryContact = User.findById(primaryContactId);
-                if (updatedPrimaryContact == null) {
+            if (!superuserId.equals(company.superuser.id)) {
+                User updatedSuperuser = User.findById(superuserId);
+                if (updatedSuperuser == null) {
                     throw new NotFoundException();
                 }
-                company.primaryContact = updatedPrimaryContact;
+                company.superuser = updatedSuperuser;
             }
         }
-        if (!userIdsModified.contains(company.primaryContact.id)) {
-            userIdsModified.add(company.primaryContact.id);
+        if (!userIdsModified.contains(company.superuser.id)) {
+            userIdsModified.add(company.superuser.id);
         }
 
         company.name = name;
@@ -339,23 +337,23 @@ public class CompanyResource {
         return LocalDate.now().isAfter(endDate);
     }
 
-    private void validatePrimaryContactUser(String username, String email, String password) {
+    private void validateSuperuserUser(String username, String email, String password) {
         if (username == null || username.isEmpty()) {
-            throw new BadRequestException("Primary Contact username is required");
+            throw new BadRequestException("Superuser username is required");
         }
         if (email == null || email.isEmpty()) {
-            throw new BadRequestException("Primary Contact email is required");
+            throw new BadRequestException("Superuser email is required");
         }
         if (password == null || password.isEmpty()) {
-            throw new BadRequestException("Primary Contact password is required");
+            throw new BadRequestException("Superuser password is required");
         }
     }
 
-    private User buildPrimaryContact(String username, String fullName, String email, String phoneNumber,
+    private User buildSuperuser(String username, String fullName, String email, String phoneNumber,
             String phoneExtension, String social, Long timezone, String password, Long countryId) {
         User user = new User();
         user.name = username;
-        user.email = email;
+        user.email = email == null ? null : email.trim();
         user.phoneNumber = phoneNumber != null && !phoneNumber.isBlank() ? phoneNumber : null;
         user.phoneExtension = phoneExtension != null && !phoneExtension.isBlank() ? phoneExtension : null;
         user.country = countryId != null ? Country.findById(countryId) : null;
