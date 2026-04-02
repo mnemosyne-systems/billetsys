@@ -1526,7 +1526,15 @@ pre code {
 }
 
 .attachment-actions {
+  justify-content: space-between;
   align-items: center;
+}
+
+.attachment-actions-left,
+.attachment-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .attachment-remove-button {

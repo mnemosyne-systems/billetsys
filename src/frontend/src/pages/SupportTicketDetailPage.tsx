@@ -386,17 +386,21 @@ export default function SupportTicketDetailPage({
                   {replyState.error && <p className="error-text">{replyState.error}</p>}
 
                   <div className="form-actions attachment-actions">
-                    {ticket.exportPath && (
-                      <a className="action-button export-btn" href={ticket.exportPath}>
-                        Export
-                      </a>
-                    )}
-                    <button type="button" className="action-button" onClick={() => fileInputRef.current?.click()}>
-                      Browse
-                    </button>
-                    <button type="submit" className="action-button" disabled={replyState.saving}>
-                      {replyState.saving ? 'Adding...' : 'Add'}
-                    </button>
+                    <div className="attachment-actions-left">
+                      {ticket.exportPath && (
+                        <a className="action-button export-btn" href={ticket.exportPath}>
+                          Export
+                        </a>
+                      )}
+                    </div>
+                    <div className="attachment-actions-right">
+                      <button type="button" className="action-button" onClick={() => fileInputRef.current?.click()}>
+                        Browse
+                      </button>
+                      <button type="submit" className="action-button" disabled={replyState.saving}>
+                        {replyState.saving ? 'Adding...' : 'Add'}
+                      </button>
+                    </div>
                   </div>
                 </form>
               </>
