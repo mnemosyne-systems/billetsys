@@ -13,6 +13,7 @@ import type { UserReference } from './users';
 import type { Id } from '../app';
 
 export interface TicketReference extends NamedEntity {
+  title?: string;
   status?: string;
   displayStatus?: string;
   categoryId?: Id;
@@ -69,6 +70,7 @@ export interface SupportTicketCreateBootstrap {
   defaultCategoryId?: Id;
   defaultAffectsVersion?: VersionInfo;
   ticketName?: string;
+  title?: string;
   companies?: NamedEntity[];
   companyEntitlements?: CompanyEntitlementOption[];
   categories?: NamedEntity[];
@@ -94,4 +96,3 @@ export interface SupportTicketDetailRecord extends TicketReference {
   versions?: VersionInfo[];
   messages?: MessageReference[];
 }
-

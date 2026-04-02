@@ -67,7 +67,7 @@ public class IncomingEmailService {
             }
         }
         if (ticket == null) {
-            ticket = createTicketForIncoming(sender);
+            ticket = createTicketForIncoming(sender, subject, body);
             if (ticket == null) {
                 return IncomingEmailResult.ignored();
             }
@@ -103,7 +103,7 @@ public class IncomingEmailService {
         return candidate == null ? null : candidate.trim();
     }
 
-    private Ticket createTicketForIncoming(User sender) {
+    private Ticket createTicketForIncoming(User sender, String subject, String body) {
         Company company = companyForSender(sender);
         if (company == null) {
             LOGGER.warnf("Ignoring incoming email: no company found for From '%s'",
@@ -118,6 +118,7 @@ public class IncomingEmailService {
         }
         Ticket ticket = new Ticket();
         ticket.name = Ticket.nextName(company);
+        ticket.title = incomingTitle(subject, body, ticket.name);
         ticket.status = "Open";
         ticket.company = company;
         ticket.requester = sender;
@@ -126,6 +127,22 @@ public class IncomingEmailService {
         ticket.persist();
         assignCompanyTams(ticket);
         return ticket;
+    }
+
+    private String incomingTitle(String subject, String body, String fallback) {
+        String title = Ticket.normalizeTitle(subject);
+        if (title != null) {
+            return title;
+        }
+        if (body != null) {
+            for (String line : body.split("\\R")) {
+                title = Ticket.normalizeTitle(line);
+                if (title != null) {
+                    return title;
+                }
+            }
+        }
+        return fallback;
     }
 
     private Company companyForSender(User sender) {

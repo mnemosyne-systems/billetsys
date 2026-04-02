@@ -86,7 +86,8 @@ class UserAccessTest extends AccessTestSupport {
         Assertions.assertNotNull(userCreateVersion);
         String userCreateMessage = "User create redirect coverage";
         String userCreateRedirect = RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .multiPart("status", "Open").multiPart("message", userCreateMessage).multiPart("companyId", companyId)
+                .multiPart("status", "Open").multiPart("title", "User create redirect title")
+                .multiPart("message", userCreateMessage).multiPart("companyId", companyId)
                 .multiPart("companyEntitlementId", userCreateEntitlement.id)
                 .multiPart("categoryId", Category.findDefault().id).multiPart("affectsVersionId", userCreateVersion.id)
                 .post("/user/tickets").then().statusCode(303).extract().header("Location");
@@ -224,9 +225,10 @@ class UserAccessTest extends AccessTestSupport {
 
         String redirectTo = RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .header("X-Billetsys-Client", "react").multiPart("status", "Open")
-                .multiPart("message", "User json redirect create").multiPart("companyId", companyId)
-                .multiPart("companyEntitlementId", entry.id).multiPart("categoryId", Category.findDefault().id)
-                .multiPart("affectsVersionId", version.id).post("/user/tickets").then().statusCode(200)
+                .multiPart("title", "User json redirect title").multiPart("message", "User json redirect create")
+                .multiPart("companyId", companyId).multiPart("companyEntitlementId", entry.id)
+                .multiPart("categoryId", Category.findDefault().id).multiPart("affectsVersionId", version.id)
+                .post("/user/tickets").then().statusCode(200)
                 .body("redirectTo", Matchers.matchesPattern("/user/tickets/\\d+")).extract().path("redirectTo");
         Long createdTicketId = Long.valueOf(redirectTo.substring(redirectTo.lastIndexOf('/') + 1));
 

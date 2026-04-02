@@ -37,6 +37,9 @@ public class Ticket extends PanacheEntityBase {
     @Column(nullable = false)
     public String name;
 
+    @Column
+    public String title;
+
     @Column(nullable = false)
     public String status;
 
@@ -112,5 +115,18 @@ public class Ticket extends PanacheEntityBase {
             return company.ticketSequence;
         }
         return Ticket.count("company", company);
+    }
+
+    public static String normalizeTitle(String title) {
+        if (title == null) {
+            return null;
+        }
+        String normalized = title.trim().replaceAll("\\s+", " ");
+        return normalized.isBlank() ? null : normalized;
+    }
+
+    public String displayTitle() {
+        String normalized = normalizeTitle(title);
+        return normalized != null ? normalized : name;
     }
 }

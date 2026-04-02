@@ -194,6 +194,7 @@ public class UserResource {
             @HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
         User user = requireUser(auth);
         String status = AttachmentHelper.readFormValue(input, "status");
+        String title = Ticket.normalizeTitle(AttachmentHelper.readFormValue(input, "title"));
         String messageBody = AttachmentHelper.readFormValue(input, "message");
         Long companyEntitlementId = AttachmentHelper.readFormLong(input, "companyEntitlementId");
         Long affectsVersionId = AttachmentHelper.readFormLong(input, "affectsVersionId");
@@ -203,6 +204,9 @@ public class UserResource {
         }
         if (!"Open".equalsIgnoreCase(status)) {
             throw new BadRequestException("Status must be Open");
+        }
+        if (title == null) {
+            throw new BadRequestException("Title is required");
         }
         if (messageBody == null || messageBody.isBlank()) {
             throw new BadRequestException("Message is required");
@@ -224,6 +228,7 @@ public class UserResource {
         }
         Ticket ticket = new Ticket();
         ticket.name = Ticket.nextName(entitlement.company);
+        ticket.title = title;
         ticket.status = "Open";
         ticket.company = entitlement.company;
         ticket.requester = user;
@@ -856,6 +861,7 @@ public class UserResource {
         Ticket displayTicket = new Ticket();
         displayTicket.id = ticket.id;
         displayTicket.name = ticket.name;
+        displayTicket.title = ticket.title;
         displayTicket.status = "Assigned";
         displayTicket.company = ticket.company;
         displayTicket.companyEntitlement = ticket.companyEntitlement;
@@ -873,6 +879,7 @@ public class UserResource {
         Ticket displayTicket = new Ticket();
         displayTicket.id = ticket.id;
         displayTicket.name = ticket.name;
+        displayTicket.title = ticket.title;
         displayTicket.status = ticket.status;
         displayTicket.company = ticket.company;
         displayTicket.companyEntitlement = ticket.companyEntitlement;

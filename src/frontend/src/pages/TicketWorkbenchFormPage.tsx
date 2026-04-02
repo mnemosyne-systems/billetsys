@@ -42,6 +42,7 @@ export default function TicketWorkbenchFormPage({ sessionState }: SessionPagePro
       if (!current || String(current.id || '') !== String(bootstrap.ticket?.id || '')) {
         return {
           id: bootstrap.ticket?.id ? String(bootstrap.ticket.id) : '',
+          title: bootstrap.ticket?.title || '',
           status: bootstrap.ticket?.status || 'Open',
           companyId: bootstrap.ticket?.companyId ? String(bootstrap.ticket.companyId) : '',
           companyEntitlementId: bootstrap.ticket?.companyEntitlementId ? String(bootstrap.ticket.companyEntitlementId) : '',
@@ -82,6 +83,7 @@ export default function TicketWorkbenchFormPage({ sessionState }: SessionPagePro
     try {
       setSaveState({ saving: true, error: '' });
       const response = await postForm(bootstrap.submitPath, [
+        ['title', formState.title],
         ['status', formState.status],
         ['companyId', formState.companyId],
         ['companyEntitlementId', formState.companyEntitlementId],
@@ -136,6 +138,10 @@ export default function TicketWorkbenchFormPage({ sessionState }: SessionPagePro
         {bootstrap && formState && (
           <form className="owner-form" onSubmit={submit}>
             <div className="owner-form-grid">
+              <label>
+                Title
+                <input value={formState.title} onChange={event => updateFormState('title', event.target.value)} required />
+              </label>
               <label>
                 Status
                 <select value={formState.status} onChange={event => updateFormState('status', event.target.value)}>
@@ -249,4 +255,3 @@ export default function TicketWorkbenchFormPage({ sessionState }: SessionPagePro
     </section>
   );
 }
-

@@ -77,6 +77,7 @@ public class TicketWorkbenchApiResource {
         Category defaultCategory = ticket.category == null ? Category.findDefault() : ticket.category;
         if (ticketId == null) {
             ticket.status = ticket.status == null ? "Open" : ticket.status;
+            ticket.title = ticket.displayTitle();
             ticket.company = selectedCompany;
             ticket.companyEntitlement = selectedEntitlement;
             ticket.affectsVersion = defaultAffectsVersion(selectedEntitlement);
@@ -95,7 +96,8 @@ public class TicketWorkbenchApiResource {
                 ticketId == null ? List.of()
                         : Message.<Message> list("ticket = ?1 order by date desc", ticket).stream()
                                 .map(this::toMessageSummary).toList(),
-                new TicketFormData(ticket.id, ticket.status, ticket.company == null ? null : ticket.company.id,
+                new TicketFormData(ticket.id, ticket.displayTitle(), ticket.status,
+                        ticket.company == null ? null : ticket.company.id,
                         ticket.companyEntitlement == null ? null : ticket.companyEntitlement.id,
                         ticket.category == null ? null : ticket.category.id, ticket.externalIssueLink,
                         ticket.affectsVersion == null ? null : ticket.affectsVersion.id,
@@ -208,7 +210,7 @@ public class TicketWorkbenchApiResource {
     public record MessageSummary(Long id, String body, String dateLabel) {
     }
 
-    public record TicketFormData(Long id, String status, Long companyId, Long companyEntitlementId, Long categoryId,
-            String externalIssueLink, Long affectsVersionId, Long resolvedVersionId) {
+    public record TicketFormData(Long id, String title, String status, Long companyId, Long companyEntitlementId,
+            Long categoryId, String externalIssueLink, Long affectsVersionId, Long resolvedVersionId) {
     }
 }

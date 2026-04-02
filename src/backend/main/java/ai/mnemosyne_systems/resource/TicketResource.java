@@ -156,11 +156,15 @@ public class TicketResource {
     @Transactional
     public Response create(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
             @HeaderParam("X-Billetsys-Client") String client, @FormParam("status") String status,
-            @FormParam("companyId") Long companyId, @FormParam("companyEntitlementId") Long companyEntitlementId,
-            @FormParam("categoryId") Long categoryId) {
+            @FormParam("title") String title, @FormParam("companyId") Long companyId,
+            @FormParam("companyEntitlementId") Long companyEntitlementId, @FormParam("categoryId") Long categoryId) {
         User user = requireSupport(auth);
+        String normalizedTitle = Ticket.normalizeTitle(title);
         if (status == null || status.isBlank()) {
             throw new BadRequestException("Status is required");
+        }
+        if (normalizedTitle == null) {
+            throw new BadRequestException("Title is required");
         }
         if (companyId == null) {
             throw new BadRequestException("Company is required");
@@ -180,6 +184,7 @@ public class TicketResource {
         Category category = categoryId != null ? Category.findById(categoryId) : Category.findDefault();
         Ticket ticket = new Ticket();
         ticket.name = Ticket.nextName(company);
+        ticket.title = normalizedTitle;
         ticket.status = status;
         ticket.company = company;
         ticket.requester = user;

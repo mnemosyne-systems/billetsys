@@ -396,6 +396,7 @@ public class AppSeeder {
         if (ticket == null) {
             ticket = new Ticket();
             ticket.name = name;
+            ticket.title = name;
             ticket.status = "Open";
             ticket.company = company;
             ticket.requester = requester;
@@ -408,6 +409,9 @@ public class AppSeeder {
         }
         if (ticket.status == null || ticket.status.isBlank()) {
             ticket.status = "Open";
+        }
+        if (Ticket.normalizeTitle(ticket.title) == null) {
+            ticket.title = ticket.name;
         }
         ticket.company = company;
         ticket.requester = requester;

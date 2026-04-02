@@ -85,7 +85,7 @@ public class SuperuserTicketApiResource {
                 data.assignedTickets == null ? 0 : data.assignedTickets.size(),
                 data.openTickets == null ? 0 : data.openTickets.size(),
                 selectedCompany == null ? null : selectedCompany.id,
-                selectedCompany == null ? "" : Ticket.previewNextName(selectedCompany),
+                selectedCompany == null ? "" : Ticket.previewNextName(selectedCompany), "",
                 companies.stream().map(company -> new SupportTicketApiResource.CompanyOption(company.id, company.name))
                         .toList(),
                 entitlements.stream().map(this::toEntitlementOption).toList(), selectedCompanyEntitlementId,
@@ -118,7 +118,7 @@ public class SuperuserTicketApiResource {
                 : User.find(
                         "select distinct u from Company c join c.users u where c = ?1 and lower(u.type) = ?2 order by u.email",
                         ticket.company, User.TYPE_SUPERUSER).list();
-        return new UserTicketApiResource.RoleTicketDetailResponse(ticket.id, ticket.name,
+        return new UserTicketApiResource.RoleTicketDetailResponse(ticket.id, ticket.name, ticket.displayTitle(),
                 ticket.status == null || ticket.status.isBlank() ? "Open" : ticket.status,
                 data.assignedTickets == null ? 0 : data.assignedTickets.size(),
                 data.openTickets == null ? 0 : data.openTickets.size(),

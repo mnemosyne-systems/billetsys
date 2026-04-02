@@ -77,7 +77,7 @@ public class SupportTicketApiResource {
         Category defaultCategory = Category.findDefault();
         return new SupportTicketBootstrapResponse(counts.assignedCount(), counts.openCount(),
                 selectedCompany == null ? null : selectedCompany.id,
-                selectedCompany == null ? "" : Ticket.previewNextName(selectedCompany),
+                selectedCompany == null ? "" : Ticket.previewNextName(selectedCompany), "",
                 companies.stream().map(company -> new CompanyOption(company.id, company.name)).toList(),
                 entitlements.stream().map(this::toEntitlementOption).toList(), selectedCompanyEntitlementId,
                 Category.<Category> list("order by name").stream().map(this::toCategoryOption).toList(),
@@ -109,8 +109,8 @@ public class SupportTicketApiResource {
         mergeTicketTams(ticket, tamUsers);
         List<Message> messages = SupportTicketViewSupport.loadMessages(ticket);
         List<MessageEntry> messageEntries = messages.stream().map(this::toMessageEntry).toList();
-        return new SupportTicketDetailResponse(ticket.id, ticket.name, displayStatus, counts.assignedCount(),
-                counts.openCount(), ticket.company == null ? null : ticket.company.id,
+        return new SupportTicketDetailResponse(ticket.id, ticket.name, ticket.displayTitle(), displayStatus,
+                counts.assignedCount(), counts.openCount(), ticket.company == null ? null : ticket.company.id,
                 ticket.company == null ? null : ticket.company.name,
                 ticket.category == null ? null : ticket.category.id,
                 ticket.category == null ? null : ticket.category.name,
@@ -292,7 +292,7 @@ public class SupportTicketApiResource {
     }
 
     public record SupportTicketBootstrapResponse(int assignedCount, int openCount, Long selectedCompanyId,
-            String ticketName, List<CompanyOption> companies, List<EntitlementOption> companyEntitlements,
+            String ticketName, String title, List<CompanyOption> companies, List<EntitlementOption> companyEntitlements,
             Long selectedCompanyEntitlementId, List<CategoryOption> categories, Long defaultCategoryId,
             VersionOption defaultAffectsVersion, List<VersionOption> versions, String submitPath) {
     }
@@ -323,8 +323,8 @@ public class SupportTicketApiResource {
     public record AttachmentEntry(Long id, String name, String mimeType, String sizeLabel, String downloadPath) {
     }
 
-    public record SupportTicketDetailResponse(Long id, String name, String displayStatus, int assignedCount,
-            int openCount, Long companyId, String companyName, Long categoryId, String categoryName,
+    public record SupportTicketDetailResponse(Long id, String name, String title, String displayStatus,
+            int assignedCount, int openCount, Long companyId, String companyName, Long categoryId, String categoryName,
             Long companyEntitlementId, String entitlementName, String levelName, String externalIssueLink,
             Long affectsVersionId, Long resolvedVersionId, List<VersionOption> versions,
             List<CategoryOption> categories, List<UserReference> supportUsers, List<UserReference> tamUsers,

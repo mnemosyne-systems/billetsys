@@ -86,8 +86,8 @@ class SuperuserAccessTest extends AccessTestSupport {
         String superuserCreateMessage = "Superuser create redirect coverage";
         String superuserCreateRedirect = RestAssured.given().redirects().follow(false)
                 .cookie(AuthHelper.AUTH_COOKIE, cookie).multiPart("status", "Open")
-                .multiPart("message", superuserCreateMessage).multiPart("companyId", companyId)
-                .multiPart("companyEntitlementId", superuserCreateEntitlement.id)
+                .multiPart("title", "Superuser create redirect title").multiPart("message", superuserCreateMessage)
+                .multiPart("companyId", companyId).multiPart("companyEntitlementId", superuserCreateEntitlement.id)
                 .multiPart("categoryId", Category.findDefault().id)
                 .multiPart("affectsVersionId", superuserCreateVersion.id).post("/superuser/tickets").then()
                 .statusCode(303).extract().header("Location");
@@ -193,6 +193,7 @@ class SuperuserAccessTest extends AccessTestSupport {
 
         String redirectTo = RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .header("X-Billetsys-Client", "react").multiPart("status", "Open")
+                .multiPart("title", "Superuser json redirect title")
                 .multiPart("message", "Superuser json redirect create").multiPart("companyId", companyId)
                 .multiPart("companyEntitlementId", entry.id).multiPart("categoryId", Category.findDefault().id)
                 .multiPart("affectsVersionId", version.id).post("/superuser/tickets").then().statusCode(200)

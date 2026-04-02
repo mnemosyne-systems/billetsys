@@ -15,6 +15,7 @@ Tickets bring together the information needed to manage a case in one place. Ins
 A ticket can hold the main context for a support issue, including:
 
 * Ticket identifier
+* Ticket title
 * Company
 * Requester
 * Status
@@ -26,6 +27,8 @@ A ticket can hold the main context for a support issue, including:
 * Message history
 
 This allows teams to understand both the current state of a case and how it reached that state.
+
+The entity model stores the ticket identifier and the ticket title separately. The identifier is the generated case reference used for routing, exports, and cross-system references, while the title is the human-written summary entered when the ticket is created.
 
 ## Lifecycle
 

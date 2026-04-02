@@ -16,7 +16,7 @@ import useJson from '../hooks/useJson';
 import useSubmissionGuard from '../hooks/useSubmissionGuard';
 import { postMultipart } from '../utils/api';
 import { toQueryString } from '../utils/formatting';
-import { resolvePostRedirectPath, SmartLink } from '../utils/routing';
+import { resolvePostRedirectPath } from '../utils/routing';
 import type { SessionPageProps } from '../types/app';
 import type { CompanyEntitlementOption, NamedEntity, SupportTicketCreateBootstrap, VersionInfo } from '../types/domain';
 import type { SupportTicketCreateFormState } from '../types/forms';
@@ -24,7 +24,6 @@ import type { FormEntries } from '../utils/api';
 
 interface SupportTicketCreatePageProps extends SessionPageProps {
   apiBase?: string;
-  backPath?: string;
   submitFallbackPath?: string;
   title?: string;
   description?: string;
@@ -36,9 +35,8 @@ interface SupportTicketCreatePageProps extends SessionPageProps {
 export default function SupportTicketCreatePage({
   sessionState,
   apiBase = '/api/support/tickets/bootstrap',
-  backPath = '/support/tickets',
   submitFallbackPath = '/support/tickets',
-  title = 'New support ticket',
+  title = '',
   description = '',
   navigateTo = '/support/tickets',
   compactCreateActions = false,
@@ -60,8 +58,6 @@ export default function SupportTicketCreatePage({
   const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
   const submissionGuard = useSubmissionGuard();
   const showFixedCompany = sessionState.data?.role === 'superuser';
-  const compactCreateHeader = apiBase === '/api/superuser/tickets/bootstrap';
-
   useEffect(() => {
     if (!bootstrap) {
       return;
@@ -75,6 +71,7 @@ export default function SupportTicketCreatePage({
         setSelectedCompanyEntitlementId(initialEntitlementId);
         return {
           ticketName: bootstrap.ticketName || '',
+          title: bootstrap.title || '',
           companyId: initialCompanyId,
           companyEntitlementId: initialEntitlementId,
           categoryId: bootstrap.defaultCategoryId ? String(bootstrap.defaultCategoryId) : '',
@@ -86,12 +83,13 @@ export default function SupportTicketCreatePage({
       const validVersionIds = (bootstrap.versions || []).map(version => String(version.id));
       const nextEntitlementId = validEntitlementIds.includes(current.companyEntitlementId) ? current.companyEntitlementId : initialEntitlementId;
       setSelectedCompanyEntitlementId(nextEntitlementId);
-      return {
-        ...current,
-        ticketName: bootstrap.ticketName || current.ticketName,
-        companyId: initialCompanyId || current.companyId,
-        companyEntitlementId: nextEntitlementId,
-        categoryId: current.categoryId || (bootstrap.defaultCategoryId ? String(bootstrap.defaultCategoryId) : ''),
+        return {
+          ...current,
+          ticketName: bootstrap.ticketName || current.ticketName,
+          title: current.title,
+          companyId: initialCompanyId || current.companyId,
+          companyEntitlementId: nextEntitlementId,
+          categoryId: current.categoryId || (bootstrap.defaultCategoryId ? String(bootstrap.defaultCategoryId) : ''),
         affectsVersionId: validVersionIds.includes(current.affectsVersionId) ? current.affectsVersionId : initialAffectsVersionId
       };
     });
@@ -110,6 +108,7 @@ export default function SupportTicketCreatePage({
       setSaveState({ saving: true, error: '' });
       const entries: FormEntries = [
         ['status', 'Open'],
+        ['title', formState.title],
         ['message', formState.message],
         ['companyId', formState.companyId],
         ['companyEntitlementId', formState.companyEntitlementId],
@@ -136,10 +135,10 @@ export default function SupportTicketCreatePage({
 
   return (
     <section className="panel">
-      {(!compactCreateHeader && title) || description ? (
+      {(bootstrap?.ticketName || title || description) ? (
         <div className="section-header">
           <div>
-            {title ? <h2>{title}</h2> : null}
+            <h2>{bootstrap?.ticketName || title}</h2>
             {description ? <p className="section-copy">{description}</p> : null}
           </div>
         </div>
@@ -149,11 +148,11 @@ export default function SupportTicketCreatePage({
         {formState && bootstrap && (
           <form className="owner-form" onSubmit={submit}>
             <div className="owner-form-grid">
-              <label>
-                Ticket
-                <input value={formState.ticketName} readOnly />
+              <label className="form-span-2">
+                Title
+                <input value={formState.title} onChange={event => updateFormState('title', event.target.value)} required />
               </label>
-              <label>
+              <label className="form-span-2">
                 Company
                 {showFixedCompany ? (
                   <input value={(bootstrap.companies || []).find((company: NamedEntity) => String(company.id) === formState.companyId)?.name || ''} readOnly />
@@ -185,7 +184,7 @@ export default function SupportTicketCreatePage({
                   </select>
                 )}
               </label>
-              <label>
+              <label className="form-span-2">
                 Entitlement
                 <select
                   value={formState.companyEntitlementId}
@@ -208,7 +207,7 @@ export default function SupportTicketCreatePage({
                   ))}
                 </select>
               </label>
-              <label>
+              <label className="form-span-2">
                 Category
                 <select value={formState.categoryId} onChange={event => updateFormState('categoryId', event.target.value)}>
                   {(bootstrap.categories || []).map((category: NamedEntity) => (
@@ -250,15 +249,10 @@ export default function SupportTicketCreatePage({
 
             {saveState.error && <p className="error-text">{saveState.error}</p>}
 
-            <div className={`button-row${compactCreateHeader || compactCreateActions ? ' button-row-end' : ''}`}>
+            <div className="button-row button-row-end">
               <button type="submit" className="primary-button" disabled={saveState.saving}>
-                {saveState.saving ? 'Creating...' : compactCreateHeader || compactCreateActions ? 'Create' : 'Create ticket'}
+                {saveState.saving ? 'Creating...' : 'Create'}
               </button>
-              {!compactCreateHeader && !compactCreateActions ? (
-                <SmartLink className="secondary-button" href={backPath}>
-                  Cancel
-                </SmartLink>
-              ) : null}
             </div>
           </form>
         )}
@@ -266,4 +260,3 @@ export default function SupportTicketCreatePage({
     </section>
   );
 }
-

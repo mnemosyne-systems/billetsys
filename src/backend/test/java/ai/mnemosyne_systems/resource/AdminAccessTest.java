@@ -458,6 +458,7 @@ class AdminAccessTest extends AccessTestSupport {
 
         Ticket ticket = new Ticket();
         ticket.name = Ticket.nextName(company);
+        ticket.title = "Delete target";
         ticket.status = "Open";
         ticket.company = company;
         ticket.requester = user;

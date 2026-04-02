@@ -298,6 +298,7 @@ public class SupportResource {
             @HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
         User user = requireSupport(auth);
         String status = AttachmentHelper.readFormValue(input, "status");
+        String title = Ticket.normalizeTitle(AttachmentHelper.readFormValue(input, "title"));
         String messageBody = AttachmentHelper.readFormValue(input, "message");
         Long companyId = AttachmentHelper.readFormLong(input, "companyId");
         Long companyEntitlementId = AttachmentHelper.readFormLong(input, "companyEntitlementId");
@@ -308,6 +309,9 @@ public class SupportResource {
         }
         if (!"Open".equalsIgnoreCase(status)) {
             throw new BadRequestException("Status must be Open");
+        }
+        if (title == null) {
+            throw new BadRequestException("Title is required");
         }
         if (messageBody == null || messageBody.isBlank()) {
             throw new BadRequestException("Message is required");
@@ -329,6 +333,7 @@ public class SupportResource {
         }
         Ticket ticket = new Ticket();
         ticket.name = Ticket.nextName(company);
+        ticket.title = title;
         ticket.status = "Open";
         ticket.company = company;
         ticket.requester = user;

@@ -86,7 +86,7 @@ public class UserTicketApiResource {
                 data.assignedTickets == null ? 0 : data.assignedTickets.size(),
                 data.openTickets == null ? 0 : data.openTickets.size(),
                 selectedCompany == null ? null : selectedCompany.id,
-                selectedCompany == null ? "" : Ticket.previewNextName(selectedCompany),
+                selectedCompany == null ? "" : Ticket.previewNextName(selectedCompany), "",
                 companies.stream().map(company -> new SupportTicketApiResource.CompanyOption(company.id, company.name))
                         .toList(),
                 entitlements.stream().map(this::toEntitlementOption).toList(), selectedCompanyEntitlementId,
@@ -122,7 +122,7 @@ public class UserTicketApiResource {
                 .find("select u from Ticket t join t.tamUsers u where t = ?1 order by u.email", ticket).list();
         mergeMissingUsers(secondaryUsers, ticketTams);
         boolean tamView = User.TYPE_TAM.equalsIgnoreCase(user.type);
-        return new RoleTicketDetailResponse(ticket.id, ticket.name,
+        return new RoleTicketDetailResponse(ticket.id, ticket.name, ticket.displayTitle(),
                 ticket.status == null || ticket.status.isBlank() ? "Open" : ticket.status,
                 data.assignedTickets == null ? 0 : data.assignedTickets.size(),
                 data.openTickets == null ? 0 : data.openTickets.size(),
@@ -276,10 +276,10 @@ public class UserTicketApiResource {
         return user;
     }
 
-    public record RoleTicketDetailResponse(Long id, String name, String displayStatus, int assignedCount, int openCount,
-            Long companyId, String companyName, Long categoryId, String categoryName, Long companyEntitlementId,
-            String entitlementName, String levelName, String externalIssueLink, Long affectsVersionId,
-            Long resolvedVersionId, List<SupportTicketApiResource.VersionOption> versions,
+    public record RoleTicketDetailResponse(Long id, String name, String title, String displayStatus, int assignedCount,
+            int openCount, Long companyId, String companyName, Long categoryId, String categoryName,
+            Long companyEntitlementId, String entitlementName, String levelName, String externalIssueLink,
+            Long affectsVersionId, Long resolvedVersionId, List<SupportTicketApiResource.VersionOption> versions,
             List<SupportTicketApiResource.CategoryOption> categories,
             List<SupportTicketApiResource.UserReference> supportUsers, String secondaryUsersLabel,
             List<SupportTicketApiResource.UserReference> secondaryUsers,

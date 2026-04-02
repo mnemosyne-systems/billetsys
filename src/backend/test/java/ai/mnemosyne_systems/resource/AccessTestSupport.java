@@ -113,6 +113,7 @@ abstract class AccessTestSupport {
         entry.persist();
         ai.mnemosyne_systems.model.Ticket ticket = new ai.mnemosyne_systems.model.Ticket();
         ticket.name = ai.mnemosyne_systems.model.Ticket.nextName(company);
+        ticket.title = "Support request " + ticket.name;
         ticket.status = "Assigned";
         ticket.company = company;
         ticket.requester = user;

@@ -113,8 +113,8 @@ class SupportAccessTest extends AccessTestSupport {
         String supportCreateMessage = "Support create redirect coverage";
         String supportCreateRedirect = RestAssured.given().redirects().follow(false)
                 .cookie(AuthHelper.AUTH_COOKIE, cookie).multiPart("status", "Open")
-                .multiPart("message", supportCreateMessage).multiPart("companyId", companyId)
-                .multiPart("companyEntitlementId", supportCreateEntitlement.id)
+                .multiPart("title", "Support create redirect title").multiPart("message", supportCreateMessage)
+                .multiPart("companyId", companyId).multiPart("companyEntitlementId", supportCreateEntitlement.id)
                 .multiPart("categoryId", Category.findDefault().id)
                 .multiPart("affectsVersionId", supportCreateVersion.id).post("/support/tickets").then().statusCode(303)
                 .extract().header("Location");
@@ -251,8 +251,9 @@ class SupportAccessTest extends AccessTestSupport {
         CompanyEntitlement entry = ensureCompanyEntitlement(company, entitlement, level);
 
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .contentType(ContentType.URLENC).formParam("status", "Open").formParam("companyId", company.id)
-                .formParam("companyEntitlementId", entry.id).post("/tickets").then().statusCode(303);
+                .contentType(ContentType.URLENC).formParam("status", "Open").formParam("title", "CRUD create title")
+                .formParam("companyId", company.id).formParam("companyEntitlementId", entry.id).post("/tickets").then()
+                .statusCode(303);
         Ticket ticket = Ticket.find("company = ?1 order by id desc", company).firstResult();
         Assertions.assertNotNull(ticket);
         Assertions.assertNotNull(ticket.category);
@@ -524,7 +525,8 @@ class SupportAccessTest extends AccessTestSupport {
         String supportBody = "Support create mail body " + System.nanoTime();
         String supportCookie = login("support1", "support1");
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie)
-                .multiPart("status", "Open").multiPart("message", supportBody).multiPart("companyId", supportCompanyId)
+                .multiPart("status", "Open").multiPart("title", "Support mail title").multiPart("message", supportBody)
+                .multiPart("companyId", supportCompanyId)
                 .multiPart("companyEntitlementId", supportCompanyEntitlement.id)
                 .multiPart("categoryId", Category.findDefault().id).multiPart("affectsVersionId", supportVersion.id)
                 .post("/support/tickets").then().statusCode(303);
@@ -541,8 +543,8 @@ class SupportAccessTest extends AccessTestSupport {
         String userBody = "User create mail body " + System.nanoTime();
         String userCookie = login("user", "user");
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, userCookie)
-                .multiPart("status", "Open").multiPart("message", userBody).multiPart("companyId", userCompanyId)
-                .multiPart("companyEntitlementId", userCompanyEntitlement.id)
+                .multiPart("status", "Open").multiPart("title", "User mail title").multiPart("message", userBody)
+                .multiPart("companyId", userCompanyId).multiPart("companyEntitlementId", userCompanyEntitlement.id)
                 .multiPart("categoryId", Category.findDefault().id).multiPart("affectsVersionId", userVersion.id)
                 .post("/user/tickets").then().statusCode(303);
         Ticket createdUserTicket = findMessageByBody(userBody).ticket;
@@ -558,8 +560,8 @@ class SupportAccessTest extends AccessTestSupport {
         String superuserBody = "Superuser create mail body " + System.nanoTime();
         String superuserCookie = login("superuser1", "superuser1");
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, superuserCookie)
-                .multiPart("status", "Open").multiPart("message", superuserBody)
-                .multiPart("companyId", superuserCompanyId)
+                .multiPart("status", "Open").multiPart("title", "Superuser mail title")
+                .multiPart("message", superuserBody).multiPart("companyId", superuserCompanyId)
                 .multiPart("companyEntitlementId", superuserCompanyEntitlement.id)
                 .multiPart("categoryId", Category.findDefault().id).multiPart("affectsVersionId", superuserVersion.id)
                 .post("/superuser/tickets").then().statusCode(303);
@@ -856,10 +858,10 @@ class SupportAccessTest extends AccessTestSupport {
         CompanyEntitlement entry = ensureCompanyEntitlement(companyId, entitlement);
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).header("X-Billetsys-Client", "react")
-                .multiPart("status", "Open").multiPart("message", "Support json redirect create")
-                .multiPart("companyId", company.id).multiPart("companyEntitlementId", entry.id)
-                .multiPart("categoryId", Category.findDefault().id).multiPart("affectsVersionId", version.id)
-                .post("/support/tickets").then().statusCode(200)
+                .multiPart("status", "Open").multiPart("title", "Support json redirect title")
+                .multiPart("message", "Support json redirect create").multiPart("companyId", company.id)
+                .multiPart("companyEntitlementId", entry.id).multiPart("categoryId", Category.findDefault().id)
+                .multiPart("affectsVersionId", version.id).post("/support/tickets").then().statusCode(200)
                 .body("redirectTo", Matchers.matchesPattern("/support/tickets/\\d+"));
 
         Ticket createdTicket = findMessageByBody("Support json redirect create").ticket;

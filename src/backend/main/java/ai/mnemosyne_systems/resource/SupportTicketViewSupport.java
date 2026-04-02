@@ -205,6 +205,7 @@ final class SupportTicketViewSupport {
         Ticket displayTicket = new Ticket();
         displayTicket.id = ticket.id;
         displayTicket.name = ticket.name;
+        displayTicket.title = ticket.title;
         displayTicket.status = "Assigned";
         displayTicket.company = ticket.company;
         displayTicket.companyEntitlement = ticket.companyEntitlement;
@@ -222,6 +223,7 @@ final class SupportTicketViewSupport {
         Ticket displayTicket = new Ticket();
         displayTicket.id = ticket.id;
         displayTicket.name = ticket.name;
+        displayTicket.title = ticket.title;
         displayTicket.status = ticket.status;
         displayTicket.company = ticket.company;
         displayTicket.companyEntitlement = ticket.companyEntitlement;

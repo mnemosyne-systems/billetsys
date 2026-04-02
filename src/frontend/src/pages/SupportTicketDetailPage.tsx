@@ -144,12 +144,16 @@ export default function SupportTicketDetailPage({
         {ticket && formState && (
           <>
             <div className="form-card ticket-detail-card">
-              <h1>{ticket.name || titleFallback}</h1>
+              <h1>{ticket.title || ticket.name || titleFallback}</h1>
               <form className="owner-form ticket-detail-form" onSubmit={saveTicket}>
                 <div className="owner-form-grid ticket-detail-grid">
                   <label>
                     Ticket
                     <input value={ticket.name || ''} readOnly />
+                  </label>
+                  <label>
+                    Title
+                    <input value={ticket.title || ticket.name || ''} readOnly />
                   </label>
                   <label>
                     Company
@@ -409,4 +413,3 @@ export default function SupportTicketDetailPage({
     </section>
   );
 }
-

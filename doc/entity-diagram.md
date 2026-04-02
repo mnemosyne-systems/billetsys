@@ -60,6 +60,7 @@ erDiagram
     TICKET {
         BIGINT id PK
         STRING name
+        STRING title
         STRING status
         BIGINT company_id FK
         BIGINT requester_id FK

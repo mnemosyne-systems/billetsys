@@ -40,6 +40,7 @@ export interface CompanyFormState {
 
 export interface SupportTicketCreateFormState {
   ticketName: string;
+  title: string;
   companyId: string;
   companyEntitlementId: string;
   categoryId: string;
@@ -57,6 +58,7 @@ export interface SupportTicketDetailState {
 
 export interface TicketWorkbenchFormState {
   id: string;
+  title: string;
   status: string;
   companyId: string;
   companyEntitlementId: string;
