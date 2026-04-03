@@ -200,10 +200,10 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
   const reports = reportsState.data;
 
   useEffect(() => {
-    if (reports && !filters.companyId && reports.selectedCompanyId) {
+    if (reports && reports.selectedCompanyId) {
       setFilters(current => ({ ...current, companyId: String(reports.selectedCompanyId) }));
     }
-  }, [reports, filters.companyId]);
+  }, [reports]);
 
   const onChartReady = (name: string, instance: ChartInstance | null) => {
     if (instance) {
