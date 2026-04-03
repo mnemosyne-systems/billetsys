@@ -37,8 +37,19 @@ export default function AuthenticatedHeader({ session }: AuthenticatedHeaderProp
   const ticketMenuRef = useRef<HTMLDetailsElement | null>(null);
   const profileMenuRef = useRef<HTMLDetailsElement | null>(null);
   const role = session?.role;
-  const showTicketMenu = role === 'support' || role === 'user';
-  const ticketMenuBasePath = role === 'support' ? '/support/tickets' : '/user/tickets';
+  const showTicketMenu =
+    role === 'support' ||
+    role === 'user' ||
+    role === 'superuser' ||
+    role === 'tam';
+
+  const ticketMenuBasePath =
+    role === 'support'
+      ? '/support/tickets'
+      : role === 'superuser'
+      ? '/superuser/tickets'
+      : '/user/tickets';
+
   const ticketCountsState = useJson<TicketCounts>(ticketCountsApiPath(role));
   const ticketAlarmState = useText(showRoleTicketAlarm(role) ? '/tickets/alarm/status' : '');
 
