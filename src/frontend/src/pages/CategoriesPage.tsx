@@ -6,15 +6,16 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { Link } from 'react-router-dom';
-import useJson from '../hooks/useJson';
-import DataState from '../components/common/DataState';
-import { SmartLink } from '../utils/routing';
-import type { SessionPageProps } from '../types/app';
-import type { CategoryRecord, CollectionResponse } from '../types/domain';
+import { Link } from "react-router-dom";
+import useJson from "../hooks/useJson";
+import DataState from "../components/common/DataState";
+import { SmartLink } from "../utils/routing";
+import type { SessionPageProps } from "../types/app";
+import type { CategoryRecord, CollectionResponse } from "../types/domain";
 
 export default function CategoriesPage({ sessionState }: SessionPageProps) {
-  const categoriesState = useJson<CollectionResponse<CategoryRecord>>('/api/categories');
+  const categoriesState =
+    useJson<CollectionResponse<CategoryRecord>>("/api/categories");
 
   return (
     <section className="panel">
@@ -24,14 +25,21 @@ export default function CategoriesPage({ sessionState }: SessionPageProps) {
         </div>
         <div className="button-row">
           {categoriesState.data?.canCreate && (
-            <SmartLink className="primary-button" href={categoriesState.data.createPath}>
+            <SmartLink
+              className="primary-button"
+              href={categoriesState.data.createPath}
+            >
               Create
             </SmartLink>
           )}
         </div>
       </div>
 
-      <DataState state={categoriesState} emptyMessage="No categories are available yet." signInHref={sessionState.data?.homePath || '/login'}>
+      <DataState
+        state={categoriesState}
+        emptyMessage="No categories are available yet."
+        signInHref={sessionState.data?.homePath || "/login"}
+      >
         <div className="category-list">
           {categoriesState.data?.items.map((category: CategoryRecord) => (
             <article key={category.id} className="category-card">
@@ -39,13 +47,20 @@ export default function CategoriesPage({ sessionState }: SessionPageProps) {
                 <div>
                   <div className="category-title-row">
                     <h3>
-                      <Link className="inline-link" to={`/categories/${category.id}`}>
+                      <Link
+                        className="inline-link"
+                        to={`/categories/${category.id}`}
+                      >
                         {category.name}
                       </Link>
                     </h3>
-                    {category.isDefault && <span className="status-pill">Default</span>}
+                    {category.isDefault && (
+                      <span className="status-pill">Default</span>
+                    )}
                   </div>
-                  <p className="tag-copy">{category.descriptionPreview || 'No description'}</p>
+                  <p className="tag-copy">
+                    {category.descriptionPreview || "No description"}
+                  </p>
                 </div>
               </div>
             </article>
@@ -55,4 +70,3 @@ export default function CategoriesPage({ sessionState }: SessionPageProps) {
     </section>
   );
 }
-

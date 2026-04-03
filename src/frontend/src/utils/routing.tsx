@@ -6,8 +6,8 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { MouseEventHandler, ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import type { MouseEventHandler, ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 interface RedirectJsonPayload {
   redirectTo?: string;
@@ -20,45 +20,57 @@ interface SmartLinkProps {
   onClick?: MouseEventHandler<HTMLAnchorElement>;
 }
 
-export function normalizeClientPath(path?: string | null): string | null | undefined {
-  if (typeof path !== 'string' || path.length === 0) {
+export function normalizeClientPath(
+  path?: string | null,
+): string | null | undefined {
+  if (typeof path !== "string" || path.length === 0) {
     return path;
   }
-  if (path.startsWith('/app/#')) {
-    const cleanPath = path.slice('/app/#'.length);
-    return cleanPath || '/';
+  if (path.startsWith("/app/#")) {
+    const cleanPath = path.slice("/app/#".length);
+    return cleanPath || "/";
   }
-  if (path === '/app' || path === '/app/') {
-    return '/';
+  if (path === "/app" || path === "/app/") {
+    return "/";
   }
-  if (path.startsWith('/app/')) {
-    const cleanPath = path.slice('/app'.length);
-    return cleanPath || '/';
+  if (path.startsWith("/app/")) {
+    const cleanPath = path.slice("/app".length);
+    return cleanPath || "/";
   }
   return path;
 }
 
 export function isClientRoute(href?: string | null): boolean {
-  if (typeof href !== 'string' || !href.startsWith('/')) {
+  if (typeof href !== "string" || !href.startsWith("/")) {
     return false;
   }
-  if (href.startsWith('/api/') || href === '/logout' || href.startsWith('/tickets/export/')) {
+  if (
+    href.startsWith("/api/") ||
+    href === "/logout" ||
+    href.startsWith("/tickets/export/")
+  ) {
     return false;
   }
-  if (href.startsWith('/attachments/')) {
-    return !href.includes('/data');
+  if (href.startsWith("/attachments/")) {
+    return !href.includes("/data");
   }
   return true;
 }
 
-export function resolveClientPath(path: string | null | undefined, fallback: string): string {
+export function resolveClientPath(
+  path: string | null | undefined,
+  fallback: string,
+): string {
   if (!path) {
     return fallback;
   }
   return normalizeClientPath(path) || fallback;
 }
 
-export function resolveRedirectPath(response: Response | null | undefined, fallback: string): string {
+export function resolveRedirectPath(
+  response: Response | null | undefined,
+  fallback: string,
+): string {
   if (!response?.redirected || !response.url) {
     return fallback;
   }
@@ -67,26 +79,35 @@ export function resolveRedirectPath(response: Response | null | undefined, fallb
     if (redirectUrl.origin !== window.location.origin) {
       return fallback;
     }
-    return resolveClientPath(`${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`, fallback);
+    return resolveClientPath(
+      `${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`,
+      fallback,
+    );
   } catch {
     return fallback;
   }
 }
 
-export async function resolvePostRedirectPath(response: Response, fallback: string): Promise<string> {
-  const contentType = response?.headers?.get('content-type') || '';
-  if (contentType.includes('application/json')) {
+export async function resolvePostRedirectPath(
+  response: Response,
+  fallback: string,
+): Promise<string> {
+  const contentType = response?.headers?.get("content-type") || "";
+  if (contentType.includes("application/json")) {
     const payload = (await response.json()) as RedirectJsonPayload;
     return resolveClientPath(payload?.redirectTo, fallback);
   }
-  const location = response?.headers?.get('Location');
+  const location = response?.headers?.get("Location");
   if (location) {
     try {
       const redirectUrl = new URL(location, window.location.origin);
       if (redirectUrl.origin !== window.location.origin) {
         return fallback;
       }
-      return resolveClientPath(`${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`, fallback);
+      return resolveClientPath(
+        `${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`,
+        fallback,
+      );
     } catch {
       return resolveClientPath(location, fallback);
     }
@@ -94,20 +115,28 @@ export async function resolvePostRedirectPath(response: Response, fallback: stri
   return resolveRedirectPath(response, fallback);
 }
 
-export function SmartLink({ href, className, children, onClick }: SmartLinkProps) {
+export function SmartLink({
+  href,
+  className,
+  children,
+  onClick,
+}: SmartLinkProps) {
   const normalizedHref = normalizeClientPath(href);
   if (isClientRoute(normalizedHref)) {
     return (
-      <Link className={className} to={normalizedHref ?? '/'} onClick={onClick}>
+      <Link className={className} to={normalizedHref ?? "/"} onClick={onClick}>
         {children}
       </Link>
     );
   }
 
   return (
-    <a className={className} href={normalizedHref || undefined} onClick={onClick}>
+    <a
+      className={className}
+      href={normalizedHref || undefined}
+      onClick={onClick}
+    >
       {children}
     </a>
   );
 }
-

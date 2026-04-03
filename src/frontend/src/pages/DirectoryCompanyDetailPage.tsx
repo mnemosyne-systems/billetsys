@@ -6,19 +6,24 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { MouseEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import useJson from '../hooks/useJson';
-import DataState from '../components/common/DataState';
-import { SmartLink } from '../utils/routing';
-import type { SessionPageProps } from '../types/app';
-import type { DirectoryCompanyDetail as DirectoryCompanyDetailType, DirectoryUserRecord } from '../types/domain';
+import type { MouseEvent } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import useJson from "../hooks/useJson";
+import DataState from "../components/common/DataState";
+import { SmartLink } from "../utils/routing";
+import type { SessionPageProps } from "../types/app";
+import type {
+  DirectoryCompanyDetail as DirectoryCompanyDetailType,
+  DirectoryUserRecord,
+} from "../types/domain";
 
 interface DirectoryUserReferenceListProps {
   users?: DirectoryUserRecord[];
 }
 
-function DirectoryUserReferenceList({ users }: DirectoryUserReferenceListProps) {
+function DirectoryUserReferenceList({
+  users,
+}: DirectoryUserReferenceListProps) {
   if (!users || users.length === 0) {
     return <p className="muted-text">No users.</p>;
   }
@@ -29,12 +34,14 @@ function DirectoryUserReferenceList({ users }: DirectoryUserReferenceListProps) 
         <li key={user.id || `${user.username}-${user.type}`}>
           {user.detailPath ? (
             <SmartLink className="inline-link" href={user.detailPath}>
-              {user.displayName || user.username || 'User'}
+              {user.displayName || user.username || "User"}
             </SmartLink>
           ) : (
-            <span>{user.displayName || user.username || 'User'}</span>
-          )}{' '}
-          <span className="muted-text">({user.typeLabel || user.type || 'User'})</span>
+            <span>{user.displayName || user.username || "User"}</span>
+          )}{" "}
+          <span className="muted-text">
+            ({user.typeLabel || user.type || "User"})
+          </span>
         </li>
       ))}
     </ul>
@@ -46,10 +53,16 @@ interface DirectoryCompanyDetailPageProps extends SessionPageProps {
   backFallback: string;
 }
 
-export default function DirectoryCompanyDetailPage({ sessionState, apiBase, backFallback }: DirectoryCompanyDetailPageProps) {
+export default function DirectoryCompanyDetailPage({
+  sessionState,
+  apiBase,
+  backFallback,
+}: DirectoryCompanyDetailPageProps) {
   const navigate = useNavigate();
   const { id } = useParams();
-  const companyState = useJson<DirectoryCompanyDetailType>(id ? `${apiBase}/${id}` : null);
+  const companyState = useJson<DirectoryCompanyDetailType>(
+    id ? `${apiBase}/${id}` : null,
+  );
   const company = companyState.data;
   const resolvedBackHref = company?.backPath || backFallback;
 
@@ -64,28 +77,36 @@ export default function DirectoryCompanyDetailPage({ sessionState, apiBase, back
     <section className="panel">
       <div className="section-header">
         <div>
-          <SmartLink className="inline-link back-link" href={resolvedBackHref} onClick={handleBackClick}>
+          <SmartLink
+            className="inline-link back-link"
+            href={resolvedBackHref}
+            onClick={handleBackClick}
+          >
             Back
           </SmartLink>
-          <h2>{company?.name || 'Company details'}</h2>
+          <h2>{company?.name || "Company details"}</h2>
         </div>
       </div>
 
-      <DataState state={companyState} emptyMessage="Company not found." signInHref={sessionState.data?.homePath || '/login'}>
+      <DataState
+        state={companyState}
+        emptyMessage="Company not found."
+        signInHref={sessionState.data?.homePath || "/login"}
+      >
         {company && (
           <div className="article-detail">
             <section className="detail-grid">
               <div className="detail-card">
                 <h3>Phone</h3>
-                <p>{company.phoneNumber || '—'}</p>
+                <p>{company.phoneNumber || "—"}</p>
               </div>
               <div className="detail-card">
                 <h3>Country</h3>
-                <p>{company.countryName || '—'}</p>
+                <p>{company.countryName || "—"}</p>
               </div>
               <div className="detail-card">
                 <h3>Time zone</h3>
-                <p>{company.timezoneName || '—'}</p>
+                <p>{company.timezoneName || "—"}</p>
               </div>
             </section>
 
@@ -93,12 +114,24 @@ export default function DirectoryCompanyDetailPage({ sessionState, apiBase, back
               <div className="detail-card">
                 <h3>Address</h3>
                 <ul className="plain-list">
-                  {[company.address1, company.address2, company.city, company.state, company.zip].filter(Boolean).length === 0 ? (
+                  {[
+                    company.address1,
+                    company.address2,
+                    company.city,
+                    company.state,
+                    company.zip,
+                  ].filter(Boolean).length === 0 ? (
                     <li>—</li>
                   ) : (
-                    [company.address1, company.address2, company.city, company.state, company.zip]
+                    [
+                      company.address1,
+                      company.address2,
+                      company.city,
+                      company.state,
+                      company.zip,
+                    ]
                       .filter(Boolean)
-                      .map(line => <li key={line}>{line}</li>)
+                      .map((line) => <li key={line}>{line}</li>)
                   )}
                 </ul>
               </div>
@@ -125,4 +158,3 @@ export default function DirectoryCompanyDetailPage({ sessionState, apiBase, back
     </section>
   );
 }
-

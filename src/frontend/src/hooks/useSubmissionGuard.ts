@@ -6,7 +6,7 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { useRef } from 'react';
+import { useRef } from "react";
 
 export default function useSubmissionGuard() {
   const inFlightRef = useRef(false);
@@ -21,6 +21,6 @@ export default function useSubmissionGuard() {
     },
     exit: () => {
       inFlightRef.current = false;
-    }
+    },
   };
 }

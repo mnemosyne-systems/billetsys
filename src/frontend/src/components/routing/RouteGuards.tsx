@@ -6,12 +6,12 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { ReactNode } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import LoadingSpinner from '../common/LoadingSpinner';
-import StatusPage from '../../pages/StatusPage';
-import { PATHS } from '../../routes/paths';
-import type { Role, SessionPageProps } from '../../types/app';
+import type { ReactNode } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import LoadingSpinner from "../common/LoadingSpinner";
+import StatusPage from "../../pages/StatusPage";
+import { PATHS } from "../../routes/paths";
+import type { Role, SessionPageProps } from "../../types/app";
 
 function GuardLoading() {
   return (
@@ -43,7 +43,11 @@ export function RequireAuth({ sessionState, children }: RequireAuthProps) {
   return children;
 }
 
-export function RequireRole({ sessionState, allowedRoles, children }: RequireRoleProps) {
+export function RequireRole({
+  sessionState,
+  allowedRoles,
+  children,
+}: RequireRoleProps) {
   if (sessionState.loading) {
     return <GuardLoading />;
   }
@@ -66,4 +70,3 @@ export function RequireRole({ sessionState, allowedRoles, children }: RequireRol
 
   return children;
 }
-

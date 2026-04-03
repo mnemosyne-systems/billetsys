@@ -6,19 +6,19 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { ReactElement } from 'react';
-import { Suspense } from 'react';
-import { Route, Routes } from 'react-router-dom';
-import LoadingSpinner from './components/common/LoadingSpinner';
-import RouteErrorBoundary from './components/routing/RouteErrorBoundary';
-import { RequireAuth, RequireRole } from './components/routing/RouteGuards';
-import StatusPage from './pages/StatusPage';
-import { getContentRoutes } from './routes/ContentRoutes';
-import { getCoreRoutes } from './routes/CoreRoutes';
-import { getDirectoryRoutes } from './routes/DirectoryRoutes';
-import { getMessagingRoutes } from './routes/MessagingRoutes';
-import { getTicketRoutes } from './routes/TicketRoutes';
-import type { AppRoute, SessionPageProps } from './types/app';
+import type { ReactElement } from "react";
+import { Suspense } from "react";
+import { Route, Routes } from "react-router-dom";
+import LoadingSpinner from "./components/common/LoadingSpinner";
+import RouteErrorBoundary from "./components/routing/RouteErrorBoundary";
+import { RequireAuth, RequireRole } from "./components/routing/RouteGuards";
+import StatusPage from "./pages/StatusPage";
+import { getContentRoutes } from "./routes/ContentRoutes";
+import { getCoreRoutes } from "./routes/CoreRoutes";
+import { getDirectoryRoutes } from "./routes/DirectoryRoutes";
+import { getMessagingRoutes } from "./routes/MessagingRoutes";
+import { getTicketRoutes } from "./routes/TicketRoutes";
+import type { AppRoute, SessionPageProps } from "./types/app";
 
 function RouteFallback() {
   return (
@@ -36,7 +36,10 @@ function wrapLazyElement(element: ReactElement): ReactElement {
   );
 }
 
-function wrapRouteElement(route: AppRoute, sessionState: SessionPageProps['sessionState']): ReactElement {
+function wrapRouteElement(
+  route: AppRoute,
+  sessionState: SessionPageProps["sessionState"],
+): ReactElement {
   let element = wrapLazyElement(route.element);
 
   if (route.requiresAuth) {
@@ -45,7 +48,10 @@ function wrapRouteElement(route: AppRoute, sessionState: SessionPageProps['sessi
 
   if (route.allowedRoles?.length) {
     element = (
-      <RequireRole sessionState={sessionState} allowedRoles={route.allowedRoles}>
+      <RequireRole
+        sessionState={sessionState}
+        allowedRoles={route.allowedRoles}
+      >
         {element}
       </RequireRole>
     );
@@ -60,21 +66,30 @@ function AppRoutes({ sessionState }: SessionPageProps) {
     ...getDirectoryRoutes(sessionState),
     ...getTicketRoutes(sessionState),
     ...getMessagingRoutes(sessionState),
-    ...getContentRoutes(sessionState)
+    ...getContentRoutes(sessionState),
   ];
 
   return (
     <Routes>
-      {routeGroups.map(route => (
-        <Route key={route.path} path={route.path} element={wrapRouteElement(route, sessionState)} />
+      {routeGroups.map((route) => (
+        <Route
+          key={route.path}
+          path={route.path}
+          element={wrapRouteElement(route, sessionState)}
+        />
       ))}
       <Route
         path="*"
-        element={<StatusPage sessionState={sessionState} title="Page not found" message="That route is not available in the React shell." />}
+        element={
+          <StatusPage
+            sessionState={sessionState}
+            title="Page not found"
+            message="That route is not available in the React shell."
+          />
+        }
       />
     </Routes>
   );
 }
 
 export default AppRoutes;
-

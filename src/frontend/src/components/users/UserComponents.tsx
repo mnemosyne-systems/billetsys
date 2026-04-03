@@ -6,10 +6,10 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { MouseEvent, ReactNode } from 'react';
-import { useState } from 'react';
-import type { Id } from '../../types/app';
-import type { UserReference } from '../../types/domain';
+import type { MouseEvent, ReactNode } from "react";
+import { useState } from "react";
+import type { Id } from "../../types/app";
+import type { UserReference } from "../../types/domain";
 
 interface TooltipState {
   left: number;
@@ -33,7 +33,11 @@ interface SelectableUsersProps {
   onToggle: (userId: Id) => void;
 }
 
-export function UserHoverLink({ user, className, children }: UserHoverLinkProps) {
+export function UserHoverLink({
+  user,
+  className,
+  children,
+}: UserHoverLinkProps) {
   const [tooltipState, setTooltipState] = useState<TooltipState | null>(null);
 
   if (!user?.detailPath) {
@@ -54,7 +58,7 @@ export function UserHoverLink({ user, className, children }: UserHoverLinkProps)
     }
     setTooltipState({
       left,
-      top
+      top,
     });
   };
 
@@ -71,28 +75,44 @@ export function UserHoverLink({ user, className, children }: UserHoverLinkProps)
         {children}
       </a>
       {tooltipState && (
-        <div className="user-tooltip" style={{ left: tooltipState.left, top: tooltipState.top }}>
+        <div
+          className="user-tooltip"
+          style={{ left: tooltipState.left, top: tooltipState.top }}
+        >
           <div className="user-tooltip-inner">
             <div className="user-tooltip-header">
               <div className="user-tooltip-avatar">
                 {user.logoBase64 ? (
                   <img src={user.logoBase64} alt="avatar" />
                 ) : (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
                     <circle cx="12" cy="8" r="4" />
                     <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
                   </svg>
                 )}
               </div>
               <div>
-                <div className="user-tooltip-name">{user.username || ''}</div>
-                <div className="user-tooltip-fullname">{user.fullName || ''}</div>
+                <div className="user-tooltip-name">{user.username || ""}</div>
+                <div className="user-tooltip-fullname">
+                  {user.fullName || ""}
+                </div>
               </div>
             </div>
             <div className="user-tooltip-divider" />
-            <div className="user-tooltip-meta">{user.email ? `📧 ${user.email}` : ''}</div>
-            <div className="user-tooltip-meta">{user.countryName ? `🌎 ${user.countryName}` : ''}</div>
-            <div className="user-tooltip-meta">{user.timezoneName ? `🕐 ${user.timezoneName}` : ''}</div>
+            <div className="user-tooltip-meta">
+              {user.email ? `📧 ${user.email}` : ""}
+            </div>
+            <div className="user-tooltip-meta">
+              {user.countryName ? `🌎 ${user.countryName}` : ""}
+            </div>
+            <div className="user-tooltip-meta">
+              {user.timezoneName ? `🕐 ${user.timezoneName}` : ""}
+            </div>
           </div>
         </div>
       )}
@@ -106,7 +126,7 @@ export function UserReferenceList({ users }: UserCollectionProps) {
   }
   return (
     <ul className="plain-list">
-      {users.map(user => (
+      {users.map((user) => (
         <li key={user.id}>
           {user.detailPath ? (
             <UserHoverLink user={user} className="inline-link">
@@ -138,14 +158,19 @@ export function UserReferenceInlineList({ users }: UserCollectionProps) {
           ) : (
             user.username || user.displayName
           )}
-          {index < users.length - 1 ? ', ' : ''}
+          {index < users.length - 1 ? ", " : ""}
         </span>
       ))}
     </div>
   );
 }
 
-export function SelectableUserPicker({ title, users, selectedIds, onToggle }: SelectableUsersProps) {
+export function SelectableUserPicker({
+  title,
+  users,
+  selectedIds,
+  onToggle,
+}: SelectableUsersProps) {
   return (
     <section className="detail-card">
       <h3>{title}</h3>
@@ -153,9 +178,13 @@ export function SelectableUserPicker({ title, users, selectedIds, onToggle }: Se
         {users.length === 0 ? (
           <p className="muted-text">No users available.</p>
         ) : (
-          users.map(user => (
+          users.map((user) => (
             <label key={user.id} className="checkbox-card">
-              <input type="checkbox" checked={selectedIds.includes(user.id)} onChange={() => onToggle(user.id)} />
+              <input
+                type="checkbox"
+                checked={selectedIds.includes(user.id)}
+                onChange={() => onToggle(user.id)}
+              />
               <span>
                 <strong>{user.displayName || user.username}</strong>
                 <small>{user.email}</small>
@@ -175,9 +204,10 @@ export function SelectableUserSummary({ users }: UserCollectionProps) {
 
   return (
     <ul className="plain-list">
-      {users.map(user => (
+      {users.map((user) => (
         <li key={user.id}>
-          {(user.displayName || user.username) + (user.email ? ` (${user.email})` : '')}
+          {(user.displayName || user.username) +
+            (user.email ? ` (${user.email})` : "")}
         </li>
       ))}
     </ul>
@@ -191,7 +221,7 @@ export function OwnerUserList({ users }: UserCollectionProps) {
 
   return (
     <ul className="plain-list">
-      {users.map(user => (
+      {users.map((user) => (
         <li key={user.id}>
           <a href={user.profilePath}>{user.displayName || user.username}</a>
         </li>
@@ -200,7 +230,12 @@ export function OwnerUserList({ users }: UserCollectionProps) {
   );
 }
 
-export function OwnerSelector({ title, users, selectedIds, onToggle }: SelectableUsersProps) {
+export function OwnerSelector({
+  title,
+  users,
+  selectedIds,
+  onToggle,
+}: SelectableUsersProps) {
   return (
     <section className="detail-card">
       <h3>{title}</h3>
@@ -208,9 +243,13 @@ export function OwnerSelector({ title, users, selectedIds, onToggle }: Selectabl
         {users.length === 0 ? (
           <p className="muted-text">No users available.</p>
         ) : (
-          users.map(user => (
+          users.map((user) => (
             <label key={user.id} className="checkbox-card">
-              <input type="checkbox" checked={selectedIds.includes(user.id)} onChange={() => onToggle(user.id)} />
+              <input
+                type="checkbox"
+                checked={selectedIds.includes(user.id)}
+                onChange={() => onToggle(user.id)}
+              />
               <span>
                 <strong>{user.displayName || user.username}</strong>
                 <small>{user.email}</small>

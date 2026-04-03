@@ -6,7 +6,7 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from "react";
 
 interface RouteErrorBoundaryProps {
   children?: ReactNode;
@@ -16,7 +16,10 @@ interface RouteErrorBoundaryState {
   error: Error | null;
 }
 
-export default class RouteErrorBoundary extends Component<RouteErrorBoundaryProps, RouteErrorBoundaryState> {
+export default class RouteErrorBoundary extends Component<
+  RouteErrorBoundaryProps,
+  RouteErrorBoundaryState
+> {
   constructor(props: RouteErrorBoundaryProps) {
     super(props);
     this.state = { error: null };
@@ -26,9 +29,9 @@ export default class RouteErrorBoundary extends Component<RouteErrorBoundaryProp
     return { error };
   }
 
-  componentDidCatch(error: Error, _info: ErrorInfo) {
-    if (typeof console !== 'undefined' && typeof console.error === 'function') {
-      console.error('Route rendering failed', error);
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    if (typeof console !== "undefined" && typeof console.error === "function") {
+      console.error("Route rendering failed", error, info);
     }
   }
 
@@ -37,7 +40,10 @@ export default class RouteErrorBoundary extends Component<RouteErrorBoundaryProp
       return (
         <section className="panel">
           <h2>Unable to load this page</h2>
-          <p className="error-text">{this.state.error?.message || 'A route-level error occurred while loading the page.'}</p>
+          <p className="error-text">
+            {this.state.error?.message ||
+              "A route-level error occurred while loading the page."}
+          </p>
         </section>
       );
     }
@@ -45,4 +51,3 @@ export default class RouteErrorBoundary extends Component<RouteErrorBoundaryProp
     return this.props.children;
   }
 }
-

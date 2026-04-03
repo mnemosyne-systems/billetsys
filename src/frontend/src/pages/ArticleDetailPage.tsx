@@ -6,51 +6,60 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { useParams } from 'react-router-dom';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { buildToastNavigationState, useToast } from '../components/common/ToastProvider';
-import useJson from '../hooks/useJson';
-import useSubmissionGuard from '../hooks/useSubmissionGuard';
-import DataState from '../components/common/DataState';
-import MarkdownContent from '../components/markdown/MarkdownContent';
-import { resolvePostRedirectPath, SmartLink } from '../utils/routing';
-import { postForm } from '../utils/api';
-import type { SessionPageProps } from '../types/app';
-import type { ArticleRecord } from '../types/domain';
+import { useParams } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  buildToastNavigationState,
+  useToast,
+} from "../components/common/ToastProvider";
+import useJson from "../hooks/useJson";
+import useSubmissionGuard from "../hooks/useSubmissionGuard";
+import DataState from "../components/common/DataState";
+import MarkdownContent from "../components/markdown/MarkdownContent";
+import { resolvePostRedirectPath, SmartLink } from "../utils/routing";
+import { postForm } from "../utils/api";
+import type { SessionPageProps } from "../types/app";
+import type { ArticleRecord } from "../types/domain";
 
 interface DeleteArticleButtonProps {
   articleId: string | number;
   label?: string;
 }
 
-function DeleteArticleButton({ articleId, label = 'Delete article' }: DeleteArticleButtonProps) {
+function DeleteArticleButton({
+  articleId,
+  label = "Delete article",
+}: DeleteArticleButtonProps) {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState('');
   const submissionGuard = useSubmissionGuard();
 
   const remove = async () => {
-    if (!window.confirm('Delete this article?') || !submissionGuard.tryEnter()) {
+    if (
+      !window.confirm("Delete this article?") ||
+      !submissionGuard.tryEnter()
+    ) {
       return;
     }
     try {
       setDeleting(true);
-      setError('');
       const response = await postForm(`/articles/${articleId}/delete`, []);
-      navigate(await resolvePostRedirectPath(response, '/articles'), {
+      navigate(await resolvePostRedirectPath(response, "/articles"), {
         state: buildToastNavigationState({
-          variant: 'danger',
-          message: 'Article deleted.'
-        })
+          variant: "danger",
+          message: "Article deleted.",
+        }),
       });
     } catch (submitError: unknown) {
       setDeleting(false);
-      setError(submitError instanceof Error ? submitError.message : 'Unable to delete article.');
       showToast({
-        variant: 'error',
-        message: submitError instanceof Error ? submitError.message : 'Unable to delete article.'
+        variant: "error",
+        message:
+          submitError instanceof Error
+            ? submitError.message
+            : "Unable to delete article.",
       });
       return;
     } finally {
@@ -61,8 +70,13 @@ function DeleteArticleButton({ articleId, label = 'Delete article' }: DeleteArti
 
   return (
     <>
-      <button type="button" className="secondary-button danger-button" onClick={remove} disabled={deleting}>
-        {deleting ? 'Deleting...' : label}
+      <button
+        type="button"
+        className="secondary-button danger-button"
+        onClick={remove}
+        disabled={deleting}
+      >
+        {deleting ? "Deleting..." : label}
       </button>
     </>
   );
@@ -72,25 +86,31 @@ export { DeleteArticleButton };
 
 export default function ArticleDetailPage({ sessionState }: SessionPageProps) {
   const { id } = useParams();
-  const articleState = useJson<ArticleRecord>(id ? `/api/articles/${id}` : null);
+  const articleState = useJson<ArticleRecord>(
+    id ? `/api/articles/${id}` : null,
+  );
   const article = articleState.data;
 
   return (
     <section className="panel">
-      <DataState state={articleState} emptyMessage="Article not found." signInHref={sessionState.data?.homePath || '/login'}>
+      <DataState
+        state={articleState}
+        emptyMessage="Article not found."
+        signInHref={sessionState.data?.homePath || "/login"}
+      >
         {article && (
           <div className="article-detail">
             <div className="form-card ticket-detail-card">
-              <h1>{article.title || 'Article details'}</h1>
+              <h1>{article.title || "Article details"}</h1>
               <div className="owner-form owner-detail-form">
                 <div className="owner-form-grid ticket-detail-grid">
                   <label>
                     Title
-                    <input value={article.title || '—'} readOnly />
+                    <input value={article.title || "—"} readOnly />
                   </label>
                   <label>
                     Tags
-                    <input value={article.tags || '—'} readOnly />
+                    <input value={article.tags || "—"} readOnly />
                   </label>
                   <div className="owner-detail-panel form-span-2">
                     <div className="owner-detail-panel-label">Body</div>
@@ -116,9 +136,13 @@ export default function ArticleDetailPage({ sessionState }: SessionPageProps) {
                             <span>Mimetype</span>
                             <span>Size</span>
                           </div>
-                          {article.attachments.map(attachment => (
+                          {article.attachments.map((attachment) => (
                             <div key={attachment.id} className="attachment-row">
-                              <a href={attachment.downloadPath} target="_blank" rel="noreferrer">
+                              <a
+                                href={attachment.downloadPath}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
                                 {attachment.name}
                               </a>
                               <span>{attachment.mimeType}</span>
@@ -134,8 +158,12 @@ export default function ArticleDetailPage({ sessionState }: SessionPageProps) {
             </div>
 
             {(article.canDelete || (article.canEdit && article.editPath)) && (
-              <div className={`button-row${article.canDelete && article.canEdit && article.editPath ? ' button-row-split' : ' button-row-end'} admin-detail-actions`}>
-                {article.canDelete && <DeleteArticleButton articleId={article.id} label="Delete" />}
+              <div
+                className={`button-row${article.canDelete && article.canEdit && article.editPath ? " button-row-split" : " button-row-end"} admin-detail-actions`}
+              >
+                {article.canDelete && (
+                  <DeleteArticleButton articleId={article.id} label="Delete" />
+                )}
                 {article.canEdit && article.editPath && (
                   <SmartLink className="primary-button" href={article.editPath}>
                     Edit
@@ -149,4 +177,3 @@ export default function ArticleDetailPage({ sessionState }: SessionPageProps) {
     </section>
   );
 }
-

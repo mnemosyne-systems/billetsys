@@ -6,19 +6,22 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { FormEvent } from 'react';
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import MarkdownEditor from '../components/markdown/MarkdownEditor';
-import useJson from '../hooks/useJson';
-import useSubmissionGuard from '../hooks/useSubmissionGuard';
-import { buildToastNavigationState, useToast } from '../components/common/ToastProvider';
-import DataState from '../components/common/DataState';
-import { postForm } from '../utils/api';
-import { resolvePostRedirectPath } from '../utils/routing';
-import type { FormMode, SessionPageProps } from '../types/app';
-import type { EntitlementRecord, LevelRecord } from '../types/domain';
-import type { FormEntries } from '../utils/api';
+import type { FormEvent } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import MarkdownEditor from "../components/markdown/MarkdownEditor";
+import useJson from "../hooks/useJson";
+import useSubmissionGuard from "../hooks/useSubmissionGuard";
+import {
+  buildToastNavigationState,
+  useToast,
+} from "../components/common/ToastProvider";
+import DataState from "../components/common/DataState";
+import { postForm } from "../utils/api";
+import { resolvePostRedirectPath } from "../utils/routing";
+import type { FormMode, SessionPageProps } from "../types/app";
+import type { EntitlementRecord, LevelRecord } from "../types/domain";
+import type { FormEntries } from "../utils/api";
 
 interface EntitlementVersionForm {
   id: string;
@@ -42,19 +45,32 @@ interface EntitlementFormBootstrap extends EntitlementRecord {
   todayDate?: string;
 }
 
-export default function EntitlementFormPage({ sessionState, mode }: EntitlementFormPageProps) {
+export default function EntitlementFormPage({
+  sessionState,
+  mode,
+}: EntitlementFormPageProps) {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { id } = useParams();
-  const entitlementState = useJson<EntitlementFormBootstrap>(mode === 'edit' && id ? `/api/entitlements/${id}` : '/api/entitlements/bootstrap');
+  const entitlementState = useJson<EntitlementFormBootstrap>(
+    mode === "edit" && id
+      ? `/api/entitlements/${id}`
+      : "/api/entitlements/bootstrap",
+  );
   const entitlement = entitlementState.data;
+  const supportLevels = (entitlement?.supportLevels || []) as LevelRecord[];
   const [formState, setFormState] = useState<EntitlementFormState | null>(null);
-  const [saveState, setSaveState] = useState({ saving: false, error: '' });
+  const [saveState, setSaveState] = useState({ saving: false, error: "" });
   const submissionGuard = useSubmissionGuard();
-  const isEdit = mode === 'edit';
+  const isEdit = mode === "edit";
 
-  const updateFormState = <K extends keyof EntitlementFormState>(field: K, value: EntitlementFormState[K]) => {
-    setFormState(current => (current ? { ...current, [field]: value } : current));
+  const updateFormState = <K extends keyof EntitlementFormState>(
+    field: K,
+    value: EntitlementFormState[K],
+  ) => {
+    setFormState((current) =>
+      current ? { ...current, [field]: value } : current,
+    );
   };
 
   useEffect(() => {
@@ -63,71 +79,82 @@ export default function EntitlementFormPage({ sessionState, mode }: EntitlementF
     }
     if (isEdit) {
       setFormState({
-        name: entitlement.name || '',
-        description: entitlement.description || '',
+        name: entitlement.name || "",
+        description: entitlement.description || "",
         selectedLevelIds: entitlement.selectedLevelIds || [],
         versions:
-          entitlement.versions?.map(version => ({
-            id: version.id ? String(version.id) : '',
-            name: version.name || '',
-            date: version.date || ''
-          })) || []
+          entitlement.versions?.map((version) => ({
+            id: version.id ? String(version.id) : "",
+            name: version.name || "",
+            date: version.date || "",
+          })) || [],
       });
       return;
     }
     setFormState({
-      name: '',
-      description: '',
+      name: "",
+      description: "",
       selectedLevelIds: [],
-      versions: [{ id: '', name: '', date: entitlement.todayDate || '' }]
+      versions: [{ id: "", name: "", date: entitlement.todayDate || "" }],
     });
   }, [entitlement, isEdit]);
 
   const toggleLevel = (levelId: string | number) => {
-    setFormState(current =>
+    setFormState((current) =>
       current
         ? {
             ...current,
             selectedLevelIds: current.selectedLevelIds.includes(levelId)
-              ? current.selectedLevelIds.filter(existing => existing !== levelId)
-              : [...current.selectedLevelIds, levelId]
+              ? current.selectedLevelIds.filter(
+                  (existing) => existing !== levelId,
+                )
+              : [...current.selectedLevelIds, levelId],
           }
-        : current
+        : current,
     );
   };
 
-  const updateVersion = (index: number, field: keyof EntitlementVersionForm, value: string) => {
-    setFormState(current =>
+  const updateVersion = (
+    index: number,
+    field: keyof EntitlementVersionForm,
+    value: string,
+  ) => {
+    setFormState((current) =>
       current
         ? {
             ...current,
             versions: current.versions.map((version, versionIndex) =>
-              versionIndex === index ? { ...version, [field]: value } : version
-            )
+              versionIndex === index ? { ...version, [field]: value } : version,
+            ),
           }
-        : current
+        : current,
     );
   };
 
   const addVersion = () => {
-    setFormState(current =>
+    setFormState((current) =>
       current
         ? {
             ...current,
-            versions: [...current.versions, { id: '', name: '', date: entitlement?.todayDate || '' }]
+            versions: [
+              ...current.versions,
+              { id: "", name: "", date: entitlement?.todayDate || "" },
+            ],
           }
-        : current
+        : current,
     );
   };
 
   const removeVersion = (index: number) => {
-    setFormState(current =>
+    setFormState((current) =>
       current
         ? {
             ...current,
-            versions: current.versions.filter((_, versionIndex) => versionIndex !== index)
+            versions: current.versions.filter(
+              (_, versionIndex) => versionIndex !== index,
+            ),
           }
-        : current
+        : current,
     );
   };
 
@@ -137,80 +164,136 @@ export default function EntitlementFormPage({ sessionState, mode }: EntitlementF
       return;
     }
     try {
-      setSaveState({ saving: true, error: '' });
+      setSaveState({ saving: true, error: "" });
       const entries: FormEntries = [
-        ['name', formState.name],
-        ['description', formState.description],
-        ...formState.selectedLevelIds.map((levelId): [string, string] => ['levelIds', String(levelId)]),
+        ["name", formState.name],
+        ["description", formState.description],
+        ...formState.selectedLevelIds.map((levelId): [string, string] => [
+          "levelIds",
+          String(levelId),
+        ]),
         ...formState.versions.flatMap((version): [string, string][] => [
-          ['versionIds', version.id || ''],
-          ['versionNames', version.name],
-          ['versionDates', version.date]
-        ])
+          ["versionIds", version.id || ""],
+          ["versionNames", version.name],
+          ["versionDates", version.date],
+        ]),
       ];
-      const response = await postForm(isEdit ? `/entitlements/${id}` : '/entitlements', entries);
-      navigate(await resolvePostRedirectPath(response, '/entitlements'), {
+      const response = await postForm(
+        isEdit ? `/entitlements/${id}` : "/entitlements",
+        entries,
+      );
+      navigate(await resolvePostRedirectPath(response, "/entitlements"), {
         state: buildToastNavigationState({
-          variant: 'success',
-          message: isEdit ? 'Entitlement updated successfully.' : 'Entitlement created successfully.'
-        })
+          variant: "success",
+          message: isEdit
+            ? "Entitlement updated successfully."
+            : "Entitlement created successfully.",
+        }),
       });
     } catch (error: unknown) {
-      setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save entitlement.' });
-      showToast({ variant: 'error', message: error instanceof Error ? error.message : 'Unable to save entitlement.' });
+      setSaveState({
+        saving: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to save entitlement.",
+      });
+      showToast({
+        variant: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to save entitlement.",
+      });
       return;
     } finally {
       submissionGuard.exit();
     }
-    setSaveState({ saving: false, error: '' });
+    setSaveState({ saving: false, error: "" });
   };
 
   const deleteEntitlement = async () => {
-    if (!id || !window.confirm('Delete this entitlement?') || !submissionGuard.tryEnter()) {
+    if (
+      !id ||
+      !window.confirm("Delete this entitlement?") ||
+      !submissionGuard.tryEnter()
+    ) {
       return;
     }
     try {
-      setSaveState({ saving: true, error: '' });
+      setSaveState({ saving: true, error: "" });
       const response = await postForm(`/entitlements/${id}/delete`, []);
-      navigate(await resolvePostRedirectPath(response, '/entitlements'), {
+      navigate(await resolvePostRedirectPath(response, "/entitlements"), {
         state: buildToastNavigationState({
-          variant: 'danger',
-          message: 'Entitlement deleted.'
-        })
+          variant: "danger",
+          message: "Entitlement deleted.",
+        }),
       });
     } catch (error: unknown) {
-      setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to delete entitlement.' });
-      showToast({ variant: 'error', message: error instanceof Error ? error.message : 'Unable to delete entitlement.' });
+      setSaveState({
+        saving: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to delete entitlement.",
+      });
+      showToast({
+        variant: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to delete entitlement.",
+      });
       return;
     } finally {
       submissionGuard.exit();
     }
-    setSaveState({ saving: false, error: '' });
+    setSaveState({ saving: false, error: "" });
   };
 
   return (
     <section className="panel">
-      <DataState state={entitlementState} emptyMessage="Entitlement not found." signInHref={sessionState.data?.homePath || '/login'}>
+      <DataState
+        state={entitlementState}
+        emptyMessage="Entitlement not found."
+        signInHref={sessionState.data?.homePath || "/login"}
+      >
         {formState && entitlement && (
           <div className="form-card ticket-detail-card">
             <form className="owner-form" onSubmit={submit}>
               <div className="owner-form-grid ticket-detail-grid">
                 <label className="form-span-2">
                   Name
-                  <input value={formState.name} onChange={event => updateFormState('name', event.target.value)} required />
+                  <input
+                    value={formState.name}
+                    onChange={(event) =>
+                      updateFormState("name", event.target.value)
+                    }
+                    required
+                  />
                 </label>
                 <label className="form-span-2">
                   Description
-                  <MarkdownEditor value={formState.description} onChange={value => updateFormState('description', value)} rows={10} required />
+                  <MarkdownEditor
+                    value={formState.description}
+                    onChange={(value) => updateFormState("description", value)}
+                    rows={10}
+                    required
+                  />
                 </label>
               </div>
 
               <section className="detail-card">
                 <h3>Support levels</h3>
                 <div className="entitlement-support-level-list">
-                  {(entitlement.supportLevels || []).map((level: LevelRecord) => (
-                    <label key={level.id} className="entitlement-support-level-row">
-                      <span className="entitlement-support-level-name">{level.name}</span>
+                  {supportLevels.map((level) => (
+                    <label
+                      key={level.id}
+                      className="entitlement-support-level-row"
+                    >
+                      <span className="entitlement-support-level-name">
+                        {level.name}
+                      </span>
                       <span className="entitlement-support-level-window">
                         {level.fromLabel} - {level.toLabel}
                       </span>
@@ -229,21 +312,41 @@ export default function EntitlementFormPage({ sessionState, mode }: EntitlementF
                   <div>
                     <h3>Versions</h3>
                   </div>
-                  <button type="button" className="primary-button" onClick={addVersion}>
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={addVersion}
+                  >
                     Add
                   </button>
                 </div>
                 <div className="version-editor-list">
                   {formState.versions.map((version, index) => (
-                    <div key={`${version.id || 'new'}-${index}`} className="version-editor-card entitlement-version-card">
+                    <div
+                      key={`${version.id || "new"}-${index}`}
+                      className="version-editor-card entitlement-version-card"
+                    >
                       <div className="entitlement-version-grid">
                         <label>
                           Version
-                          <input value={version.name} onChange={event => updateVersion(index, 'name', event.target.value)} required />
+                          <input
+                            value={version.name}
+                            onChange={(event) =>
+                              updateVersion(index, "name", event.target.value)
+                            }
+                            required
+                          />
                         </label>
                         <label>
                           Date
-                          <input type="date" value={version.date} onChange={event => updateVersion(index, 'date', event.target.value)} required />
+                          <input
+                            type="date"
+                            value={version.date}
+                            onChange={(event) =>
+                              updateVersion(index, "date", event.target.value)
+                            }
+                            required
+                          />
                         </label>
                         <div className="button-row button-row-end entitlement-version-actions">
                           <button
@@ -263,12 +366,21 @@ export default function EntitlementFormPage({ sessionState, mode }: EntitlementF
 
               <div className="button-row button-row-end">
                 {isEdit && (
-                  <button type="button" className="secondary-button danger-button" onClick={deleteEntitlement} disabled={saveState.saving}>
+                  <button
+                    type="button"
+                    className="secondary-button danger-button"
+                    onClick={deleteEntitlement}
+                    disabled={saveState.saving}
+                  >
                     Delete
                   </button>
                 )}
-                <button type="submit" className="primary-button" disabled={saveState.saving}>
-                  {saveState.saving ? 'Saving...' : isEdit ? 'Save' : 'Create'}
+                <button
+                  type="submit"
+                  className="primary-button"
+                  disabled={saveState.saving}
+                >
+                  {saveState.saving ? "Saving..." : isEdit ? "Save" : "Create"}
                 </button>
               </div>
             </form>

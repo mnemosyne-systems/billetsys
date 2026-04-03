@@ -6,21 +6,21 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { MouseEvent } from 'react';
-import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import useJson from '../../hooks/useJson';
-import useText from '../../hooks/useText';
-import { SmartLink, normalizeClientPath } from '../../utils/routing';
+import type { MouseEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
+import useJson from "../../hooks/useJson";
+import useText from "../../hooks/useText";
+import { SmartLink, normalizeClientPath } from "../../utils/routing";
 import {
   headerNavigation,
   ticketCountsApiPath,
   ticketLabelForRole,
   isRoleTicketRoute,
   showRoleTicketAlarm,
-  rssPath
-} from '../../utils/navigation';
-import type { Session } from '../../types/app';
+  rssPath,
+} from "../../utils/navigation";
+import type { Session } from "../../types/app";
 
 interface TicketCounts {
   assignedCount?: number;
@@ -31,27 +31,31 @@ interface AuthenticatedHeaderProps {
   session: Session | null;
 }
 
-export default function AuthenticatedHeader({ session }: AuthenticatedHeaderProps) {
+export default function AuthenticatedHeader({
+  session,
+}: AuthenticatedHeaderProps) {
   const [now, setNow] = useState(() => new Date());
   const location = useLocation();
   const ticketMenuRef = useRef<HTMLDetailsElement | null>(null);
   const profileMenuRef = useRef<HTMLDetailsElement | null>(null);
   const role = session?.role;
   const showTicketMenu =
-    role === 'support' ||
-    role === 'user' ||
-    role === 'superuser' ||
-    role === 'tam';
+    role === "support" ||
+    role === "user" ||
+    role === "superuser" ||
+    role === "tam";
 
   const ticketMenuBasePath =
-    role === 'support'
-      ? '/support/tickets'
-      : role === 'superuser'
-      ? '/superuser/tickets'
-      : '/user/tickets';
+    role === "support"
+      ? "/support/tickets"
+      : role === "superuser"
+        ? "/superuser/tickets"
+        : "/user/tickets";
 
   const ticketCountsState = useJson<TicketCounts>(ticketCountsApiPath(role));
-  const ticketAlarmState = useText(showRoleTicketAlarm(role) ? '/tickets/alarm/status' : '');
+  const ticketAlarmState = useText(
+    showRoleTicketAlarm(role) ? "/tickets/alarm/status" : "",
+  );
 
   useEffect(() => {
     const timerId = window.setInterval(() => setNow(new Date()), 1000);
@@ -59,16 +63,19 @@ export default function AuthenticatedHeader({ session }: AuthenticatedHeaderProp
   }, []);
 
   const navigation = headerNavigation(session);
-  const brandHref = normalizeClientPath(session?.homePath) || '/';
-  const userName = session?.displayName || session?.username || 'Guest';
+  const brandHref = normalizeClientPath(session?.homePath) || "/";
+  const userName = session?.displayName || session?.username || "Guest";
   const assignedCount = ticketCountsState.data?.assignedCount ?? 0;
   const openCount = ticketCountsState.data?.openCount ?? 0;
   const ticketLabel = ticketLabelForRole(role, assignedCount, openCount);
-  const showTicketAlarm = String(ticketAlarmState.data || '').trim().toLowerCase() === 'true';
+  const showTicketAlarm =
+    String(ticketAlarmState.data || "")
+      .trim()
+      .toLowerCase() === "true";
   const isTicketRoute = isRoleTicketRoute(role, location.pathname);
   const rssHref = rssPath(role);
   const closeDetailsMenu = (event: MouseEvent<HTMLElement>) => {
-    const menu = event.currentTarget.closest('details');
+    const menu = event.currentTarget.closest("details");
     if (menu) {
       menu.open = false;
     }
@@ -85,16 +92,16 @@ export default function AuthenticatedHeader({ session }: AuthenticatedHeaderProp
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
-      [ticketMenuRef.current, profileMenuRef.current].forEach(menu => {
+      [ticketMenuRef.current, profileMenuRef.current].forEach((menu) => {
         if (!menu || !menu.open || menu.contains(event.target as Node)) {
           return;
         }
         menu.open = false;
       });
     };
-    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener("pointerdown", handlePointerDown);
     return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener("pointerdown", handlePointerDown);
     };
   }, []);
 
@@ -107,18 +114,24 @@ export default function AuthenticatedHeader({ session }: AuthenticatedHeaderProp
             <path d="M7 8h10M7 12h10M7 16h6" />
             <path d="M6 8l1 1 2-2" />
           </svg>
-          {session?.installationCompanyName || 'billetsys'}
+          {session?.installationCompanyName || "billetsys"}
         </SmartLink>
         {navigation.length > 0 && (
           <nav className="shell-nav" aria-label="Primary">
-            {navigation.map(link => {
-              if (showTicketMenu && link.label === 'Tickets') {
+            {navigation.map((link) => {
+              if (showTicketMenu && link.label === "Tickets") {
                 return (
-                  <details key={link.href} className="shell-nav-menu" ref={ticketMenuRef}>
-                    <summary className={`shell-nav-link shell-nav-summary${isTicketRoute ? ' active' : ''}`}>
+                  <details
+                    key={link.href}
+                    className="shell-nav-menu"
+                    ref={ticketMenuRef}
+                  >
+                    <summary
+                      className={`shell-nav-link shell-nav-summary${isTicketRoute ? " active" : ""}`}
+                    >
                       {ticketLabel}
                       <span
-                        className={`ticket-alarm${showTicketAlarm ? ' is-visible' : ''}`}
+                        className={`ticket-alarm${showTicketAlarm ? " is-visible" : ""}`}
                         aria-hidden={!showTicketAlarm}
                         title="SLA alarm"
                       >
@@ -126,13 +139,25 @@ export default function AuthenticatedHeader({ session }: AuthenticatedHeaderProp
                       </span>
                     </summary>
                     <div className="shell-nav-dropdown">
-                      <SmartLink className="shell-nav-dropdown-link" href={ticketMenuBasePath} onClick={closeDetailsMenu}>
+                      <SmartLink
+                        className="shell-nav-dropdown-link"
+                        href={ticketMenuBasePath}
+                        onClick={closeDetailsMenu}
+                      >
                         Active tickets
                       </SmartLink>
-                      <SmartLink className="shell-nav-dropdown-link" href={`${ticketMenuBasePath}/open`} onClick={closeDetailsMenu}>
+                      <SmartLink
+                        className="shell-nav-dropdown-link"
+                        href={`${ticketMenuBasePath}/open`}
+                        onClick={closeDetailsMenu}
+                      >
                         Open tickets
                       </SmartLink>
-                      <SmartLink className="shell-nav-dropdown-link" href={`${ticketMenuBasePath}/closed`} onClick={closeDetailsMenu}>
+                      <SmartLink
+                        className="shell-nav-dropdown-link"
+                        href={`${ticketMenuBasePath}/closed`}
+                        onClick={closeDetailsMenu}
+                      >
                         Closed tickets
                       </SmartLink>
                     </div>
@@ -140,12 +165,16 @@ export default function AuthenticatedHeader({ session }: AuthenticatedHeaderProp
                 );
               }
 
-              if (link.label === 'Tickets') {
+              if (link.label === "Tickets") {
                 return (
-                  <SmartLink key={link.href} className={`shell-nav-link${isTicketRoute ? ' active' : ''}`} href={link.href}>
+                  <SmartLink
+                    key={link.href}
+                    className={`shell-nav-link${isTicketRoute ? " active" : ""}`}
+                    href={link.href}
+                  >
                     {ticketLabel}
                     <span
-                      className={`ticket-alarm${showTicketAlarm ? ' is-visible' : ''}`}
+                      className={`ticket-alarm${showTicketAlarm ? " is-visible" : ""}`}
                       aria-hidden={!showTicketAlarm}
                       title="SLA alarm"
                     >
@@ -156,7 +185,11 @@ export default function AuthenticatedHeader({ session }: AuthenticatedHeaderProp
               }
 
               return (
-                <SmartLink key={link.href} className="shell-nav-link" href={link.href}>
+                <SmartLink
+                  key={link.href}
+                  className="shell-nav-link"
+                  href={link.href}
+                >
                   {link.label}
                 </SmartLink>
               );
@@ -168,9 +201,20 @@ export default function AuthenticatedHeader({ session }: AuthenticatedHeaderProp
         {session?.authenticated && (
           <>
             {rssHref && (
-              <a className="icon-link" href={rssHref} title="RSS feed" aria-label="RSS feed">
+              <a
+                className="icon-link"
+                href={rssHref}
+                title="RSS feed"
+                aria-label="RSS feed"
+              >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="6" cy="18" r="1.8" fill="currentColor" stroke="none" />
+                  <circle
+                    cx="6"
+                    cy="18"
+                    r="1.8"
+                    fill="currentColor"
+                    stroke="none"
+                  />
                   <path d="M4 11a9 9 0 0 1 9 9" />
                   <path d="M4 5a15 15 0 0 1 15 15" />
                 </svg>
@@ -179,7 +223,11 @@ export default function AuthenticatedHeader({ session }: AuthenticatedHeaderProp
             <details className="profile-menu" ref={profileMenuRef}>
               <summary className="user-summary" aria-label={userName}>
                 {session?.logoBase64 ? (
-                  <img className="user-logo" src={session.logoBase64} alt="User logo" />
+                  <img
+                    className="user-logo"
+                    src={session.logoBase64}
+                    alt="User logo"
+                  />
                 ) : (
                   <span className="user-avatar" aria-hidden="true">
                     <svg viewBox="0 0 24 24">
@@ -190,13 +238,25 @@ export default function AuthenticatedHeader({ session }: AuthenticatedHeaderProp
                 )}
               </summary>
               <div className="profile-dropdown">
-                <SmartLink className="profile-link" href="/profile" onClick={closeDetailsMenu}>
+                <SmartLink
+                  className="profile-link"
+                  href="/profile"
+                  onClick={closeDetailsMenu}
+                >
                   Profile
                 </SmartLink>
-                <SmartLink className="profile-link" href="/profile/password" onClick={closeDetailsMenu}>
+                <SmartLink
+                  className="profile-link"
+                  href="/profile/password"
+                  onClick={closeDetailsMenu}
+                >
                   Password
                 </SmartLink>
-                <a className="profile-link" href="/logout" onClick={closeDetailsMenu}>
+                <a
+                  className="profile-link"
+                  href="/logout"
+                  onClick={closeDetailsMenu}
+                >
                   Sign out
                 </a>
               </div>
@@ -205,8 +265,8 @@ export default function AuthenticatedHeader({ session }: AuthenticatedHeaderProp
         )}
         <span className="header-clock">
           {now.toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit'
+            hour: "2-digit",
+            minute: "2-digit",
           })}
         </span>
       </div>

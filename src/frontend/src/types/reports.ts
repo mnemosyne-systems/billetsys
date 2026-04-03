@@ -6,9 +6,9 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { NamedEntity, TicketListItem } from './domain';
+import type { NamedEntity, TicketListItem } from "./domain";
 
-export type ReportChartType = 'pie' | 'bar' | 'line';
+export type ReportChartType = "pie" | "bar" | "line";
 
 export interface ReportChartPoint {
   label: string;
@@ -37,4 +37,3 @@ export interface ReportData {
   resolutionTime?: ReportChartPoint[];
   histogram?: ReportHistogramBucket[];
 }
-

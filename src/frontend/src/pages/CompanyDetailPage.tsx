@@ -6,27 +6,38 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { useParams } from 'react-router-dom';
-import useJson from '../hooks/useJson';
-import DataState from '../components/common/DataState';
-import { SmartLink } from '../utils/routing';
-import { SelectableUserSummary } from '../components/users/UserComponents';
-import { sortUsersByName, sortEntitlementAssignments } from '../utils/formatting';
-import type { SessionPageProps } from '../types/app';
-import type { CompanyAssignment, CompanyRecord } from '../types/domain';
+import { useParams } from "react-router-dom";
+import useJson from "../hooks/useJson";
+import DataState from "../components/common/DataState";
+import { SmartLink } from "../utils/routing";
+import { SelectableUserSummary } from "../components/users/UserComponents";
+import {
+  sortUsersByName,
+  sortEntitlementAssignments,
+} from "../utils/formatting";
+import type { SessionPageProps } from "../types/app";
+import type { CompanyAssignment, CompanyRecord } from "../types/domain";
 
 export default function CompanyDetailPage({ sessionState }: SessionPageProps) {
   const { id } = useParams();
-  const companyState = useJson<CompanyRecord>(id ? `/api/companies/${id}` : null);
+  const companyState = useJson<CompanyRecord>(
+    id ? `/api/companies/${id}` : null,
+  );
   const company = companyState.data;
-  const sortedEntitlements = sortEntitlementAssignments(company?.entitlementAssignments || []);
+  const sortedEntitlements = sortEntitlementAssignments(
+    company?.entitlementAssignments || [],
+  );
   const sortedSuperusers = sortUsersByName(company?.selectedSuperusers || []);
   const sortedUsers = sortUsersByName(company?.selectedUsers || []);
   const sortedTams = sortUsersByName(company?.selectedTams || []);
 
   return (
     <section className="panel">
-      <DataState state={companyState} emptyMessage="Company not found." signInHref={sessionState.data?.homePath || '/login'}>
+      <DataState
+        state={companyState}
+        emptyMessage="Company not found."
+        signInHref={sessionState.data?.homePath || "/login"}
+      >
         {company && (
           <div className="article-detail">
             <div className="form-card ticket-detail-card">
@@ -34,39 +45,39 @@ export default function CompanyDetailPage({ sessionState }: SessionPageProps) {
                 <div className="owner-form-grid ticket-detail-grid">
                   <label>
                     Name
-                    <input value={company.name || '—'} readOnly />
+                    <input value={company.name || "—"} readOnly />
                   </label>
                   <label>
                     Phone
-                    <input value={company.phoneNumber || '—'} readOnly />
+                    <input value={company.phoneNumber || "—"} readOnly />
                   </label>
                   <label>
                     Country
-                    <input value={company.countryName || '—'} readOnly />
+                    <input value={company.countryName || "—"} readOnly />
                   </label>
                   <label>
                     Time zone
-                    <input value={company.timezoneName || '—'} readOnly />
+                    <input value={company.timezoneName || "—"} readOnly />
                   </label>
                   <label>
                     Address1
-                    <input value={company.address1 || '—'} readOnly />
+                    <input value={company.address1 || "—"} readOnly />
                   </label>
                   <label>
                     Address2
-                    <input value={company.address2 || '—'} readOnly />
+                    <input value={company.address2 || "—"} readOnly />
                   </label>
                   <label>
                     City
-                    <input value={company.city || '—'} readOnly />
+                    <input value={company.city || "—"} readOnly />
                   </label>
                   <label>
                     State
-                    <input value={company.state || '—'} readOnly />
+                    <input value={company.state || "—"} readOnly />
                   </label>
                   <label>
                     Zip
-                    <input value={company.zip || '—'} readOnly />
+                    <input value={company.zip || "—"} readOnly />
                   </label>
                   <div className="owner-detail-panel">
                     <div className="owner-detail-panel-label">Entitlements</div>
@@ -75,11 +86,15 @@ export default function CompanyDetailPage({ sessionState }: SessionPageProps) {
                         <p className="muted-text">—</p>
                       ) : (
                         <ul className="plain-list">
-                          {sortedEntitlements.map((entry: CompanyAssignment, index) => (
-                            <li key={`${entry.entitlementId}-${entry.levelId}-${index}`}>
-                              {entry.entitlementName} • {entry.levelName}
-                            </li>
-                          ))}
+                          {sortedEntitlements.map(
+                            (entry: CompanyAssignment, index) => (
+                              <li
+                                key={`${entry.entitlementId}-${entry.levelId}-${index}`}
+                              >
+                                {entry.entitlementName} • {entry.levelName}
+                              </li>
+                            ),
+                          )}
                         </ul>
                       )}
                     </div>
@@ -109,7 +124,10 @@ export default function CompanyDetailPage({ sessionState }: SessionPageProps) {
 
             {company.id && (
               <div className="button-row button-row-end admin-detail-actions">
-                <SmartLink className="primary-button" href={`/companies/${company.id}/edit`}>
+                <SmartLink
+                  className="primary-button"
+                  href={`/companies/${company.id}/edit`}
+                >
                   Edit
                 </SmartLink>
               </div>
@@ -120,4 +138,3 @@ export default function CompanyDetailPage({ sessionState }: SessionPageProps) {
     </section>
   );
 }
-

@@ -6,22 +6,38 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { ChangeEvent, FormEvent } from 'react';
-import { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { buildToastNavigationState, useToast } from '../components/common/ToastProvider';
-import DataState from '../components/common/DataState';
-import MarkdownContent from '../components/markdown/MarkdownContent';
-import MarkdownEditor from '../components/markdown/MarkdownEditor';
-import { UserHoverLink, UserReferenceInlineList } from '../components/users/UserComponents';
-import useJson from '../hooks/useJson';
-import useSubmissionGuard from '../hooks/useSubmissionGuard';
-import { postForm } from '../utils/api';
-import { formatFileSize, toQueryString, versionLabel } from '../utils/formatting';
-import { resolvePostRedirectPath, SmartLink } from '../utils/routing';
-import type { SessionPageProps } from '../types/app';
-import type { AttachmentReference, MessageReference, NamedEntity, SupportTicketDetailRecord, VersionInfo } from '../types/domain';
-import type { SupportTicketDetailState } from '../types/forms';
+import type { ChangeEvent, FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import {
+  buildToastNavigationState,
+  useToast,
+} from "../components/common/ToastProvider";
+import DataState from "../components/common/DataState";
+import MarkdownContent from "../components/markdown/MarkdownContent";
+import MarkdownEditor from "../components/markdown/MarkdownEditor";
+import {
+  UserHoverLink,
+  UserReferenceInlineList,
+} from "../components/users/UserComponents";
+import useJson from "../hooks/useJson";
+import useSubmissionGuard from "../hooks/useSubmissionGuard";
+import { postForm } from "../utils/api";
+import {
+  formatFileSize,
+  toQueryString,
+  versionLabel,
+} from "../utils/formatting";
+import { resolvePostRedirectPath } from "../utils/routing";
+import type { SessionPageProps } from "../types/app";
+import type {
+  AttachmentReference,
+  MessageReference,
+  NamedEntity,
+  SupportTicketDetailRecord,
+  VersionInfo,
+} from "../types/domain";
+import type { SupportTicketDetailState } from "../types/forms";
 
 interface SupportTicketDetailPageProps extends SessionPageProps {
   apiBase?: string;
@@ -32,47 +48,55 @@ interface SupportTicketDetailPageProps extends SessionPageProps {
 
 export default function SupportTicketDetailPage({
   sessionState,
-  apiBase = '/api/support/tickets',
-  backPath = '/support/tickets',
-  titleFallback = 'Support ticket',
-  secondaryUsersLabel = 'TAM'
+  apiBase = "/api/support/tickets",
+  titleFallback = "Support ticket",
+  secondaryUsersLabel = "TAM",
 }: SupportTicketDetailPageProps) {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [refreshNonce, setRefreshNonce] = useState(0);
-  const ticketState = useJson<SupportTicketDetailRecord>(id ? `${apiBase}/${id}${toQueryString({ refresh: refreshNonce })}` : null);
+  const ticketState = useJson<SupportTicketDetailRecord>(
+    id ? `${apiBase}/${id}${toQueryString({ refresh: refreshNonce })}` : null,
+  );
   const ticket = ticketState.data;
-  const [formState, setFormState] = useState<SupportTicketDetailState | null>(null);
-  const [saveState, setSaveState] = useState({ saving: false, error: '' });
+  const [formState, setFormState] = useState<SupportTicketDetailState | null>(
+    null,
+  );
+  const [saveState, setSaveState] = useState({ saving: false, error: "" });
   const submissionGuard = useSubmissionGuard();
-  const [replyState] = useState({ saving: false, error: '' });
-  const [replyBody, setReplyBody] = useState('');
+  const [replyState] = useState({ saving: false, error: "" });
+  const [replyBody, setReplyBody] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const replyInputRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const messagesHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const [scrollToMessages, setScrollToMessages] = useState(false);
-  const isClosed = ticket?.displayStatus === 'Closed';
+  const isClosed = ticket?.displayStatus === "Closed";
   const canEditStatus = ticket?.editableStatus ?? true;
   const canEditCategory = ticket?.editableCategory ?? true;
   const canEditExternalIssue = ticket?.editableExternalIssue ?? true;
   const canEditAffectsVersion = ticket?.editableAffectsVersion ?? true;
   const canEditResolvedVersion = ticket?.editableResolvedVersion ?? true;
-  const showLevelField = apiBase !== '/api/user/tickets' || sessionState.data?.role === 'tam';
+  const showLevelField =
+    apiBase !== "/api/user/tickets" || sessionState.data?.role === "tam";
 
   useEffect(() => {
     if (!ticket) {
       return;
     }
     setFormState({
-      title: ticket.title || '',
-      status: ticket.displayStatus || 'Open',
-      categoryId: ticket.categoryId ? String(ticket.categoryId) : '',
-      externalIssueLink: ticket.externalIssueLink || '',
-      affectsVersionId: ticket.affectsVersionId ? String(ticket.affectsVersionId) : '',
-      resolvedVersionId: ticket.resolvedVersionId ? String(ticket.resolvedVersionId) : ''
+      title: ticket.title || "",
+      status: ticket.displayStatus || "Open",
+      categoryId: ticket.categoryId ? String(ticket.categoryId) : "",
+      externalIssueLink: ticket.externalIssueLink || "",
+      affectsVersionId: ticket.affectsVersionId
+        ? String(ticket.affectsVersionId)
+        : "",
+      resolvedVersionId: ticket.resolvedVersionId
+        ? String(ticket.resolvedVersionId)
+        : "",
     });
   }, [ticket]);
 
@@ -80,19 +104,33 @@ export default function SupportTicketDetailPage({
     if (!ticket) {
       return;
     }
-    const shouldScrollFromQuery = new URLSearchParams(location.search).has('replyAdded');
+    const shouldScrollFromQuery = new URLSearchParams(location.search).has(
+      "replyAdded",
+    );
     if (!scrollToMessages && !shouldScrollFromQuery) {
       return;
     }
-    messagesHeadingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    messagesHeadingRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
     setScrollToMessages(false);
     if (shouldScrollFromQuery) {
-      window.history.replaceState({}, '', ticket.actionPath || location.pathname);
+      window.history.replaceState(
+        {},
+        "",
+        ticket.actionPath || location.pathname,
+      );
     }
   }, [ticket, scrollToMessages, location.search, location.pathname]);
 
-  const updateFormState = <K extends keyof SupportTicketDetailState>(field: K, value: SupportTicketDetailState[K]) => {
-    setFormState(current => (current ? { ...current, [field]: value } : current));
+  const updateFormState = <K extends keyof SupportTicketDetailState>(
+    field: K,
+    value: SupportTicketDetailState[K],
+  ) => {
+    setFormState((current) =>
+      current ? { ...current, [field]: value } : current,
+    );
   };
 
   const saveTicket = async (event: FormEvent<HTMLFormElement>) => {
@@ -101,39 +139,57 @@ export default function SupportTicketDetailPage({
       return;
     }
     try {
-      setSaveState({ saving: true, error: '' });
-      const response = await postForm(ticket.actionPath || `${apiBase}/${id || ''}`, [
-        ['title', formState.title],
-        ['status', formState.status],
-        ['companyId', ticket.companyId],
-        ['companyEntitlementId', ticket.companyEntitlementId],
-        ['categoryId', formState.categoryId || null],
-        ['externalIssueLink', formState.externalIssueLink],
-        ['affectsVersionId', formState.affectsVersionId],
-        ['resolvedVersionId', formState.resolvedVersionId || null]
-      ], {
-        headers: { 'X-Billetsys-Client': 'react' }
-      });
-      const redirectPath = await resolvePostRedirectPath(response, ticket.actionPath || `${apiBase}/${id || ''}`);
+      setSaveState({ saving: true, error: "" });
+      const response = await postForm(
+        ticket.actionPath || `${apiBase}/${id || ""}`,
+        [
+          ["title", formState.title],
+          ["status", formState.status],
+          ["companyId", ticket.companyId],
+          ["companyEntitlementId", ticket.companyEntitlementId],
+          ["categoryId", formState.categoryId || null],
+          ["externalIssueLink", formState.externalIssueLink],
+          ["affectsVersionId", formState.affectsVersionId],
+          ["resolvedVersionId", formState.resolvedVersionId || null],
+        ],
+        {
+          headers: { "X-Billetsys-Client": "react" },
+        },
+      );
+      const redirectPath = await resolvePostRedirectPath(
+        response,
+        ticket.actionPath || `${apiBase}/${id || ""}`,
+      );
       if (redirectPath !== location.pathname) {
         navigate(redirectPath, {
           state: buildToastNavigationState({
-            variant: 'success',
-            message: 'Ticket updated successfully.'
-          })
+            variant: "success",
+            message: "Ticket updated successfully.",
+          }),
         });
       } else {
-        setRefreshNonce(current => current + 1);
-        showToast({ variant: 'success', message: 'Ticket updated successfully.' });
+        setRefreshNonce((current) => current + 1);
+        showToast({
+          variant: "success",
+          message: "Ticket updated successfully.",
+        });
       }
     } catch (error: unknown) {
-      setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save ticket.' });
-      showToast({ variant: 'error', message: error instanceof Error ? error.message : 'Unable to save ticket.' });
+      setSaveState({
+        saving: false,
+        error:
+          error instanceof Error ? error.message : "Unable to save ticket.",
+      });
+      showToast({
+        variant: "error",
+        message:
+          error instanceof Error ? error.message : "Unable to save ticket.",
+      });
       return;
     } finally {
       submissionGuard.exit();
     }
-    setSaveState({ saving: false, error: '' });
+    setSaveState({ saving: false, error: "" });
   };
 
   const addReplyFiles = (event: ChangeEvent<HTMLInputElement>) => {
@@ -141,38 +197,61 @@ export default function SupportTicketDetailPage({
     if (nextFiles.length === 0) {
       return;
     }
-    setFiles(current => [...current, ...nextFiles]);
-    event.target.value = '';
+    setFiles((current) => [...current, ...nextFiles]);
+    event.target.value = "";
   };
 
   const removeReplyFile = (index: number) => {
-    setFiles(current => current.filter((_, fileIndex) => fileIndex !== index));
+    setFiles((current) =>
+      current.filter((_, fileIndex) => fileIndex !== index),
+    );
   };
 
   return (
     <section className="panel support-ticket-detail-page">
-      <DataState state={ticketState} emptyMessage="Ticket not found." signInHref={sessionState.data?.homePath || '/login'}>
+      <DataState
+        state={ticketState}
+        emptyMessage="Ticket not found."
+        signInHref={sessionState.data?.homePath || "/login"}
+      >
         {ticket && formState && (
           <>
             <div className="form-card ticket-detail-card">
               <h1>{ticket.title || ticket.name || titleFallback}</h1>
-              <form className="owner-form ticket-detail-form" onSubmit={saveTicket}>
+              <form
+                className="owner-form ticket-detail-form"
+                onSubmit={saveTicket}
+              >
                 <div className="owner-form-grid ticket-detail-grid">
                   <label>
                     Title
                     {isClosed ? (
-                      <input value={formState.title || ticket.title || ticket.name || ''} readOnly />
+                      <input
+                        value={
+                          formState.title || ticket.title || ticket.name || ""
+                        }
+                        readOnly
+                      />
                     ) : (
-                      <input value={formState.title} onChange={event => updateFormState('title', event.target.value)} required />
+                      <input
+                        value={formState.title}
+                        onChange={(event) =>
+                          updateFormState("title", event.target.value)
+                        }
+                        required
+                      />
                     )}
                   </label>
                   <label>
                     Company
                     <div className="readonly-link-field">
-                      <input value={ticket.companyName || ''} readOnly />
+                      <input value={ticket.companyName || ""} readOnly />
                       {ticket.companyId ? (
-                        <a className="readonly-link-field-link" href={`/support/companies/${ticket.companyId}`}>
-                          {ticket.companyName || '-'}
+                        <a
+                          className="readonly-link-field-link"
+                          href={`/support/companies/${ticket.companyId}`}
+                        >
+                          {ticket.companyName || "-"}
                         </a>
                       ) : null}
                     </div>
@@ -180,28 +259,46 @@ export default function SupportTicketDetailPage({
                   <label>
                     Category
                     {isClosed || !canEditCategory ? (
-                      <input value={ticket.categoryName || '-'} readOnly />
+                      <input value={ticket.categoryName || "-"} readOnly />
                     ) : (
-                      <select value={formState.categoryId} onChange={event => updateFormState('categoryId', event.target.value)}>
-                        {(ticket.categories || []).map((category: NamedEntity) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
+                      <select
+                        value={formState.categoryId}
+                        onChange={(event) =>
+                          updateFormState("categoryId", event.target.value)
+                        }
+                      >
+                        {(ticket.categories || []).map(
+                          (category: NamedEntity) => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ),
+                        )}
                       </select>
                     )}
                   </label>
                   <label>
                     Entitlement
-                    <input value={ticket.entitlementName || '-'} readOnly className={ticket.ticketEntitlementExpired ? 'expired-input' : ''} />
+                    <input
+                      value={ticket.entitlementName || "-"}
+                      readOnly
+                      className={
+                        ticket.ticketEntitlementExpired ? "expired-input" : ""
+                      }
+                    />
                   </label>
                   <label>
                     Status
                     {isClosed || !canEditStatus ? (
-                      <input value={formState.status || '-'} readOnly />
+                      <input value={formState.status || "-"} readOnly />
                     ) : (
-                      <select value={formState.status} onChange={event => updateFormState('status', event.target.value)}>
-                        {(ticket.statusOptions || []).map(option => (
+                      <select
+                        value={formState.status}
+                        onChange={(event) =>
+                          updateFormState("status", event.target.value)
+                        }
+                      >
+                        {(ticket.statusOptions || []).map((option) => (
                           <option key={option} value={option}>
                             {option}
                           </option>
@@ -212,7 +309,13 @@ export default function SupportTicketDetailPage({
                   {showLevelField ? (
                     <label>
                       Level
-                      <input value={ticket.levelName || '-'} readOnly className={ticket.ticketEntitlementExpired ? 'expired-input' : ''} />
+                      <input
+                        value={ticket.levelName || "-"}
+                        readOnly
+                        className={
+                          ticket.ticketEntitlementExpired ? "expired-input" : ""
+                        }
+                      />
                     </label>
                   ) : (
                     <label className="ticket-detail-spacer" aria-hidden="true">
@@ -223,7 +326,11 @@ export default function SupportTicketDetailPage({
                     External issue
                     {isClosed || !canEditExternalIssue ? (
                       formState.externalIssueLink ? (
-                        <a href={formState.externalIssueLink} target="_blank" rel="noreferrer">
+                        <a
+                          href={formState.externalIssueLink}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
                           {formState.externalIssueLink}
                         </a>
                       ) : (
@@ -231,9 +338,22 @@ export default function SupportTicketDetailPage({
                       )
                     ) : (
                       <div className="inline-link-field">
-                        <input value={formState.externalIssueLink} onChange={event => updateFormState('externalIssueLink', event.target.value)} />
+                        <input
+                          value={formState.externalIssueLink}
+                          onChange={(event) =>
+                            updateFormState(
+                              "externalIssueLink",
+                              event.target.value,
+                            )
+                          }
+                        />
                         {formState.externalIssueLink ? (
-                          <a className="inline-link-field-link" href={formState.externalIssueLink} target="_blank" rel="noreferrer">
+                          <a
+                            className="inline-link-field-link"
+                            href={formState.externalIssueLink}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
                             Open
                           </a>
                         ) : null}
@@ -246,10 +366,28 @@ export default function SupportTicketDetailPage({
                   <label>
                     Affects
                     {isClosed || !canEditAffectsVersion ? (
-                      <input value={versionLabel(ticket.versions, formState.affectsVersionId) || '-'} readOnly />
+                      <input
+                        value={
+                          versionLabel(
+                            ticket.versions,
+                            formState.affectsVersionId,
+                          ) || "-"
+                        }
+                        readOnly
+                      />
                     ) : (
-                      <select value={formState.affectsVersionId} onChange={event => updateFormState('affectsVersionId', event.target.value)}>
-                        {(ticket.versions || []).length === 0 && <option value="">-</option>}
+                      <select
+                        value={formState.affectsVersionId}
+                        onChange={(event) =>
+                          updateFormState(
+                            "affectsVersionId",
+                            event.target.value,
+                          )
+                        }
+                      >
+                        {(ticket.versions || []).length === 0 && (
+                          <option value="">-</option>
+                        )}
                         {(ticket.versions || []).map((version: VersionInfo) => (
                           <option key={version.id} value={version.id}>
                             {version.name} ({version.date})
@@ -261,9 +399,25 @@ export default function SupportTicketDetailPage({
                   <label>
                     Resolved
                     {isClosed || !canEditResolvedVersion ? (
-                      <input value={versionLabel(ticket.versions, formState.resolvedVersionId) || '-'} readOnly />
+                      <input
+                        value={
+                          versionLabel(
+                            ticket.versions,
+                            formState.resolvedVersionId,
+                          ) || "-"
+                        }
+                        readOnly
+                      />
                     ) : (
-                      <select value={formState.resolvedVersionId} onChange={event => updateFormState('resolvedVersionId', event.target.value)}>
+                      <select
+                        value={formState.resolvedVersionId}
+                        onChange={(event) =>
+                          updateFormState(
+                            "resolvedVersionId",
+                            event.target.value,
+                          )
+                        }
+                      >
                         <option value="">-</option>
                         {(ticket.versions || []).map((version: VersionInfo) => (
                           <option key={version.id} value={version.id}>
@@ -282,18 +436,29 @@ export default function SupportTicketDetailPage({
                   <label>
                     {ticket.secondaryUsersLabel || secondaryUsersLabel}
                     <div className="ticket-user-field">
-                      <UserReferenceInlineList users={ticket.secondaryUsers || ticket.tamUsers} />
+                      <UserReferenceInlineList
+                        users={ticket.secondaryUsers || ticket.tamUsers}
+                      />
                     </div>
                   </label>
                 </div>
 
-                {!isClosed && (canEditStatus || canEditCategory || canEditExternalIssue || canEditAffectsVersion || canEditResolvedVersion) && (
-                  <div className="form-actions">
-                    <button type="submit" className="action-button" disabled={saveState.saving}>
-                      {saveState.saving ? 'Saving...' : 'Save'}
-                    </button>
-                  </div>
-                )}
+                {!isClosed &&
+                  (canEditStatus ||
+                    canEditCategory ||
+                    canEditExternalIssue ||
+                    canEditAffectsVersion ||
+                    canEditResolvedVersion) && (
+                    <div className="form-actions">
+                      <button
+                        type="submit"
+                        className="action-button"
+                        disabled={saveState.saving}
+                      >
+                        {saveState.saving ? "Saving..." : "Save"}
+                      </button>
+                    </div>
+                  )}
               </form>
             </div>
 
@@ -305,39 +470,56 @@ export default function SupportTicketDetailPage({
                 {(ticket.messages || []).map((message: MessageReference) => (
                   <tbody key={message.id}>
                     <tr className="message-header">
-                      <td>{message.dateLabel || '-'}</td>
+                      <td>{message.dateLabel || "-"}</td>
                       <td className="message-email">
                         {message.author?.detailPath ? (
-                          <UserHoverLink user={message.author} className="inline-link">
-                            {message.author.displayName || message.author.username}
+                          <UserHoverLink
+                            user={message.author}
+                            className="inline-link"
+                          >
+                            {message.author.displayName ||
+                              message.author.username}
                           </UserHoverLink>
                         ) : (
-                          message.author?.displayName || message.author?.username || '-'
+                          message.author?.displayName ||
+                          message.author?.username ||
+                          "-"
                         )}
                       </td>
                     </tr>
                     <tr>
                       <td colSpan={2}>
                         <div className="markdown-output">
-                          <MarkdownContent>{message.body || ''}</MarkdownContent>
+                          <MarkdownContent>
+                            {message.body || ""}
+                          </MarkdownContent>
                         </div>
                       </td>
                     </tr>
                     {(message.attachments || []).length > 0 && (
                       <tr className="message-attachments">
                         <td colSpan={2}>
-                          {(message.attachments || []).map((attachment: AttachmentReference) => (
-                            <div key={attachment.id} className="attachment-footer">
-                              <span className="attachment-name">
-                                <a href={attachment.downloadPath} target="_blank" rel="noreferrer">
-                                  {attachment.name}
-                                </a>
-                              </span>
-                              <span className="attachment-meta">
-                                {attachment.mimeType} - {attachment.sizeLabel}
-                              </span>
-                            </div>
-                          ))}
+                          {(message.attachments || []).map(
+                            (attachment: AttachmentReference) => (
+                              <div
+                                key={attachment.id}
+                                className="attachment-footer"
+                              >
+                                <span className="attachment-name">
+                                  <a
+                                    href={attachment.downloadPath}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    {attachment.name}
+                                  </a>
+                                </span>
+                                <span className="attachment-meta">
+                                  {attachment.mimeType} - {attachment.sizeLabel}
+                                </span>
+                              </div>
+                            ),
+                          )}
                         </td>
                       </tr>
                     )}
@@ -349,8 +531,20 @@ export default function SupportTicketDetailPage({
             {!isClosed ? (
               <>
                 <h2>Reply</h2>
-                <form className="ticket-reply-form" action={ticket.messageActionPath} method="post" encType="multipart/form-data">
-                  <MarkdownEditor value={replyBody} onChange={setReplyBody} inputRef={replyInputRef} name="body" rows={6} required />
+                <form
+                  className="ticket-reply-form"
+                  action={ticket.messageActionPath}
+                  method="post"
+                  encType="multipart/form-data"
+                >
+                  <MarkdownEditor
+                    value={replyBody}
+                    onChange={setReplyBody}
+                    inputRef={replyInputRef}
+                    name="body"
+                    rows={6}
+                    required
+                  />
 
                   <div className="reply-attachment-container">
                     <span className="attachment-label">Attachments</span>
@@ -368,10 +562,14 @@ export default function SupportTicketDetailPage({
                           {files.map((file, index) => (
                             <tr key={`${file.name}-${file.size}-${index}`}>
                               <td>{file.name}</td>
-                              <td>{file.type || 'application/octet-stream'}</td>
+                              <td>{file.type || "application/octet-stream"}</td>
                               <td>{formatFileSize(file.size)}</td>
                               <td>
-                                <button type="button" className="secondary-button attachment-remove-button" onClick={() => removeReplyFile(index)}>
+                                <button
+                                  type="button"
+                                  className="secondary-button attachment-remove-button"
+                                  onClick={() => removeReplyFile(index)}
+                                >
                                   Remove
                                 </button>
                               </td>
@@ -387,25 +585,45 @@ export default function SupportTicketDetailPage({
                         </tbody>
                       </table>
                     </div>
-                    <input ref={fileInputRef} type="file" name="attachments" multiple className="attachment-input" onChange={addReplyFiles} />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      name="attachments"
+                      multiple
+                      className="attachment-input"
+                      onChange={addReplyFiles}
+                    />
                   </div>
 
-                  {replyState.error && <p className="error-text">{replyState.error}</p>}
+                  {replyState.error && (
+                    <p className="error-text">{replyState.error}</p>
+                  )}
 
                   <div className="form-actions attachment-actions">
                     <div className="attachment-actions-left">
                       {ticket.exportPath && (
-                        <a className="action-button export-btn" href={ticket.exportPath}>
+                        <a
+                          className="action-button export-btn"
+                          href={ticket.exportPath}
+                        >
                           Export
                         </a>
                       )}
                     </div>
                     <div className="attachment-actions-right">
-                      <button type="button" className="action-button" onClick={() => fileInputRef.current?.click()}>
+                      <button
+                        type="button"
+                        className="action-button"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
                         Browse
                       </button>
-                      <button type="submit" className="action-button" disabled={replyState.saving}>
-                        {replyState.saving ? 'Adding...' : 'Add'}
+                      <button
+                        type="submit"
+                        className="action-button"
+                        disabled={replyState.saving}
+                      >
+                        {replyState.saving ? "Adding..." : "Add"}
                       </button>
                     </div>
                   </div>
@@ -414,7 +632,10 @@ export default function SupportTicketDetailPage({
             ) : (
               ticket.exportPath && (
                 <div className="form-actions attachment-actions">
-                  <a className="action-button export-btn" href={ticket.exportPath}>
+                  <a
+                    className="action-button export-btn"
+                    href={ticket.exportPath}
+                  >
                     Export
                   </a>
                 </div>

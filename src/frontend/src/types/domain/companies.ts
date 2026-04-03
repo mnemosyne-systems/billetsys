@@ -6,9 +6,9 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { CountryOption, NamedEntity, TimezoneOption } from './common';
-import type { LevelRecord } from './content';
-import type { UserReference, DirectoryUserRecord } from './users';
+import type { CountryOption, NamedEntity, TimezoneOption } from "./common";
+import type { LevelRecord } from "./content";
+import type { UserReference, DirectoryUserRecord } from "./users";
 
 export interface CompanyAssignment {
   entitlementId?: string | number;

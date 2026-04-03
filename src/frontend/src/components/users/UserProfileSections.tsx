@@ -6,10 +6,9 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { ReactNode } from 'react';
-import { formatPhone, profileInitial } from '../../utils/formatting';
-import { SmartLink } from '../../utils/routing';
-import type { UserReference } from '../../types/domain';
+import type { ReactNode } from "react";
+import { formatPhone, profileInitial } from "../../utils/formatting";
+import { SmartLink } from "../../utils/routing";
 
 interface UserLogoPreviewProps {
   logoBase64?: string;
@@ -40,13 +39,22 @@ interface UserDetailCardProps {
   actions?: ReactNode;
 }
 
-export function UserLogoPreview({ logoBase64, fullName, username, email }: UserLogoPreviewProps) {
+export function UserLogoPreview({
+  logoBase64,
+  fullName,
+  username,
+  email,
+}: UserLogoPreviewProps) {
   const initial = profileInitial(fullName, username, email);
 
   return (
     <div className="profile-logo-preview">
       {logoBase64 ? (
-        <img className="profile-logo-image" src={logoBase64} alt="Profile logo" />
+        <img
+          className="profile-logo-image"
+          src={logoBase64}
+          alt="Profile logo"
+        />
       ) : (
         <span className="profile-logo-fallback" aria-label="Profile initial">
           {initial}
@@ -56,7 +64,12 @@ export function UserLogoPreview({ logoBase64, fullName, username, email }: UserL
   );
 }
 
-export function UserDetailCard({ user, companyHref, companyLabel = 'Company', actions }: UserDetailCardProps) {
+export function UserDetailCard({
+  user,
+  companyHref,
+  companyLabel = "Company",
+  actions,
+}: UserDetailCardProps) {
   const hasCompany = user.companyName || companyHref;
 
   return (
@@ -66,47 +79,53 @@ export function UserDetailCard({ user, companyHref, companyLabel = 'Company', ac
           <div className="owner-form-grid ticket-detail-grid">
             <label>
               Username
-              <input value={user.username || '—'} readOnly />
+              <input value={user.username || "—"} readOnly />
             </label>
             <label>
               Full name
-              <input value={user.fullName || '—'} readOnly />
+              <input value={user.fullName || "—"} readOnly />
             </label>
             <label>
               Type
-              <input value={user.typeLabel || user.type || 'User'} readOnly />
+              <input value={user.typeLabel || user.type || "User"} readOnly />
             </label>
             <label>
               Email
-              <input value={user.email || '—'} readOnly />
+              <input value={user.email || "—"} readOnly />
             </label>
             <label>
               Social
-              <input value={user.social || '—'} readOnly />
+              <input value={user.social || "—"} readOnly />
             </label>
             <label>
               Phone
-              <input value={formatPhone(user.phoneNumber, user.phoneExtension)} readOnly />
+              <input
+                value={formatPhone(user.phoneNumber, user.phoneExtension)}
+                readOnly
+              />
             </label>
             <label>
               Country
-              <input value={user.countryName || '—'} readOnly />
+              <input value={user.countryName || "—"} readOnly />
             </label>
             <label>
               Time zone
-              <input value={user.timezoneName || '—'} readOnly />
+              <input value={user.timezoneName || "—"} readOnly />
             </label>
             <label>
               {companyLabel}
               {companyHref ? (
                 <div className="readonly-link-field">
-                  <input value={user.companyName || '—'} readOnly />
-                  <SmartLink className="readonly-link-field-link" href={companyHref}>
-                    {user.companyName || 'Open company'}
+                  <input value={user.companyName || "—"} readOnly />
+                  <SmartLink
+                    className="readonly-link-field-link"
+                    href={companyHref}
+                  >
+                    {user.companyName || "Open company"}
                   </SmartLink>
                 </div>
               ) : (
-                <input value={hasCompany ? user.companyName : '—'} readOnly />
+                <input value={hasCompany ? user.companyName : "—"} readOnly />
               )}
             </label>
             <div className="owner-detail-panel">
@@ -127,8 +146,11 @@ export function UserDetailCard({ user, companyHref, companyLabel = 'Company', ac
         </div>
       </div>
 
-      {actions ? <div className="button-row button-row-end admin-detail-actions">{actions}</div> : null}
+      {actions ? (
+        <div className="button-row button-row-end admin-detail-actions">
+          {actions}
+        </div>
+      ) : null}
     </div>
   );
 }
-

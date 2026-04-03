@@ -6,8 +6,13 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { CollectionResponse, CountryOption, NamedEntity, TimezoneOption } from './common';
-import type { Id } from '../app';
+import type {
+  CollectionResponse,
+  CountryOption,
+  NamedEntity,
+  TimezoneOption,
+} from "./common";
+import type { Id } from "../app";
 
 export interface UserReference extends NamedEntity {
   username?: string;
@@ -100,4 +105,3 @@ export interface DirectoryUserDetail extends DirectoryUserRecord {
   companyPath?: string;
   deletePath?: string;
 }
-

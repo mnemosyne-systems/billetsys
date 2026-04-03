@@ -6,7 +6,8 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { VersionInfo, NamedEntity } from './common';
+import type { AttachmentReference } from "./attachments";
+import type { VersionInfo, NamedEntity } from "./common";
 
 export interface ArticleRecord extends NamedEntity {
   title?: string;

@@ -6,13 +6,13 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { Navigate, useLocation } from 'react-router-dom';
-import type { SessionPageProps } from '../types/app';
+import { Navigate, useLocation } from "react-router-dom";
+import type { SessionPageProps } from "../types/app";
 
 export default function LoginPage({ sessionState }: SessionPageProps) {
   const session = sessionState.data;
   const location = useLocation();
-  const error = new URLSearchParams(location.search).get('error');
+  const error = new URLSearchParams(location.search).get("error");
 
   if (session?.authenticated) {
     return <Navigate replace to="/" />;
@@ -28,7 +28,12 @@ export default function LoginPage({ sessionState }: SessionPageProps) {
         </label>
         <label>
           Password
-          <input type="password" name="password" autoComplete="current-password" required />
+          <input
+            type="password"
+            name="password"
+            autoComplete="current-password"
+            required
+          />
         </label>
         {error && <p className="error-text">{error}</p>}
         <div className="login-actions">
@@ -40,4 +45,3 @@ export default function LoginPage({ sessionState }: SessionPageProps) {
     </section>
   );
 }
-

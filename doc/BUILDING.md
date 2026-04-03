@@ -46,6 +46,12 @@ The application is available at:
 
 The frontend source lives in `src/frontend`.
 
+- From the repository root, run `npm run frontend:fix` to apply the shared frontend Prettier formatting and ESLint auto-fixes.
+- From the repository root, run `npm run frontend:check` to execute the frontend lint, type-check, and formatting checks used in CI.
+- Install frontend dependencies with `npm ci` from `src/frontend`.
+- Run `npm run fix` from `src/frontend` to apply Prettier formatting and ESLint auto-fixes in one step.
+- Run `npm run check` from `src/frontend` to execute the frontend lint, type-check, and formatting checks used in CI.
+- Run `npm run format` from `src/frontend` to apply the shared frontend formatting rules.
 - Development mode: Quinoa proxies `/app` to the Vite dev server.
 - Production packaging: Quinoa builds the frontend into `src/frontend/dist` and stages the
   packaged assets under `target/quinoa/build`.

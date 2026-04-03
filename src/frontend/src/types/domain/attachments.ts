@@ -6,9 +6,9 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { NamedEntity } from './common';
-import type { UserReference } from './users';
-import type { Id } from '../app';
+import type { NamedEntity } from "./common";
+import type { UserReference } from "./users";
+import type { Id } from "../app";
 
 export interface AttachmentReference extends NamedEntity {
   downloadPath?: string;
@@ -56,4 +56,3 @@ export interface MessageFormBootstrap {
   tickets?: NamedEntity[];
   attachments?: AttachmentReference[];
 }
-

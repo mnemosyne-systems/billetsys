@@ -42,7 +42,7 @@ a {
 }
 
 code {
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 pre {
@@ -1005,7 +1005,10 @@ pre code {
 
 .attachment-row {
   display: grid;
-  grid-template-columns: minmax(180px, 2fr) minmax(140px, 1.2fr) minmax(100px, 0.8fr);
+  grid-template-columns: minmax(180px, 2fr) minmax(140px, 1.2fr) minmax(
+      100px,
+      0.8fr
+    );
   gap: 1rem;
   padding: 0.9rem 1rem;
   background: #fff;

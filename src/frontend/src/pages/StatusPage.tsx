@@ -6,11 +6,15 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { SmartLink } from '../utils/routing';
-import type { StatusPageProps } from '../types/app';
+import { SmartLink } from "../utils/routing";
+import type { StatusPageProps } from "../types/app";
 
-export default function StatusPage({ sessionState, title, message }: StatusPageProps) {
-  const homeHref = sessionState.data?.homePath || '/login';
+export default function StatusPage({
+  sessionState,
+  title,
+  message,
+}: StatusPageProps) {
+  const homeHref = sessionState.data?.homePath || "/login";
 
   return (
     <section className="panel auth-panel">
@@ -28,4 +32,3 @@ export default function StatusPage({ sessionState, title, message }: StatusPageP
     </section>
   );
 }
-

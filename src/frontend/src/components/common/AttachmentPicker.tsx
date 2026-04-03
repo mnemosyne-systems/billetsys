@@ -6,8 +6,8 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { ChangeEvent } from 'react';
-import type { AttachmentReference } from '../../types/domain';
+import type { ChangeEvent } from "react";
+import type { AttachmentReference } from "../../types/domain";
 
 interface AttachmentPickerProps {
   files: File[];
@@ -15,23 +15,31 @@ interface AttachmentPickerProps {
   existingAttachments?: AttachmentReference[];
 }
 
-export default function AttachmentPicker({ files, onFilesChange, existingAttachments }: AttachmentPickerProps) {
+export default function AttachmentPicker({
+  files,
+  onFilesChange,
+  existingAttachments,
+}: AttachmentPickerProps) {
   return (
     <section className="detail-card">
       <h3>Attachments</h3>
       <input
         type="file"
         multiple
-        onChange={(event: ChangeEvent<HTMLInputElement>) => onFilesChange(Array.from(event.target.files || []))}
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          onFilesChange(Array.from(event.target.files || []))
+        }
       />
       <div className="version-list">
-        {files.map(file => (
+        {files.map((file) => (
           <div key={`${file.name}-${file.size}`} className="version-row">
             <strong>{file.name}</strong>
-            <span>{file.type || 'application/octet-stream'}</span>
+            <span>{file.type || "application/octet-stream"}</span>
           </div>
         ))}
-        {files.length === 0 && <p className="muted-text">No new attachments selected.</p>}
+        {files.length === 0 && (
+          <p className="muted-text">No new attachments selected.</p>
+        )}
       </div>
       {!!existingAttachments?.length && (
         <>
@@ -42,9 +50,13 @@ export default function AttachmentPicker({ files, onFilesChange, existingAttachm
               <span>Mimetype</span>
               <span>Size</span>
             </div>
-            {existingAttachments.map(attachment => (
+            {existingAttachments.map((attachment) => (
               <div key={attachment.id} className="attachment-row">
-                <a href={attachment.downloadPath} target="_blank" rel="noreferrer">
+                <a
+                  href={attachment.downloadPath}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   {attachment.name}
                 </a>
                 <span>{attachment.mimeType}</span>
@@ -57,4 +69,3 @@ export default function AttachmentPicker({ files, onFilesChange, existingAttachm
     </section>
   );
 }
-

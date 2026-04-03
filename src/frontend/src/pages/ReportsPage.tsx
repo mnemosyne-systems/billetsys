@@ -6,26 +6,44 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { ReactNode } from 'react';
-import { useEffect, useRef, useState } from 'react';
-import useJson from '../hooks/useJson';
-import useExternalScript from '../hooks/useExternalScript';
-import DataState from '../components/common/DataState';
-import { toQueryString } from '../utils/formatting';
-import type { NamedEntity, TicketListItem } from '../types/domain';
-import type { SessionPageProps } from '../types/app';
-import type { ReportChartPoint, ReportChartType, ReportData, ReportHistogramBucket } from '../types/reports';
-import { SUPPORT_TICKET_STATUSES } from '../types/tickets';
+import type { ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import useJson from "../hooks/useJson";
+import useExternalScript from "../hooks/useExternalScript";
+import DataState from "../components/common/DataState";
+import { toQueryString } from "../utils/formatting";
+import type { NamedEntity, TicketListItem } from "../types/domain";
+import type { SessionPageProps } from "../types/app";
+import type {
+  ReportChartPoint,
+  ReportChartType,
+  ReportData,
+  ReportHistogramBucket,
+} from "../types/reports";
+import { SUPPORT_TICKET_STATUSES } from "../types/tickets";
 
-const REPORT_STATUS_COLORS: Partial<Record<(typeof SUPPORT_TICKET_STATUSES)[number], string>> = {
-  Open: '#4285f4',
-  Assigned: '#fbbc04',
-  Closed: '#34a853',
-  Resolved: '#34a853',
-  'In Progress': '#ea4335'
+const REPORT_STATUS_COLORS: Partial<
+  Record<(typeof SUPPORT_TICKET_STATUSES)[number], string>
+> = {
+  Open: "#4285f4",
+  Assigned: "#fbbc04",
+  Closed: "#34a853",
+  Resolved: "#34a853",
+  "In Progress": "#ea4335",
 };
 
-const REPORT_DEFAULT_COLORS = ['#4285f4', '#ea4335', '#fbbc04', '#34a853', '#9334e6', '#ff6d01', '#46bdc6', '#7baaf7', '#f07b72', '#fdd663'];
+const REPORT_DEFAULT_COLORS = [
+  "#4285f4",
+  "#ea4335",
+  "#fbbc04",
+  "#34a853",
+  "#9334e6",
+  "#ff6d01",
+  "#46bdc6",
+  "#7baaf7",
+  "#f07b72",
+  "#fdd663",
+];
 
 interface ChartInstance {
   destroy: () => void;
@@ -51,7 +69,7 @@ interface ChartConstructor {
         }>;
       };
       options: Record<string, unknown>;
-    }
+    },
   ): ChartInstance;
 }
 
@@ -76,8 +94,15 @@ interface ReportChartCardProps extends ReportChartCanvasProps {
   children?: ReactNode;
 }
 
-function reportColorsForLabels(labels: string[], colorMap?: Record<string, string>) {
-  return labels.map((label, index) => (colorMap && colorMap[label]) || REPORT_DEFAULT_COLORS[index % REPORT_DEFAULT_COLORS.length]);
+function reportColorsForLabels(
+  labels: string[],
+  colorMap?: Record<string, string>,
+) {
+  return labels.map(
+    (label, index) =>
+      (colorMap && colorMap[label]) ||
+      REPORT_DEFAULT_COLORS[index % REPORT_DEFAULT_COLORS.length],
+  );
 }
 
 function ReportChartCanvas({
@@ -89,15 +114,23 @@ function ReportChartCanvas({
   onChartReady,
   colorMap,
   integerScale = false,
-  fill = false
+  fill = false,
 }: ReportChartCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<ChartInstance | null>(null);
-  const normalizedItems = Array.isArray(items) ? items : [];
+  const normalizedItems = useMemo(
+    () => (Array.isArray(items) ? items : []),
+    [items],
+  );
   const ChartCtor = (window as ChartWindow).Chart;
 
   useEffect(() => {
-    if (!scriptReady || !canvasRef.current || normalizedItems.length === 0 || !ChartCtor) {
+    if (
+      !scriptReady ||
+      !canvasRef.current ||
+      normalizedItems.length === 0 ||
+      !ChartCtor
+    ) {
       if (chartRef.current) {
         chartRef.current.destroy();
         chartRef.current = null;
@@ -110,21 +143,21 @@ function ReportChartCanvas({
       chartRef.current.destroy();
     }
 
-    const labels = normalizedItems.map(item => item.label);
-    const values = normalizedItems.map(item => item.value);
+    const labels = normalizedItems.map((item) => item.label);
+    const values = normalizedItems.map((item) => item.value);
     const options: Record<string, unknown> = {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { display: type === 'pie', position: 'bottom' }
-      }
+        legend: { display: type === "pie", position: "bottom" },
+      },
     };
-    if (type !== 'pie') {
+    if (type !== "pie") {
       options.scales = {
         y: {
           beginAtZero: true,
-          ticks: integerScale ? { stepSize: 1 } : undefined
-        }
+          ticks: integerScale ? { stepSize: 1 } : undefined,
+        },
       };
     }
 
@@ -134,18 +167,23 @@ function ReportChartCanvas({
         labels,
         datasets: [
           {
-            label: type === 'line' ? 'Tickets created' : type === 'pie' ? undefined : 'Tickets',
+            label:
+              type === "line"
+                ? "Tickets created"
+                : type === "pie"
+                  ? undefined
+                  : "Tickets",
             data: values,
             backgroundColor: reportColorsForLabels(labels, colorMap),
-            borderColor: type === 'line' ? '#b00020' : undefined,
-            borderWidth: type === 'line' ? 2 : 0,
+            borderColor: type === "line" ? "#b00020" : undefined,
+            borderWidth: type === "line" ? 2 : 0,
             fill,
-            tension: type === 'line' ? 0.3 : undefined,
-            pointRadius: type === 'line' ? 4 : undefined
-          }
-        ]
+            tension: type === "line" ? 0.3 : undefined,
+            pointRadius: type === "line" ? 4 : undefined,
+          },
+        ],
       },
-      options
+      options,
     });
     onChartReady?.(chartKey, chartRef.current);
 
@@ -156,7 +194,17 @@ function ReportChartCanvas({
       }
       onChartReady?.(chartKey, null);
     };
-  }, [ChartCtor, chartKey, colorMap, fill, integerScale, normalizedItems, onChartReady, scriptReady, type]);
+  }, [
+    ChartCtor,
+    chartKey,
+    colorMap,
+    fill,
+    integerScale,
+    normalizedItems,
+    onChartReady,
+    scriptReady,
+    type,
+  ]);
 
   if (scriptError) {
     return <div className="report-no-data">Unable to load diagrams.</div>;
@@ -174,7 +222,12 @@ function ReportChartCanvas({
   );
 }
 
-function ReportChartCard({ chartKey, title, children, ...chartProps }: ReportChartCardProps) {
+function ReportChartCard({
+  chartKey,
+  title,
+  children,
+  ...chartProps
+}: ReportChartCardProps) {
   return (
     <section className="detail-card report-chart-card">
       <div className="report-title-row">
@@ -189,21 +242,20 @@ function ReportChartCard({ chartKey, title, children, ...chartProps }: ReportCha
 export default function ReportsPage({ sessionState }: SessionPageProps) {
   const session = sessionState.data;
   const role = session?.role;
-  const supportsReports = ['admin', 'tam', 'superuser'].includes(role || '');
-  const [filters, setFilters] = useState({ companyId: '', period: 'all' });
-  const chartScriptState = useExternalScript('/webjars/chart.js/4.5.1/dist/chart.umd.js');
+  const supportsReports = ["admin", "tam", "superuser"].includes(role || "");
+  const [filters, setFilters] = useState({ companyId: "", period: "all" });
+  const chartScriptState = useExternalScript(
+    "/webjars/chart.js/4.5.1/dist/chart.umd.js",
+  );
   const chartInstancesRef = useRef<Record<string, ChartInstance>>({});
   const reportUrl = supportsReports
     ? `/api/reports${toQueryString({ companyId: filters.companyId || undefined, period: filters.period || undefined })}`
     : null;
   const reportsState = useJson<ReportData>(reportUrl);
   const reports = reportsState.data;
-
-  useEffect(() => {
-    if (reports && reports.selectedCompanyId) {
-      setFilters(current => ({ ...current, companyId: String(reports.selectedCompanyId) }));
-    }
-  }, [reports]);
+  const selectedCompanyId =
+    filters.companyId ||
+    (reports?.selectedCompanyId ? String(reports.selectedCompanyId) : "");
 
   const onChartReady = (name: string, instance: ChartInstance | null) => {
     if (instance) {
@@ -217,8 +269,8 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
     if (!reports?.exportPath) {
       return;
     }
-    const form = document.createElement('form');
-    form.method = 'POST';
+    const form = document.createElement("form");
+    form.method = "POST";
     form.action = `${reports.exportPath}${toQueryString({ companyId: filters.companyId || undefined, period: filters.period || undefined })}`;
 
     const imageFields = {
@@ -228,14 +280,14 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
       timeChart: chartInstancesRef.current.timeChart,
       responseTimeChart: chartInstancesRef.current.responseTimeChart,
       resolutionTimeChart: chartInstancesRef.current.resolutionTimeChart,
-      histogramChart: chartInstancesRef.current.histogramChart
+      histogramChart: chartInstancesRef.current.histogramChart,
     };
 
     Object.entries(imageFields).forEach(([name, chart]) => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
+      const input = document.createElement("input");
+      input.type = "hidden";
       input.name = name;
-      input.value = chart ? chart.toBase64Image() : '';
+      input.value = chart ? chart.toBase64Image() : "";
       form.appendChild(input);
     });
 
@@ -248,7 +300,9 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
     return (
       <section className="panel">
         <h2>Reports</h2>
-        <p className="muted-text">Reports are available for admin, TAM, and superuser roles.</p>
+        <p className="muted-text">
+          Reports are available for admin, TAM, and superuser roles.
+        </p>
       </section>
     );
   }
@@ -261,14 +315,26 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
         </div>
       </div>
 
-      <DataState state={reportsState} emptyMessage="No report data available." signInHref={sessionState.data?.homePath || '/login'}>
+      <DataState
+        state={reportsState}
+        emptyMessage="No report data available."
+        signInHref={sessionState.data?.homePath || "/login"}
+      >
         {reports && (
           <div className="report-layout">
             {reports.showCompanyFilter ? (
               <div className="filter-row">
                 <label>
                   Company
-                  <select value={filters.companyId} onChange={event => setFilters(current => ({ ...current, companyId: event.target.value }))}>
+                  <select
+                    value={selectedCompanyId}
+                    onChange={(event) =>
+                      setFilters((current) => ({
+                        ...current,
+                        companyId: event.target.value,
+                      }))
+                    }
+                  >
                     <option value="">All companies</option>
                     {(reports.companies || []).map((company: NamedEntity) => (
                       <option key={company.id} value={company.id}>
@@ -333,7 +399,15 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
               >
                 <label className="report-inline-filter">
                   Period
-                  <select value={filters.period} onChange={event => setFilters(current => ({ ...current, period: event.target.value }))}>
+                  <select
+                    value={filters.period}
+                    onChange={(event) =>
+                      setFilters((current) => ({
+                        ...current,
+                        period: event.target.value,
+                      }))
+                    }
+                  >
                     <option value="all">All</option>
                     <option value="year">Year</option>
                     <option value="month">Month</option>
@@ -356,7 +430,12 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
                 <ReportChartCanvas
                   chartKey="histogramChart"
                   type="bar"
-                  items={(reports.histogram || []).map((bucket: ReportHistogramBucket) => ({ label: bucket.label, value: bucket.count }))}
+                  items={(reports.histogram || []).map(
+                    (bucket: ReportHistogramBucket) => ({
+                      label: bucket.label,
+                      value: bucket.count,
+                    }),
+                  )}
                   scriptReady={chartScriptState.loaded}
                   scriptError={chartScriptState.error}
                   integerScale
@@ -371,24 +450,30 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    {(reports.histogram || []).map((bucket: ReportHistogramBucket) => (
-                      <tr key={bucket.label}>
-                        <td>{bucket.label}</td>
-                        <td>{bucket.count}</td>
-                        <td>
-                          {bucket.tickets.length === 0 ? (
-                            '—'
-                          ) : (
-                            bucket.tickets.map((ticket: TicketListItem, index: number) => (
-                              <span key={ticket.id}>
-                                <a href={`/tickets/${ticket.id}`}>{ticket.name}</a>
-                                {index < bucket.tickets.length - 1 ? ', ' : ''}
-                              </span>
-                            ))
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                    {(reports.histogram || []).map(
+                      (bucket: ReportHistogramBucket) => (
+                        <tr key={bucket.label}>
+                          <td>{bucket.label}</td>
+                          <td>{bucket.count}</td>
+                          <td>
+                            {bucket.tickets.length === 0
+                              ? "—"
+                              : bucket.tickets.map(
+                                  (ticket: TicketListItem, index: number) => (
+                                    <span key={ticket.id}>
+                                      <a href={`/tickets/${ticket.id}`}>
+                                        {ticket.name}
+                                      </a>
+                                      {index < bucket.tickets.length - 1
+                                        ? ", "
+                                        : ""}
+                                    </span>
+                                  ),
+                                )}
+                          </td>
+                        </tr>
+                      ),
+                    )}
                   </tbody>
                 </table>
               </section>
@@ -404,7 +489,12 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
             </div>
 
             <div className="button-row button-row-end">
-              <button type="button" className="action-button export-btn" onClick={exportReport} disabled={!chartScriptState.loaded}>
+              <button
+                type="button"
+                className="action-button export-btn"
+                onClick={exportReport}
+                disabled={!chartScriptState.loaded}
+              >
                 Export
               </button>
             </div>

@@ -6,16 +6,16 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { Link } from 'react-router-dom';
-import DataState from '../components/common/DataState';
-import { LevelColorBadge } from '../components/common/LevelColorBadge';
-import useJson from '../hooks/useJson';
-import { SmartLink } from '../utils/routing';
-import type { SessionPageProps } from '../types/app';
-import type { CollectionResponse, LevelRecord } from '../types/domain';
+import { Link } from "react-router-dom";
+import DataState from "../components/common/DataState";
+import { LevelColorBadge } from "../components/common/LevelColorBadge";
+import useJson from "../hooks/useJson";
+import { SmartLink } from "../utils/routing";
+import type { SessionPageProps } from "../types/app";
+import type { CollectionResponse, LevelRecord } from "../types/domain";
 
 export default function LevelsPage({ sessionState }: SessionPageProps) {
-  const levelsState = useJson<CollectionResponse<LevelRecord>>('/api/levels');
+  const levelsState = useJson<CollectionResponse<LevelRecord>>("/api/levels");
 
   return (
     <section className="panel">
@@ -30,7 +30,11 @@ export default function LevelsPage({ sessionState }: SessionPageProps) {
         </div>
       </div>
 
-      <DataState state={levelsState} emptyMessage="No support levels are available yet." signInHref={sessionState.data?.homePath || '/login'}>
+      <DataState
+        state={levelsState}
+        emptyMessage="No support levels are available yet."
+        signInHref={sessionState.data?.homePath || "/login"}
+      >
         <div className="category-list">
           {levelsState.data?.items.map((level: LevelRecord) => (
             <article key={level.id} className="category-card">
@@ -42,14 +46,20 @@ export default function LevelsPage({ sessionState }: SessionPageProps) {
                         {level.name}
                       </Link>
                     </h3>
-                    <LevelColorBadge color={level.color} display={level.colorDisplay} />
+                    <LevelColorBadge
+                      color={level.color}
+                      display={level.colorDisplay}
+                    />
                   </div>
-                  <p className="tag-copy">{level.descriptionPreview || 'No description'}</p>
+                  <p className="tag-copy">
+                    {level.descriptionPreview || "No description"}
+                  </p>
                   <p className="muted-text">
                     Level {level.level} • {level.fromLabel} - {level.toLabel}
                   </p>
                   <p className="muted-text">
-                    {level.countryName || 'No country'} • {level.timezoneName || 'No time zone'}
+                    {level.countryName || "No country"} •{" "}
+                    {level.timezoneName || "No time zone"}
                   </p>
                 </div>
               </div>
@@ -60,4 +70,3 @@ export default function LevelsPage({ sessionState }: SessionPageProps) {
     </section>
   );
 }
-

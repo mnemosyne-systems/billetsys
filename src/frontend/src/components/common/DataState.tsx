@@ -6,8 +6,8 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { ReactNode } from 'react';
-import type { AsyncState } from '../../types/app';
+import type { ReactNode } from "react";
+import type { AsyncState } from "../../types/app";
 
 interface DataStateProps<T> {
   state: AsyncState<T>;
@@ -16,7 +16,12 @@ interface DataStateProps<T> {
   children?: ReactNode;
 }
 
-export default function DataState<T>({ state, emptyMessage, signInHref, children }: DataStateProps<T>) {
+export default function DataState<T>({
+  state,
+  emptyMessage,
+  signInHref,
+  children,
+}: DataStateProps<T>) {
   if (state.loading) {
     return <p>Loading...</p>;
   }
@@ -46,4 +51,3 @@ export default function DataState<T>({ state, emptyMessage, signInHref, children
 
   return children;
 }
-

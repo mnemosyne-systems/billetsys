@@ -28,6 +28,11 @@ See the developer documentation for setup and workflow details:
 * [Build and run guide](./doc/BUILDING.md)
 * [Frontend guide](./src/frontend/README.md)
 
+For the most common frontend validation commands from the repository root:
+
+* `npm run frontend:fix`
+* `npm run frontend:check`
+
 The users defined for testing are
 
 * User: `user1` / `user1`

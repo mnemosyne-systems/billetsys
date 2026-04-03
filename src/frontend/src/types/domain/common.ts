@@ -6,7 +6,7 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { Id } from '../app';
+import type { Id } from "../app";
 
 export interface NamedEntity {
   id: Id;
@@ -14,7 +14,7 @@ export interface NamedEntity {
   [key: string]: unknown;
 }
 
-export interface CountryOption extends NamedEntity {}
+export type CountryOption = NamedEntity;
 
 export interface TimezoneOption extends NamedEntity {
   countryId?: Id;
@@ -46,4 +46,3 @@ export interface CollectionResponse<T> {
 export interface BootstrapResponse {
   [key: string]: unknown;
 }
-

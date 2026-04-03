@@ -8,6 +8,11 @@ This frontend is a Vite + React + TypeScript application that renders the React 
 - Keep that process running while you edit frontend files so Vite live reload can update the UI.
 - Use `mvn clean quarkus:dev` only when you deliberately want to wipe `target/` and force a fresh rebuild.
 - Run `npm run typecheck` from `src/frontend` when you want a strict TypeScript check without building.
+- Run `npm run check` from `src/frontend` before opening a pull request. This is the main validation command for contributors and CI.
+- Run `npm run format` from `src/frontend` when you want to apply the shared Prettier formatting rules across the frontend workspace.
+- Run `npm run fix` from `src/frontend` when you want one command that applies both Prettier formatting and ESLint auto-fixes before a final validation pass.
+- The root Git hook runs `lint-staged` for this frontend package, so staged frontend files are linted and formatted automatically on commit.
+- The pre-commit hook checks staged files only. Run `npm run check` from `src/frontend` before pushing when you want to reproduce the full frontend CI validation locally.
 
 ## Entry Flow
 

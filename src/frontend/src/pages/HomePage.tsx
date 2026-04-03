@@ -6,22 +6,22 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { Navigate } from 'react-router-dom';
-import { SmartLink, normalizeClientPath } from '../utils/routing';
-import { orderedNavigation } from '../utils/navigation';
-import type { SessionPageProps } from '../types/app';
+import { Navigate } from "react-router-dom";
+import { SmartLink, normalizeClientPath } from "../utils/routing";
+import { orderedNavigation } from "../utils/navigation";
+import type { SessionPageProps } from "../types/app";
 
 export default function HomePage({ sessionState }: SessionPageProps) {
   const session = sessionState.data;
   const adminLinks = orderedNavigation(session?.navigation, [
-    'Owner',
-    'Companies',
-    'Users',
-    'Entitlements',
-    'Levels',
-    'Categories',
-    'Articles',
-    'Reports'
+    "Owner",
+    "Companies",
+    "Users",
+    "Entitlements",
+    "Levels",
+    "Categories",
+    "Articles",
+    "Reports",
   ]);
 
   if (sessionState.loading) {
@@ -44,16 +44,20 @@ export default function HomePage({ sessionState }: SessionPageProps) {
     return <Navigate replace to="/login" />;
   }
 
-  const homePath = normalizeClientPath(session.homePath) || '/';
-  if (homePath !== '/') {
+  const homePath = normalizeClientPath(session.homePath) || "/";
+  if (homePath !== "/") {
     return <Navigate replace to={homePath} />;
   }
 
   return (
     <section className="dashboard-panel">
       <div className="dashboard-card-grid">
-        {adminLinks.map(link => (
-          <SmartLink key={link.href} className="dashboard-card" href={link.href}>
+        {adminLinks.map((link) => (
+          <SmartLink
+            key={link.href}
+            className="dashboard-card"
+            href={link.href}
+          >
             {link.label}
           </SmartLink>
         ))}
@@ -61,4 +65,3 @@ export default function HomePage({ sessionState }: SessionPageProps) {
     </section>
   );
 }
-

@@ -2,6 +2,7 @@ META-INF/
 target/
 .idea/
 *.iml
+node_modules
 doc/manual/en/build/
 src/frontend/node_modules/
 src/frontend/dist/

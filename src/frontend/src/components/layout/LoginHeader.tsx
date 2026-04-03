@@ -6,7 +6,7 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 interface LoginHeaderProps {
   brandName: string;
@@ -32,11 +32,10 @@ export default function LoginHeader({ brandName }: LoginHeaderProps) {
       </a>
       <span className="login-header-clock">
         {now.toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit'
+          hour: "2-digit",
+          minute: "2-digit",
         })}
       </span>
     </header>
   );
 }
-

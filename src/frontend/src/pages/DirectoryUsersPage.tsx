@@ -6,14 +6,18 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { ChangeEvent } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import DataState from '../components/common/DataState';
-import useJson from '../hooks/useJson';
-import { toQueryString } from '../utils/formatting';
-import { SmartLink } from '../utils/routing';
-import type { SessionPageProps } from '../types/app';
-import type { DirectoryUserRecord, DirectoryUsersResponse, NamedEntity } from '../types/domain';
+import type { ChangeEvent } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import DataState from "../components/common/DataState";
+import useJson from "../hooks/useJson";
+import { toQueryString } from "../utils/formatting";
+import { SmartLink } from "../utils/routing";
+import type { SessionPageProps } from "../types/app";
+import type {
+  DirectoryUserRecord,
+  DirectoryUsersResponse,
+  NamedEntity,
+} from "../types/domain";
 
 interface DirectoryUsersPageProps extends SessionPageProps {
   apiBase: string;
@@ -22,16 +26,25 @@ interface DirectoryUsersPageProps extends SessionPageProps {
   description?: string;
 }
 
-export default function DirectoryUsersPage({ sessionState, apiBase, basePath, titleFallback, description = '' }: DirectoryUsersPageProps) {
+export default function DirectoryUsersPage({
+  sessionState,
+  apiBase,
+  titleFallback,
+  description = "",
+}: DirectoryUsersPageProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const companyId = new URLSearchParams(location.search).get('companyId') || '';
-  const dataState = useJson<DirectoryUsersResponse>(`${apiBase}${toQueryString({ companyId })}`);
+  const companyId = new URLSearchParams(location.search).get("companyId") || "";
+  const dataState = useJson<DirectoryUsersResponse>(
+    `${apiBase}${toQueryString({ companyId })}`,
+  );
   const directory = dataState.data;
 
   const selectCompany = (event: ChangeEvent<HTMLSelectElement>) => {
     const nextCompanyId = event.target.value;
-    navigate(`${location.pathname}${toQueryString({ companyId: nextCompanyId })}`);
+    navigate(
+      `${location.pathname}${toQueryString({ companyId: nextCompanyId })}`,
+    );
   };
 
   return (
@@ -39,7 +52,11 @@ export default function DirectoryUsersPage({ sessionState, apiBase, basePath, ti
       <div className="section-header">
         <div>
           <h2>{directory?.title || titleFallback}</h2>
-          {directory?.description || description ? <p className="section-copy">{directory?.description || description}</p> : null}
+          {directory?.description || description ? (
+            <p className="section-copy">
+              {directory?.description || description}
+            </p>
+          ) : null}
         </div>
         <div className="button-row">
           {directory?.createPath && (
@@ -50,16 +67,30 @@ export default function DirectoryUsersPage({ sessionState, apiBase, basePath, ti
         </div>
       </div>
 
-      <DataState state={dataState} emptyMessage="No users are available." signInHref={sessionState.data?.homePath || '/login'}>
+      <DataState
+        state={dataState}
+        emptyMessage="No users are available."
+        signInHref={sessionState.data?.homePath || "/login"}
+      >
         <>
           {directory?.showCompanySelector && (
             <section className="detail-card">
               <h3>Company</h3>
               <label>
                 Select company
-                <select value={directory.selectedCompanyId ? String(directory.selectedCompanyId) : ''} onChange={selectCompany}>
+                <select
+                  value={
+                    directory.selectedCompanyId
+                      ? String(directory.selectedCompanyId)
+                      : ""
+                  }
+                  onChange={selectCompany}
+                >
                   {(directory.companies || []).map((company: NamedEntity) => (
-                    <option key={company.id} value={company.id ? String(company.id) : ''}>
+                    <option
+                      key={company.id}
+                      value={company.id ? String(company.id) : ""}
+                    >
                       {company.name}
                     </option>
                   ))}
@@ -76,17 +107,28 @@ export default function DirectoryUsersPage({ sessionState, apiBase, basePath, ti
                     <div className="category-title-row">
                       <h3>
                         {user.detailPath ? (
-                          <SmartLink className="inline-link" href={user.detailPath}>
-                            {user.displayName || user.fullName || user.username || 'User'}
+                          <SmartLink
+                            className="inline-link"
+                            href={user.detailPath}
+                          >
+                            {user.displayName ||
+                              user.fullName ||
+                              user.username ||
+                              "User"}
                           </SmartLink>
                         ) : (
-                          user.displayName || user.fullName || user.username || 'User'
+                          user.displayName ||
+                          user.fullName ||
+                          user.username ||
+                          "User"
                         )}
                       </h3>
-                      <span className="status-pill">{user.typeLabel || user.type || 'User'}</span>
+                      <span className="status-pill">
+                        {user.typeLabel || user.type || "User"}
+                      </span>
                     </div>
-                    <p className="tag-copy">{user.email || 'No email'}</p>
-                    <p className="muted-text">@{user.username || 'unknown'}</p>
+                    <p className="tag-copy">{user.email || "No email"}</p>
+                    <p className="muted-text">@{user.username || "unknown"}</p>
                   </div>
                 </div>
               </article>
@@ -94,11 +136,12 @@ export default function DirectoryUsersPage({ sessionState, apiBase, basePath, ti
           </div>
 
           {(!directory?.items || directory.items.length === 0) && (
-            <p className="muted-text">No users are available for the selected company.</p>
+            <p className="muted-text">
+              No users are available for the selected company.
+            </p>
           )}
         </>
       </DataState>
     </section>
   );
 }
-

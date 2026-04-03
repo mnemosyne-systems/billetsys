@@ -6,11 +6,11 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { MessageReference } from './attachments';
-import type { CompanyEntitlementOption } from './companies';
-import type { NamedEntity, VersionInfo } from './common';
-import type { UserReference } from './users';
-import type { Id } from '../app';
+import type { MessageReference } from "./attachments";
+import type { CompanyEntitlementOption } from "./companies";
+import type { NamedEntity, VersionInfo } from "./common";
+import type { UserReference } from "./users";
+import type { Id } from "../app";
 
 export interface TicketReference extends NamedEntity {
   title?: string;

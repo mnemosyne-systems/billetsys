@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -6,35 +6,52 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { useEffect, useState } from 'react';
-import type { AsyncState } from '../types/app';
+import { useEffect, useState } from "react";
+import type { AsyncState } from "../types/app";
 
-type JsonResult<T> =
-  | { data: T }
-  | { unauthorized: true }
-  | { forbidden: true };
+type JsonResult<T> = { data: T } | { unauthorized: true } | { forbidden: true };
 
-export default function useJson<T>(url: string | null): AsyncState<T> {
-  const [state, setState] = useState<AsyncState<T>>({
-    loading: Boolean(url),
-    error: '',
+interface JsonSnapshot<T> extends AsyncState<T> {
+  url: string | null;
+}
+
+function emptyState<T>(): AsyncState<T> {
+  return {
+    loading: false,
+    error: "",
+    unauthorized: false,
+    forbidden: false,
+    empty: true,
+    data: null,
+  };
+}
+
+function loadingState<T>(): AsyncState<T> {
+  return {
+    loading: true,
+    error: "",
     unauthorized: false,
     forbidden: false,
     empty: false,
-    data: null
+    data: null,
+  };
+}
+
+export default function useJson<T>(url: string | null): AsyncState<T> {
+  const [state, setState] = useState<JsonSnapshot<T>>({
+    url: null,
+    ...emptyState<T>(),
   });
 
   useEffect(() => {
     if (!url) {
-      setState({ loading: false, error: '', unauthorized: false, forbidden: false, empty: true, data: null });
       return undefined;
     }
 
     let active = true;
-    setState(current => ({ ...current, loading: true, error: '', unauthorized: false, forbidden: false, empty: false }));
 
-    fetch(url, { credentials: 'same-origin', cache: 'no-store' })
-      .then(async response => {
+    fetch(url, { credentials: "same-origin", cache: "no-store" })
+      .then(async (response) => {
         if (response.status === 401) {
           return { unauthorized: true } as JsonResult<T>;
         }
@@ -51,35 +68,54 @@ export default function useJson<T>(url: string | null): AsyncState<T> {
         if (!active) {
           return;
         }
-        if ('unauthorized' in result) {
-          setState({ loading: false, error: '', unauthorized: true, forbidden: false, empty: false, data: null });
+        if ("unauthorized" in result) {
+          setState({
+            url,
+            loading: false,
+            error: "",
+            unauthorized: true,
+            forbidden: false,
+            empty: false,
+            data: null,
+          });
           return;
         }
-        if ('forbidden' in result) {
-          setState({ loading: false, error: '', unauthorized: false, forbidden: true, empty: false, data: null });
+        if ("forbidden" in result) {
+          setState({
+            url,
+            loading: false,
+            error: "",
+            unauthorized: false,
+            forbidden: true,
+            empty: false,
+            data: null,
+          });
           return;
         }
         const items = (result.data as { items?: unknown[] } | null)?.items;
         const isEmptyList = Array.isArray(items) && items.length === 0;
         setState({
+          url,
           loading: false,
-          error: '',
+          error: "",
           unauthorized: false,
           forbidden: false,
           empty: isEmptyList,
-          data: result.data
+          data: result.data,
         });
       })
       .catch((error: unknown) => {
         if (active) {
-          const message = error instanceof Error ? error.message : 'Unable to load data';
+          const message =
+            error instanceof Error ? error.message : "Unable to load data";
           setState({
+            url,
             loading: false,
             error: message,
             unauthorized: false,
             forbidden: false,
             empty: false,
-            data: null
+            data: null,
           });
         }
       });
@@ -89,6 +125,13 @@ export default function useJson<T>(url: string | null): AsyncState<T> {
     };
   }, [url]);
 
+  if (!url) {
+    return emptyState<T>();
+  }
+
+  if (state.url !== url) {
+    return loadingState<T>();
+  }
+
   return state;
 }
-

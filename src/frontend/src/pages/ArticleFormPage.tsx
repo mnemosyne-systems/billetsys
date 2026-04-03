@@ -6,20 +6,23 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import type { FormEvent } from 'react';
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { buildToastNavigationState, useToast } from '../components/common/ToastProvider';
-import useJson from '../hooks/useJson';
-import useSubmissionGuard from '../hooks/useSubmissionGuard';
-import DataState from '../components/common/DataState';
-import MarkdownEditor from '../components/markdown/MarkdownEditor';
-import AttachmentPicker from '../components/common/AttachmentPicker';
-import { postMultipart } from '../utils/api';
-import { resolvePostRedirectPath } from '../utils/routing';
-import { DeleteArticleButton } from './ArticleDetailPage';
-import type { FormMode, SessionPageProps } from '../types/app';
-import type { ArticleRecord } from '../types/domain';
+import type { FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  buildToastNavigationState,
+  useToast,
+} from "../components/common/ToastProvider";
+import useJson from "../hooks/useJson";
+import useSubmissionGuard from "../hooks/useSubmissionGuard";
+import DataState from "../components/common/DataState";
+import MarkdownEditor from "../components/markdown/MarkdownEditor";
+import AttachmentPicker from "../components/common/AttachmentPicker";
+import { postMultipart } from "../utils/api";
+import { resolvePostRedirectPath } from "../utils/routing";
+import { DeleteArticleButton } from "./ArticleDetailPage";
+import type { FormMode, SessionPageProps } from "../types/app";
+import type { ArticleRecord } from "../types/domain";
 
 interface ArticleFormState {
   title: string;
@@ -31,21 +34,28 @@ interface ArticleFormPageProps extends SessionPageProps {
   mode: FormMode;
 }
 
-export default function ArticleFormPage({ sessionState, mode }: ArticleFormPageProps) {
+export default function ArticleFormPage({
+  sessionState,
+  mode,
+}: ArticleFormPageProps) {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { id } = useParams();
-  const articleState = useJson<ArticleRecord>(mode === 'edit' && id ? `/api/articles/${id}` : '/api/articles/bootstrap');
+  const articleState = useJson<ArticleRecord>(
+    mode === "edit" && id ? `/api/articles/${id}` : "/api/articles/bootstrap",
+  );
   const article = articleState.data;
   const [formState, setFormState] = useState<ArticleFormState | null>(null);
-  const [saveState, setSaveState] = useState({ saving: false, error: '' });
+  const [saveState, setSaveState] = useState({ saving: false, error: "" });
   const [files, setFiles] = useState<File[]>([]);
   const bodyInputRef = useRef<HTMLTextAreaElement | null>(null);
   const submissionGuard = useSubmissionGuard();
-  const isEdit = mode === 'edit';
+  const isEdit = mode === "edit";
 
   const updateFormState = (field: keyof ArticleFormState, value: string) => {
-    setFormState(current => (current ? { ...current, [field]: value } : current));
+    setFormState((current) =>
+      current ? { ...current, [field]: value } : current,
+    );
   };
 
   useEffect(() => {
@@ -54,13 +64,13 @@ export default function ArticleFormPage({ sessionState, mode }: ArticleFormPageP
     }
     if (isEdit) {
       setFormState({
-        title: article.title || '',
-        tags: article.tags || '',
-        body: article.body || ''
+        title: article.title || "",
+        tags: article.tags || "",
+        body: article.body || "",
       });
       return;
     }
-    setFormState({ title: '', tags: '', body: '' });
+    setFormState({ title: "", tags: "", body: "" });
   }, [article, isEdit]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -69,50 +79,84 @@ export default function ArticleFormPage({ sessionState, mode }: ArticleFormPageP
       return;
     }
     try {
-      setSaveState({ saving: true, error: '' });
-      const response = await postMultipart(isEdit ? `/articles/${id}` : '/articles', [
-        ['title', formState.title],
-        ['tags', formState.tags],
-        ['body', formState.body],
-        ...files.map((file): ['attachments', File] => ['attachments', file])
-      ]);
-      navigate(await resolvePostRedirectPath(response, isEdit && id ? `/articles/${id}` : '/articles'), {
-        state: buildToastNavigationState({
-          variant: 'success',
-          message: isEdit ? 'Article updated successfully.' : 'Article created successfully.'
-        })
-      });
+      setSaveState({ saving: true, error: "" });
+      const response = await postMultipart(
+        isEdit ? `/articles/${id}` : "/articles",
+        [
+          ["title", formState.title],
+          ["tags", formState.tags],
+          ["body", formState.body],
+          ...files.map((file): ["attachments", File] => ["attachments", file]),
+        ],
+      );
+      navigate(
+        await resolvePostRedirectPath(
+          response,
+          isEdit && id ? `/articles/${id}` : "/articles",
+        ),
+        {
+          state: buildToastNavigationState({
+            variant: "success",
+            message: isEdit
+              ? "Article updated successfully."
+              : "Article created successfully.",
+          }),
+        },
+      );
     } catch (error: unknown) {
-      setSaveState({ saving: false, error: error instanceof Error ? error.message : 'Unable to save article.' });
-      showToast({ variant: 'error', message: error instanceof Error ? error.message : 'Unable to save article.' });
+      setSaveState({
+        saving: false,
+        error:
+          error instanceof Error ? error.message : "Unable to save article.",
+      });
+      showToast({
+        variant: "error",
+        message:
+          error instanceof Error ? error.message : "Unable to save article.",
+      });
       return;
     } finally {
       submissionGuard.exit();
     }
-    setSaveState({ saving: false, error: '' });
+    setSaveState({ saving: false, error: "" });
   };
 
   return (
     <section className="panel">
-      <DataState state={articleState} emptyMessage="Article unavailable." signInHref={sessionState.data?.homePath || '/login'}>
+      <DataState
+        state={articleState}
+        emptyMessage="Article unavailable."
+        signInHref={sessionState.data?.homePath || "/login"}
+      >
         {formState && article && article.canEdit && (
           <div className="form-card ticket-detail-card">
-            {isEdit && <h1>{formState.title || 'Edit article'}</h1>}
+            {isEdit && <h1>{formState.title || "Edit article"}</h1>}
             <form className="owner-form" onSubmit={submit}>
               <div className="owner-form-grid ticket-detail-grid">
                 <label>
                   Title
-                  <input value={formState.title} onChange={event => updateFormState('title', event.target.value)} required />
+                  <input
+                    value={formState.title}
+                    onChange={(event) =>
+                      updateFormState("title", event.target.value)
+                    }
+                    required
+                  />
                 </label>
                 <label>
                   Tags
-                  <input value={formState.tags} onChange={event => updateFormState('tags', event.target.value)} />
+                  <input
+                    value={formState.tags}
+                    onChange={(event) =>
+                      updateFormState("tags", event.target.value)
+                    }
+                  />
                 </label>
                 <label className="form-span-2">
                   Body
                   <MarkdownEditor
                     value={formState.body}
-                    onChange={value => updateFormState('body', value)}
+                    onChange={(value) => updateFormState("body", value)}
                     inputRef={bodyInputRef}
                     rows={12}
                     required
@@ -120,12 +164,24 @@ export default function ArticleFormPage({ sessionState, mode }: ArticleFormPageP
                 </label>
               </div>
 
-              <AttachmentPicker files={files} onFilesChange={setFiles} existingAttachments={article.attachments || []} />
+              <AttachmentPicker
+                files={files}
+                onFilesChange={setFiles}
+                existingAttachments={article.attachments || []}
+              />
 
-              <div className={`button-row${isEdit ? ' button-row-split' : ' button-row-end'}`}>
-                {isEdit && article.id && article.canDelete && <DeleteArticleButton articleId={article.id} label="Delete" />}
-                <button type="submit" className="primary-button" disabled={saveState.saving}>
-                  {saveState.saving ? 'Saving...' : isEdit ? 'Save' : 'Create'}
+              <div
+                className={`button-row${isEdit ? " button-row-split" : " button-row-end"}`}
+              >
+                {isEdit && article.id && article.canDelete && (
+                  <DeleteArticleButton articleId={article.id} label="Delete" />
+                )}
+                <button
+                  type="submit"
+                  className="primary-button"
+                  disabled={saveState.saving}
+                >
+                  {saveState.saving ? "Saving..." : isEdit ? "Save" : "Create"}
                 </button>
               </div>
             </form>
@@ -135,4 +191,3 @@ export default function ArticleFormPage({ sessionState, mode }: ArticleFormPageP
     </section>
   );
 }
-

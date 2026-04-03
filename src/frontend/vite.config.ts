@@ -6,20 +6,20 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  base: '/',
+  base: "/",
   server: {
-    host: 'localhost',
+    host: "localhost",
     port: 5173,
-    strictPort: true
+    strictPort: true,
   },
   build: {
-    outDir: 'dist',
+    outDir: "dist",
     emptyOutDir: true,
-    assetsDir: 'assets'
-  }
+    assetsDir: "assets",
+  },
 });

@@ -230,7 +230,28 @@ git checkout -b mywork main
 
 ### Make the changes
 
-Remember to verify the compile and execution of the code
+Remember to verify the compile and execution of the code.
+
+For frontend changes, run the shared checks from `src/frontend` before opening a pull request:
+
+```sh
+npm ci
+npm run fix
+npm run check
+```
+
+If you prefer to stay at the repository root, use:
+
+```sh
+npm run frontend:fix
+npm run frontend:check
+```
+
+If you only need formatting without the ESLint auto-fix pass, run:
+
+```sh
+npm run format
+```
 
 ### AUTHORS
 
