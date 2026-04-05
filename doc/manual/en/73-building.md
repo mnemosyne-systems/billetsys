@@ -66,3 +66,6 @@ The targets are
 * `run` - Run in development mode
 * `test` - Run test cases
 * `docs` - Generate documentation
+* `db-drop` - Drop the database
+* `db-create` - Create the database
+* `full` - Run everything
