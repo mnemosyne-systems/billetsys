@@ -31,6 +31,7 @@ import {
 import { resolvePostRedirectPath } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
 import type {
+  AttachmentDetail,
   AttachmentReference,
   MessageReference,
   NamedEntity,
@@ -44,6 +45,133 @@ interface SupportTicketDetailPageProps extends SessionPageProps {
   backPath?: string;
   titleFallback?: string;
   secondaryUsersLabel?: string;
+  enableAttachmentPreviews?: boolean;
+}
+
+function attachmentPreviewKind(
+  attachment: AttachmentReference,
+): "image" | "text" | "markdown" | "pdf" | null {
+  const mimeType = (attachment.mimeType || "").toLowerCase();
+  const name = (attachment.name || "").toLowerCase();
+
+  if (mimeType.startsWith("image/")) {
+    return "image";
+  }
+  if (mimeType === "application/pdf" || name.endsWith(".pdf")) {
+    return "pdf";
+  }
+  if (
+    mimeType === "text/markdown" ||
+    mimeType === "text/x-markdown" ||
+    name.endsWith(".md") ||
+    name.endsWith(".markdown") ||
+    name.endsWith(".mdown") ||
+    name.endsWith(".mkdn")
+  ) {
+    return "markdown";
+  }
+  if (
+    mimeType === "text/plain" ||
+    mimeType.startsWith("text/plain;") ||
+    name.endsWith(".txt") ||
+    name.endsWith(".log")
+  ) {
+    return "text";
+  }
+  return null;
+}
+
+function attachmentPreviewText(detail: AttachmentDetail | null): string {
+  if (!detail) {
+    return "";
+  }
+  return (
+    (detail.lines || []).map((line) => line.content).join("\n") ||
+    detail.messageBody ||
+    ""
+  );
+}
+
+function AttachmentPreview({
+  attachment,
+}: {
+  attachment: AttachmentReference;
+}) {
+  const [previewRequested, setPreviewRequested] = useState(false);
+  const previewKind = attachmentPreviewKind(attachment);
+  const previewState = useJson<AttachmentDetail>(
+    previewRequested && previewKind && attachment.id
+      ? `/api/attachments/${attachment.id}`
+      : null,
+  );
+  const preview = previewState.data;
+
+  if (!previewKind) {
+    return (
+      <div className="attachment-summary">
+        <span className="attachment-name">
+          <a href={attachment.downloadPath} target="_blank" rel="noreferrer">
+            {attachment.name}
+          </a>
+        </span>
+        <span className="attachment-meta">
+          {attachment.mimeType} - {attachment.sizeLabel}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="attachment-preview-hover"
+      onMouseEnter={() => setPreviewRequested(true)}
+      onFocusCapture={() => setPreviewRequested(true)}
+    >
+      <div className="attachment-summary">
+        <span className="attachment-name">
+          <a href={attachment.downloadPath} target="_blank" rel="noreferrer">
+            {attachment.name}
+          </a>
+        </span>
+        <span className="attachment-meta">
+          {attachment.mimeType} - {attachment.sizeLabel}
+        </span>
+      </div>
+
+      <div className="attachment-preview-popover">
+        {previewState.loading ? (
+          <div className="attachment-preview-window attachment-preview-status">
+            Loading preview...
+          </div>
+        ) : previewState.error ||
+          previewState.unauthorized ||
+          previewState.forbidden ||
+          !preview ? (
+          <div className="attachment-preview-window attachment-preview-status">
+            Preview unavailable.
+          </div>
+        ) : previewKind === "image" && preview.downloadPath ? (
+          <div className="attachment-preview-window attachment-preview-image">
+            <img src={preview.downloadPath} alt={attachment.name} />
+          </div>
+        ) : previewKind === "pdf" && preview.downloadPath ? (
+          <iframe
+            className="attachment-preview-window attachment-preview-pdf"
+            src={preview.downloadPath}
+            title={`Preview of ${attachment.name || "attachment"}`}
+          />
+        ) : previewKind === "markdown" ? (
+          <div className="attachment-preview-window attachment-preview-markdown markdown-output">
+            <MarkdownContent>{attachmentPreviewText(preview)}</MarkdownContent>
+          </div>
+        ) : (
+          <pre className="attachment-preview-window attachment-preview-text">
+            {attachmentPreviewText(preview)}
+          </pre>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function SupportTicketDetailPage({
@@ -51,6 +179,7 @@ export default function SupportTicketDetailPage({
   apiBase = "/api/support/tickets",
   titleFallback = "Support ticket",
   secondaryUsersLabel = "TAM",
+  enableAttachmentPreviews = false,
 }: SupportTicketDetailPageProps) {
   const { id } = useParams();
   const location = useLocation();
@@ -568,18 +697,25 @@ export default function SupportTicketDetailPage({
                                 key={attachment.id}
                                 className="attachment-footer"
                               >
-                                <span className="attachment-name">
-                                  <a
-                                    href={attachment.downloadPath}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                  >
-                                    {attachment.name}
-                                  </a>
-                                </span>
-                                <span className="attachment-meta">
-                                  {attachment.mimeType} - {attachment.sizeLabel}
-                                </span>
+                                {enableAttachmentPreviews ? (
+                                  <AttachmentPreview attachment={attachment} />
+                                ) : (
+                                  <div className="attachment-summary">
+                                    <span className="attachment-name">
+                                      <a
+                                        href={attachment.downloadPath}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                      >
+                                        {attachment.name}
+                                      </a>
+                                    </span>
+                                    <span className="attachment-meta">
+                                      {attachment.mimeType} -{" "}
+                                      {attachment.sizeLabel}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             ),
                           )}

@@ -1545,21 +1545,110 @@ pre code {
   border-top: 1px solid var(--table-border);
 }
 
+.attachment-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .attachment-meta {
   font-size: 12px;
   color: #5b5b5b;
   margin-left: auto;
   text-align: right;
+  white-space: nowrap;
 }
 
 .attachment-name {
+  min-width: 0;
+  flex: 1 1 auto;
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .attachment-name a {
   color: #b00020;
   text-decoration: none;
   font-weight: 600;
+}
+
+.attachment-preview-hover {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.attachment-preview-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease;
+}
+
+.attachment-preview-hover:hover .attachment-preview-popover,
+.attachment-preview-hover:focus-within .attachment-preview-popover {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.attachment-preview-window {
+  width: min(320px, calc(100vw - 4rem));
+  height: 148px;
+  overflow: auto;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: #fff;
+  box-sizing: border-box;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+.attachment-preview-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  color: var(--muted-text);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.attachment-preview-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+}
+
+.attachment-preview-image img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.attachment-preview-text,
+.attachment-preview-markdown {
+  margin: 0;
+  padding: 0.75rem;
+  white-space: pre-wrap;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.attachment-preview-pdf {
+  display: block;
+  border: 1px solid var(--card-border);
 }
 
 .markdown-output :first-child {

@@ -68,7 +68,12 @@ export function getTicketRoutes(sessionState: SessionState): AppRoute[] {
     },
     {
       path: `${PATHS.supportTickets}/:id`,
-      element: <SupportTicketDetailPage sessionState={sessionState} />,
+      element: (
+        <SupportTicketDetailPage
+          sessionState={sessionState}
+          enableAttachmentPreviews
+        />
+      ),
       requiresAuth: true,
       allowedRoles: ["support"],
     },
