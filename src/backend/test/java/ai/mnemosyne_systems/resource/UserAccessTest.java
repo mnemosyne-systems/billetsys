@@ -187,6 +187,24 @@ class UserAccessTest extends AccessTestSupport {
     }
 
     @Test
+    void userTicketSearchMatchesVisibleMessagesOnly() {
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        Long companyId = ensureCompany("User Search Co");
+        ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai");
+        Ticket visibleTicket = ensureTicket(companyId);
+        String visibleBody = "user-visible-search-" + System.nanoTime();
+        ensureMessageWithBody(visibleTicket, visibleBody);
+        String cookie = login("user", "user");
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("q", visibleBody).get("/api/user/tickets")
+                .then().statusCode(200).body("searchTerm", Matchers.equalTo(visibleBody))
+                .body("items.name", Matchers.hasItem(visibleTicket.name));
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("q", "user-search-no-match")
+                .get("/api/user/tickets").then().statusCode(200).body("items.size()", Matchers.equalTo(0));
+    }
+
+    @Test
     void reactLoginRedirectsUsersToUserTickets() {
         ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
 

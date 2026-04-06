@@ -61,6 +61,18 @@ export function getTicketRoutes(sessionState: SessionState): AppRoute[] {
       allowedRoles: ["support"],
     },
     {
+      path: PATHS.supportTicketsSearch,
+      element: (
+        <SupportTicketsPage
+          sessionState={sessionState}
+          view="assigned"
+          title="Search"
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["support"],
+    },
+    {
       path: PATHS.supportTicketsNew,
       element: <SupportTicketCreatePage sessionState={sessionState} />,
       requiresAuth: true,
@@ -112,6 +124,20 @@ export function getTicketRoutes(sessionState: SessionState): AppRoute[] {
           view="closed"
           apiBase="/api/user/tickets"
           createFallbackPath={PATHS.userTicketsNew}
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["user", "tam"],
+    },
+    {
+      path: PATHS.userTicketsSearch,
+      element: (
+        <SupportTicketsPage
+          sessionState={sessionState}
+          view="assigned"
+          apiBase="/api/user/tickets"
+          createFallbackPath={PATHS.userTicketsNew}
+          title="Search"
         />
       ),
       requiresAuth: true,
@@ -184,6 +210,20 @@ export function getTicketRoutes(sessionState: SessionState): AppRoute[] {
           view="closed"
           apiBase="/api/superuser/tickets"
           createFallbackPath={PATHS.superuserTicketsNew}
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["superuser"],
+    },
+    {
+      path: PATHS.superuserTicketsSearch,
+      element: (
+        <SupportTicketsPage
+          sessionState={sessionState}
+          view="assigned"
+          apiBase="/api/superuser/tickets"
+          createFallbackPath={PATHS.superuserTicketsNew}
+          title="Search"
         />
       ),
       requiresAuth: true,

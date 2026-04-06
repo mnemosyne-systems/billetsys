@@ -38,7 +38,7 @@ public class SuperuserTicketApiResource {
     @GET
     @Transactional
     public SupportTicketApiResource.SupportTicketListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("view") @DefaultValue("assigned") String view) {
+            @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q) {
         User user = requireSuperuser(auth);
         SuperuserResource.SupportTicketData data = superuserResource.buildTicketDataForUser(user);
         String normalizedView = normalizeView(view);
@@ -47,6 +47,11 @@ public class SuperuserTicketApiResource {
             case "closed" -> data.closedTickets;
             default -> data.assignedTickets;
         };
+        String searchTerm = TicketSearchSupport.normalizeSearchTerm(q);
+        if (searchTerm != null) {
+            tickets = TicketSearchSupport.combineTickets(data.assignedTickets, data.openTickets, data.closedTickets);
+        }
+        tickets = TicketSearchSupport.filterTicketsBySearch(tickets, searchTerm);
         String title = switch (normalizedView) {
             case "open" -> "Open tickets";
             case "closed" -> "Closed tickets";
@@ -54,8 +59,23 @@ public class SuperuserTicketApiResource {
         };
         return new SupportTicketApiResource.SupportTicketListResponse(normalizedView, title,
                 data.assignedTickets == null ? 0 : data.assignedTickets.size(),
-                data.openTickets == null ? 0 : data.openTickets.size(), "/superuser/tickets/new",
+                data.openTickets == null ? 0 : data.openTickets.size(), "/superuser/tickets/new", searchTerm,
                 tickets.stream().map(ticket -> toSummary(ticket, data)).toList());
+    }
+
+    @GET
+    @Path("/suggest")
+    @Transactional
+    public SupportTicketApiResource.TicketSuggestionResponse suggest(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q) {
+        User user = requireSuperuser(auth);
+        SuperuserResource.SupportTicketData data = superuserResource.buildTicketDataForUser(user);
+        List<Ticket> tickets = TicketSearchSupport.combineTickets(data.assignedTickets, data.openTickets,
+                data.closedTickets);
+        return new SupportTicketApiResource.TicketSuggestionResponse(TicketSearchSupport.suggestTickets(tickets, q, 8)
+                .stream().map(ticket -> new SupportTicketApiResource.TicketSuggestion(ticket.id, ticket.name,
+                        ticket.displayTitle(), "/superuser/tickets/" + ticket.id))
+                .toList());
     }
 
     @GET

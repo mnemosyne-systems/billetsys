@@ -14,6 +14,7 @@ import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
 import type { CollectionResponse, TicketListItem } from "../types/domain";
 import { Button } from "../components/ui/button";
+import { useLocation } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -27,30 +28,44 @@ interface SupportTicketsPageProps extends SessionPageProps {
   view: "assigned" | "open" | "closed";
   apiBase?: string;
   createFallbackPath?: string;
+  title?: string;
 }
 
 interface TicketListResponse extends CollectionResponse<TicketListItem> {
   view?: "assigned" | "open" | "closed";
+  searchTerm?: string;
 }
 
 export default function SupportTicketsPage({
+  title,
   view,
   apiBase = "/api/support/tickets",
   createFallbackPath = "/support/tickets/new",
 }: SupportTicketsPageProps) {
-  const query = view && view !== "assigned" ? toQueryString({ view }) : "";
+  const location = useLocation();
+  const locationSearchTerm =
+    new URLSearchParams(location.search).get("q") || "";
+  const query = toQueryString({
+    view: view !== "assigned" ? view : undefined,
+    q: locationSearchTerm || undefined,
+  });
   const ticketsState = useJson<TicketListResponse>(`${apiBase}${query}`);
   const currentView = ticketsState.data?.view || view || "assigned";
+  const activeSearch = ticketsState.data?.searchTerm || locationSearchTerm;
   const showLevelColumn = apiBase !== "/api/user/tickets";
   const showCreateButton = !(
     apiBase === "/api/user/tickets" && currentView === "closed"
   );
   const pageTitle =
-    currentView === "open"
+    title ||
+    (currentView === "open"
       ? "Open tickets"
       : currentView === "closed"
         ? "Closed tickets"
-        : "Active tickets";
+        : "Active tickets");
+  const emptyMessage = activeSearch
+    ? `No tickets matched "${activeSearch}".`
+    : "No tickets";
 
   return (
     <div className="w-full mx-auto mt-2">
@@ -70,7 +85,7 @@ export default function SupportTicketsPage({
       />
 
       <div className="w-full">
-        <DataState state={ticketsState} emptyMessage="No tickets">
+        <DataState state={ticketsState} emptyMessage={emptyMessage}>
           <div className="max-w-full overflow-x-auto">
             <Table className="text-base">
               <TableHeader>

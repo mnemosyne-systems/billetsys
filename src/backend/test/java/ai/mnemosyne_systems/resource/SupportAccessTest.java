@@ -367,6 +367,27 @@ class SupportAccessTest extends AccessTestSupport {
     }
 
     @Test
+    void supportTicketSearchMatchesTicketNumberAndMessages() {
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
+        Long companyId = ensureCompany("Support Search Co");
+        Ticket ticket = ensureTicket(companyId);
+        String messageBody = "support-search-message-" + System.nanoTime();
+        ensureMessageWithBody(ticket, messageBody);
+        String cookie = login("support1", "support1");
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("q", ticket.name)
+                .get("/api/support/tickets").then().statusCode(200).body("searchTerm", Matchers.equalTo(ticket.name))
+                .body("items.name", Matchers.hasItem(ticket.name));
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("q", messageBody)
+                .get("/api/support/tickets").then().statusCode(200).body("searchTerm", Matchers.equalTo(messageBody))
+                .body("items.name", Matchers.hasItem(ticket.name));
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("q", "no-support-ticket-match")
+                .get("/api/support/tickets").then().statusCode(200).body("items.size()", Matchers.equalTo(0));
+    }
+
+    @Test
     void supportTicketDetailUpdatesFieldsAndAddsRepliesWithAndWithoutAttachments() {
         ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
         ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");

@@ -62,7 +62,7 @@ export default function AppBreadcrumbs() {
     rolePrefix === "support" &&
     segments[0] === "tickets" &&
     segments.length === 2 &&
-    !["open", "closed", "assigned", "new"].includes(segments[1])
+    !["open", "closed", "assigned", "new", "search"].includes(segments[1])
   ) {
     return null;
   }
@@ -89,7 +89,10 @@ export default function AppBreadcrumbs() {
       wrapperClass = "w-full max-w-5xl mx-auto px-1";
     }
     // SupportTicketsPage lists
-    else if (!subRoute || ["open", "closed", "assigned"].includes(subRoute)) {
+    else if (
+      !subRoute ||
+      ["open", "closed", "assigned", "search"].includes(subRoute)
+    ) {
       wrapperClass = "w-full px-1";
     }
     // SupportTicketDetailPage

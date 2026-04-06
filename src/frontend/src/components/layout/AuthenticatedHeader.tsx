@@ -7,9 +7,10 @@
  */
 
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import useJson from "../../hooks/useJson";
 import useText from "../../hooks/useText";
+import { toQueryString } from "../../utils/formatting";
 import { SmartLink, normalizeClientPath } from "../../utils/routing";
 import {
   ticketCountsApiPath,
@@ -27,10 +28,32 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
+import {
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "../ui/command";
+import { SearchIcon, XIcon } from "lucide-react";
 
 interface TicketCounts {
   assignedCount?: number;
   openCount?: number;
+}
+
+interface TicketSuggestion {
+  id?: number;
+  name?: string;
+  title?: string;
+  detailPath?: string;
+}
+
+interface TicketSuggestionResponse {
+  items?: TicketSuggestion[];
 }
 
 interface AuthenticatedHeaderProps {
@@ -42,6 +65,7 @@ export default function AuthenticatedHeader({
 }: AuthenticatedHeaderProps) {
   const [now, setNow] = useState(() => new Date());
   const location = useLocation();
+  const navigate = useNavigate();
   const role = session?.role;
   const showTicketMenu =
     role === "support" ||
@@ -78,6 +102,96 @@ export default function AuthenticatedHeader({
       .toLowerCase() === "true";
   const isTicketRoute = isRoleTicketRoute(role, location.pathname);
   const rssHref = rssPath(role);
+  const ticketSearchContext = resolveTicketSearchContext(
+    role,
+    location.pathname,
+  );
+  const ticketSearchApiBase = ticketSearchContext?.apiBase;
+  const ticketSearchPath = ticketSearchContext?.searchPath;
+  const ticketSearchBasePath = ticketSearchContext?.basePath;
+  const locationSearchTerm =
+    new URLSearchParams(location.search).get("q") || "";
+  const [ticketSearchOpen, setTicketSearchOpen] = useState(false);
+  const [ticketSearchValue, setTicketSearchValue] = useState("");
+  const ticketSuggestionState = useJson<TicketSuggestionResponse>(
+    ticketSearchOpen &&
+      ticketSearchApiBase &&
+      ticketSearchValue.trim().length >= 2
+      ? `${ticketSearchApiBase}/suggest${toQueryString({ q: ticketSearchValue.trim() })}`
+      : null,
+  );
+  const ticketSuggestions = ticketSuggestionState.data?.items || [];
+  const normalizedTicketSearch = ticketSearchValue.trim();
+
+  function openTicketSearch() {
+    setTicketSearchValue("");
+    setTicketSearchOpen(true);
+  }
+
+  function closeTicketSearch() {
+    setTicketSearchOpen(false);
+    setTicketSearchValue("");
+  }
+
+  function submitTicketSearch(searchValue: string) {
+    if (!ticketSearchPath) {
+      return;
+    }
+    const nextParams = new URLSearchParams(location.search);
+    const normalizedSearch = searchValue.trim();
+    if (normalizedSearch) {
+      nextParams.set("q", normalizedSearch);
+    } else {
+      nextParams.delete("q");
+    }
+    closeTicketSearch();
+    navigate({
+      pathname: ticketSearchPath,
+      search: nextParams.toString() ? `?${nextParams.toString()}` : "",
+    });
+  }
+
+  function applyTicketSuggestion(suggestion: TicketSuggestion) {
+    submitTicketSearch((suggestion.name || "").trim());
+  }
+
+  function clearTicketSearch() {
+    if (!ticketSearchBasePath) {
+      return;
+    }
+    const nextParams = new URLSearchParams(location.search);
+    nextParams.delete("q");
+    closeTicketSearch();
+    navigate({
+      pathname: ticketSearchBasePath,
+      search: nextParams.toString() ? `?${nextParams.toString()}` : "",
+    });
+  }
+
+  function handleTicketSearchKeyDown(
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeTicketSearch();
+    }
+  }
+
+  useEffect(() => {
+    if (!ticketSearchApiBase) {
+      return undefined;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        openTicketSearch();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [ticketSearchApiBase]);
 
   return (
     <header className="bg-header-bg text-header-text px-5 py-3 flex items-center justify-between gap-4 flex-wrap">
@@ -176,6 +290,121 @@ export default function AuthenticatedHeader({
       <div className="flex items-center gap-3 justify-end">
         {session?.authenticated && (
           <>
+            {ticketSearchContext && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={openTicketSearch}
+                  className="hidden h-10 min-w-72 items-center justify-start rounded-xl border-white/20 bg-white/10 px-3 text-left text-sm text-white/80 shadow-none hover:bg-white/15 hover:text-white md:flex"
+                >
+                  <SearchIcon className="mr-2 size-4 shrink-0" />
+                  <span className="truncate">Search tickets...</span>
+                  <kbd className="ml-auto rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-white/70">
+                    Ctrl K
+                  </kbd>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={openTicketSearch}
+                  className="text-header-text hover:bg-white/20 hover:text-white md:hidden"
+                  aria-label="Search tickets"
+                >
+                  <SearchIcon className="size-5" />
+                </Button>
+                <CommandDialog
+                  open={ticketSearchOpen}
+                  onOpenChange={(open) => {
+                    if (open) {
+                      openTicketSearch();
+                      return;
+                    }
+                    closeTicketSearch();
+                  }}
+                  title="Search tickets"
+                  description="Search tickets by identifier or message content."
+                  className="max-w-2xl border-white/10 bg-popover/95 p-0 shadow-2xl backdrop-blur"
+                >
+                  <Command shouldFilter={false} className="bg-transparent">
+                    <CommandInput
+                      value={ticketSearchValue}
+                      onValueChange={setTicketSearchValue}
+                      onKeyDown={handleTicketSearchKeyDown}
+                      placeholder="Search ticket number or message text..."
+                    />
+                    <CommandList className="max-h-[22rem]">
+                      <CommandEmpty>
+                        {ticketSearchValue.trim()
+                          ? "No matching tickets."
+                          : "Type at least 2 characters to search tickets."}
+                      </CommandEmpty>
+                      {normalizedTicketSearch && (
+                        <CommandGroup heading="Search">
+                          <CommandItem
+                            value={`search ${normalizedTicketSearch}`}
+                            className="data-selected:bg-neutral-200 data-selected:text-neutral-950"
+                            onSelect={() =>
+                              submitTicketSearch(normalizedTicketSearch)
+                            }
+                          >
+                            <SearchIcon className="size-4 opacity-60" />
+                            <span className="truncate">
+                              Search all tickets for {normalizedTicketSearch}
+                            </span>
+                          </CommandItem>
+                        </CommandGroup>
+                      )}
+                      {locationSearchTerm && (
+                        <>
+                          <CommandSeparator />
+                          <CommandGroup heading="Current filter">
+                            <CommandItem
+                              value={`clear ${locationSearchTerm}`}
+                              className="data-selected:bg-neutral-200 data-selected:text-neutral-950"
+                              onSelect={clearTicketSearch}
+                            >
+                              <XIcon className="size-4 opacity-60" />
+                              <div className="flex min-w-0 flex-col">
+                                <span className="truncate font-medium">
+                                  Clear current search
+                                </span>
+                                <span className="truncate text-xs text-muted-foreground">
+                                  Showing results for {locationSearchTerm}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          </CommandGroup>
+                        </>
+                      )}
+                      {ticketSuggestions.length > 0 && (
+                        <CommandGroup heading="Suggestions">
+                          {ticketSuggestions.map((suggestion, index) => (
+                            <CommandItem
+                              key={`${suggestion.id}-${suggestion.name}`}
+                              value={`${index} ${suggestion.name} ${suggestion.title || ""}`}
+                              className="data-selected:bg-neutral-200 data-selected:text-neutral-950"
+                              onSelect={() => applyTicketSuggestion(suggestion)}
+                            >
+                              <SearchIcon className="size-4 opacity-60" />
+                              <div className="flex min-w-0 flex-col">
+                                <span className="truncate font-medium">
+                                  {suggestion.name}
+                                </span>
+                                <span className="truncate text-xs text-muted-foreground">
+                                  {suggestion.title || "Ticket"}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                </CommandDialog>
+              </>
+            )}
             {rssHref && (
               <Button
                 variant="ghost"
@@ -253,4 +482,35 @@ export default function AuthenticatedHeader({
       </div>
     </header>
   );
+}
+
+function resolveTicketSearchContext(role: Session["role"], pathname: string) {
+  if (role === "support") {
+    if (pathname.startsWith("/support/tickets")) {
+      return {
+        apiBase: "/api/support/tickets",
+        basePath: "/support/tickets",
+        searchPath: "/support/tickets/search",
+      };
+    }
+  }
+  if (role === "superuser") {
+    if (pathname.startsWith("/superuser/tickets")) {
+      return {
+        apiBase: "/api/superuser/tickets",
+        basePath: "/superuser/tickets",
+        searchPath: "/superuser/tickets/search",
+      };
+    }
+  }
+  if (role === "tam" || role === "user") {
+    if (pathname.startsWith("/user/tickets")) {
+      return {
+        apiBase: "/api/user/tickets",
+        basePath: "/user/tickets",
+        searchPath: "/user/tickets/search",
+      };
+    }
+  }
+  return null;
 }

@@ -35,7 +35,7 @@ public class SupportTicketApiResource {
     @GET
     @Transactional
     public SupportTicketListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("view") @DefaultValue("assigned") String view) {
+            @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q) {
         User user = requireSupport(auth);
         SupportTicketViewSupport.SupportTicketData data = SupportTicketViewSupport.buildTicketData(user);
         SupportTicketViewSupport.SupportTicketCounts counts = SupportTicketViewSupport.loadTicketCounts(user);
@@ -45,13 +45,34 @@ public class SupportTicketApiResource {
             case "closed" -> data.closedTickets();
             default -> data.assignedTickets();
         };
+        String searchTerm = TicketSearchSupport.normalizeSearchTerm(q);
+        if (searchTerm != null) {
+            tickets = TicketSearchSupport.combineTickets(data.assignedTickets(), data.openTickets(),
+                    data.closedTickets());
+        }
+        tickets = TicketSearchSupport.filterTicketsBySearch(tickets, searchTerm);
         String title = switch (normalizedView) {
             case "open" -> "Open tickets";
             case "closed" -> "Closed tickets";
             default -> "Tickets";
         };
         return new SupportTicketListResponse(normalizedView, title, counts.assignedCount(), counts.openCount(),
-                "/support/tickets/new", tickets.stream().map(ticket -> toSummary(ticket, data)).toList());
+                "/support/tickets/new", searchTerm, tickets.stream().map(ticket -> toSummary(ticket, data)).toList());
+    }
+
+    @GET
+    @Path("/suggest")
+    @Transactional
+    public TicketSuggestionResponse suggest(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q) {
+        User user = requireSupport(auth);
+        SupportTicketViewSupport.SupportTicketData data = SupportTicketViewSupport.buildTicketData(user);
+        String normalizedView = normalizeView(view);
+        List<Ticket> tickets = TicketSearchSupport.combineTickets(data.assignedTickets(), data.openTickets(),
+                data.closedTickets());
+        return new TicketSuggestionResponse(
+                TicketSearchSupport.suggestTickets(tickets, q, 8).stream().map(ticket -> new TicketSuggestion(ticket.id,
+                        ticket.name, ticket.displayTitle(), "/support/tickets/" + ticket.id)).toList());
     }
 
     @GET
@@ -282,7 +303,13 @@ public class SupportTicketApiResource {
     }
 
     public record SupportTicketListResponse(String view, String title, int assignedCount, int openCount,
-            String createPath, List<SupportTicketSummary> items) {
+            String createPath, String searchTerm, List<SupportTicketSummary> items) {
+    }
+
+    public record TicketSuggestionResponse(List<TicketSuggestion> items) {
+    }
+
+    public record TicketSuggestion(Long id, String name, String title, String detailPath) {
     }
 
     public record SupportTicketSummary(Long id, String name, String title, String status, String messageDateLabel,

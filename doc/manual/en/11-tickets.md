@@ -62,6 +62,23 @@ Billetsys provides ticket lists that help each role focus on the cases relevant 
 
 This makes the ticket area useful both for individual follow-up and for operational queue management.
 
+## Ticket search
+
+Ticket lists also include a search control in the main application header. The search is opened from the search icon shown before the RSS feed icon.
+
+Once the search field is open, users can type a search term and press `Enter` to filter the current ticket queue.
+
+When the entered text matches ticket identifiers or ticket titles, the search also offers autocomplete suggestions. For example, typing `A-` can suggest a ticket such as `A-00001`.
+
+The search currently matches:
+
+* Ticket identifier
+* Ticket message content
+
+This makes it possible to find a case either by its ticket number or by text that appeared in the conversation history.
+
+Search is queue-aware. For example, when a user searches from the open tickets view, the result only includes matches from that open ticket list. The same behavior applies to assigned and closed ticket queues.
+
 ## Detail view
 
 The ticket detail page is where the full case comes together. It combines the current ticket data with the full conversation history, attached files, assignments, and related references.

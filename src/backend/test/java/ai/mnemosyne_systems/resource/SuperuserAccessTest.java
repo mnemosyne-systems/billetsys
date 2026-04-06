@@ -170,6 +170,24 @@ class SuperuserAccessTest extends AccessTestSupport {
     }
 
     @Test
+    void superuserTicketSearchMatchesVisibleMessagesOnly() {
+        ensureUser("superuser1", "superuser1@mnemosyne-systems.ai", User.TYPE_SUPERUSER, "superuser1");
+        Long companyId = ensureCompany("Superuser Search Co");
+        ensureCompanyUsers(companyId, "superuser1@mnemosyne-systems.ai");
+        Ticket visibleTicket = ensureTicket(companyId);
+        String visibleBody = "superuser-visible-search-" + System.nanoTime();
+        ensureMessageWithBody(visibleTicket, visibleBody);
+        String cookie = login("superuser1", "superuser1");
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("q", visibleBody)
+                .get("/api/superuser/tickets").then().statusCode(200).body("searchTerm", Matchers.equalTo(visibleBody))
+                .body("items.name", Matchers.hasItem(visibleTicket.name));
+
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("q", "superuser-search-no-match")
+                .get("/api/superuser/tickets").then().statusCode(200).body("items.size()", Matchers.equalTo(0));
+    }
+
+    @Test
     void reactAppSessionReturnsSuperuserTicketLink() {
         ensureUser("superuser1", "superuser1@mnemosyne-systems.ai", User.TYPE_SUPERUSER, "superuser1");
         String cookie = login("superuser1", "superuser1");
