@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -22,7 +22,7 @@ import type { AppRoute, SessionPageProps } from "./types/app";
 
 function RouteFallback() {
   return (
-    <section className="panel">
+    <section className="w-full max-w-5xl mx-auto mt-12 text-center space-y-4">
       <LoadingSpinner label="Loading page..." />
     </section>
   );

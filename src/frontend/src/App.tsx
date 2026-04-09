@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -8,7 +8,8 @@
 
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { ToastProvider } from "./components/common/ToastProvider";
+import { Toaster } from "./components/ui/sonner";
+import AppBreadcrumbs from "./components/layout/AppBreadcrumbs";
 import AppFooter from "./components/layout/AppFooter";
 import AuthenticatedHeader from "./components/layout/AuthenticatedHeader";
 import LoginHeader from "./components/layout/LoginHeader";
@@ -23,25 +24,40 @@ function App() {
   const isLoginRoute =
     location.pathname === "/login" && !session?.authenticated;
   const brandName = session?.installationCompanyName || "billetsys";
+  const showBreadcrumbs = location.pathname !== "/" && !isLoginRoute;
 
   useEffect(() => {
     document.title = `${brandName}: billetsys`;
   }, [brandName]);
 
   return (
-    <ToastProvider>
-      <div className={isLoginRoute ? "login-shell" : "app-shell"}>
+    <>
+      <div
+        className={
+          isLoginRoute
+            ? "min-h-screen flex flex-col bg-header-bg text-header-text"
+            : "min-h-screen flex flex-col bg-background"
+        }
+      >
         {isLoginRoute ? (
           <LoginHeader brandName={brandName} />
         ) : (
           <AuthenticatedHeader session={session} />
         )}
-        <main className={isLoginRoute ? "login-main" : "app-main"}>
+        <main
+          className={
+            isLoginRoute
+              ? "flex-1 flex items-center justify-center p-6 bg-body-bg text-body-text"
+              : "flex-1 p-5"
+          }
+        >
+          {showBreadcrumbs && <AppBreadcrumbs />}
           <AppRoutes sessionState={sessionState} />
         </main>
-        <AppFooter className={isLoginRoute ? "login-footer" : "app-footer"} />
+        <AppFooter />
       </div>
-    </ToastProvider>
+      <Toaster position="bottom-right" richColors />
+    </>
   );
 }
 

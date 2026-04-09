@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -9,20 +9,27 @@
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  buildToastNavigationState,
-  useToast,
-} from "../components/common/ToastProvider";
+import { toast } from "sonner";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
 import DataState from "../components/common/DataState";
-import MarkdownEditor from "../components/markdown/MarkdownEditor";
+import LexicalEditor from "../components/editor/LexicalEditor";
 import AttachmentPicker from "../components/common/AttachmentPicker";
 import { postMultipart } from "../utils/api";
 import { resolvePostRedirectPath } from "../utils/routing";
 import { DeleteArticleButton } from "./ArticleDetailPage";
 import type { FormMode, SessionPageProps } from "../types/app";
 import type { ArticleRecord } from "../types/domain";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Field, FieldLabel } from "../components/ui/field";
+import { Input } from "../components/ui/input";
 
 interface ArticleFormState {
   title: string;
@@ -39,7 +46,7 @@ export default function ArticleFormPage({
   mode,
 }: ArticleFormPageProps) {
   const navigate = useNavigate();
-  const { showToast } = useToast();
+
   const { id } = useParams();
   const articleState = useJson<ArticleRecord>(
     mode === "edit" && id ? `/api/articles/${id}` : "/api/articles/bootstrap",
@@ -89,19 +96,16 @@ export default function ArticleFormPage({
           ...files.map((file): ["attachments", File] => ["attachments", file]),
         ],
       );
+      toast.success(
+        isEdit
+          ? "Article updated successfully."
+          : "Article created successfully.",
+      );
       navigate(
         await resolvePostRedirectPath(
           response,
           isEdit && id ? `/articles/${id}` : "/articles",
         ),
-        {
-          state: buildToastNavigationState({
-            variant: "success",
-            message: isEdit
-              ? "Article updated successfully."
-              : "Article created successfully.",
-          }),
-        },
       );
     } catch (error: unknown) {
       setSaveState({
@@ -109,11 +113,9 @@ export default function ArticleFormPage({
         error:
           error instanceof Error ? error.message : "Unable to save article.",
       });
-      showToast({
-        variant: "error",
-        message:
-          error instanceof Error ? error.message : "Unable to save article.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "Unable to save article.",
+      );
       return;
     } finally {
       submissionGuard.exit();
@@ -122,70 +124,79 @@ export default function ArticleFormPage({
   };
 
   return (
-    <section className="panel">
+    <section className="w-full max-w-5xl mx-auto mt-4">
       <DataState
         state={articleState}
         emptyMessage="Article unavailable."
         signInHref={sessionState.data?.homePath || "/login"}
       >
         {formState && article && article.canEdit && (
-          <div className="form-card ticket-detail-card">
-            {isEdit && <h1>{formState.title || "Edit article"}</h1>}
-            <form className="owner-form" onSubmit={submit}>
-              <div className="owner-form-grid ticket-detail-grid">
-                <label>
-                  Title
-                  <input
+          <Card>
+            {isEdit && (
+              <CardHeader className="pb-6">
+                <CardTitle className="text-3xl font-bold tracking-tight">
+                  {formState.title || "Edit article"}
+                </CardTitle>
+              </CardHeader>
+            )}
+            <form onSubmit={submit}>
+              <CardContent
+                className={`grid gap-6 md:grid-cols-2 pb-6 ${!isEdit ? "pt-6" : ""}`}
+              >
+                <Field>
+                  <FieldLabel>Title</FieldLabel>
+                  <Input
                     value={formState.title}
                     onChange={(event) =>
                       updateFormState("title", event.target.value)
                     }
                     required
                   />
-                </label>
-                <label>
-                  Tags
-                  <input
+                </Field>
+                <Field>
+                  <FieldLabel>Tags</FieldLabel>
+                  <Input
                     value={formState.tags}
                     onChange={(event) =>
                       updateFormState("tags", event.target.value)
                     }
                   />
-                </label>
-                <label className="form-span-2">
-                  Body
-                  <MarkdownEditor
+                </Field>
+                <Field className="md:col-span-2">
+                  <FieldLabel>Body</FieldLabel>
+                  <LexicalEditor
                     value={formState.body}
                     onChange={(value) => updateFormState("body", value)}
                     inputRef={bodyInputRef}
                     rows={12}
                     required
                   />
-                </label>
-              </div>
+                </Field>
 
-              <AttachmentPicker
-                files={files}
-                onFilesChange={setFiles}
-                existingAttachments={article.attachments || []}
-              />
+                <div className="md:col-span-2 mt-4">
+                  <AttachmentPicker
+                    files={files}
+                    onFilesChange={setFiles}
+                    existingAttachments={article.attachments || []}
+                  />
+                </div>
+              </CardContent>
 
-              <div
-                className={`button-row${isEdit ? " button-row-split" : " button-row-end"}`}
-              >
-                {isEdit && article.id && article.canDelete && (
-                  <DeleteArticleButton articleId={article.id} label="Delete" />
-                )}
-                <button
-                  type="submit"
-                  className="primary-button"
-                  disabled={saveState.saving}
-                >
+              <CardFooter className="flex items-center justify-between pt-6 border-t mt-4 bg-muted/20">
+                <div>
+                  {isEdit && article.id && article.canDelete && (
+                    <DeleteArticleButton
+                      articleId={article.id}
+                      label="Delete"
+                    />
+                  )}
+                </div>
+                <Button type="submit" disabled={saveState.saving}>
                   {saveState.saving ? "Saving..." : isEdit ? "Save" : "Create"}
-                </button>
-              </div>
+                </Button>
+              </CardFooter>
             </form>
-          </div>
+          </Card>
         )}
       </DataState>
     </section>

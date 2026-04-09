@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -9,6 +9,9 @@
 import type { ReactNode } from "react";
 import { formatPhone, profileInitial } from "../../utils/formatting";
 import { SmartLink } from "../../utils/routing";
+import { Card, CardContent } from "../ui/card";
+import { Field, FieldLabel } from "../ui/field";
+import { Input } from "../ui/input";
 
 interface UserLogoPreviewProps {
   logoBase64?: string;
@@ -48,15 +51,18 @@ export function UserLogoPreview({
   const initial = profileInitial(fullName, username, email);
 
   return (
-    <div className="profile-logo-preview">
+    <div className="flex h-20 w-20 shrink-0 overflow-hidden rounded-full border border-border bg-muted items-center justify-center">
       {logoBase64 ? (
         <img
-          className="profile-logo-image"
+          className="aspect-square h-full w-full object-cover"
           src={logoBase64}
           alt="Profile logo"
         />
       ) : (
-        <span className="profile-logo-fallback" aria-label="Profile initial">
+        <span
+          className="text-xl font-medium text-muted-foreground"
+          aria-label="Profile initial"
+        >
           {initial}
         </span>
       )}
@@ -73,77 +79,79 @@ export function UserDetailCard({
   const hasCompany = user.companyName || companyHref;
 
   return (
-    <div className="article-detail">
-      <div className="form-card ticket-detail-card">
-        <div className="owner-form owner-detail-form">
-          <div className="owner-form-grid ticket-detail-grid">
-            <label>
-              Username
-              <input value={user.username || "—"} readOnly />
-            </label>
-            <label>
-              Full name
-              <input value={user.fullName || "—"} readOnly />
-            </label>
-            <label>
-              Type
-              <input value={user.typeLabel || user.type || "User"} readOnly />
-            </label>
-            <label>
-              Email
-              <input value={user.email || "—"} readOnly />
-            </label>
-            <label>
-              Social
-              <input value={user.social || "—"} readOnly />
-            </label>
-            <label>
-              Phone
-              <input
-                value={formatPhone(user.phoneNumber, user.phoneExtension)}
-                readOnly
-              />
-            </label>
-            <label>
-              Country
-              <input value={user.countryName || "—"} readOnly />
-            </label>
-            <label>
-              Time zone
-              <input value={user.timezoneName || "—"} readOnly />
-            </label>
-            <div className="owner-detail-panel">
-              <div className="owner-detail-panel-label">{companyLabel}</div>
-              <div className="owner-detail-panel-body company-detail-panel">
-                {companyHref ? (
-                  <SmartLink className="owner-detail-link" href={companyHref}>
-                    {user.companyName || "Open company"}
-                  </SmartLink>
-                ) : (
-                  <span>{hasCompany ? user.companyName : "—"}</span>
-                )}
-              </div>
-            </div>
-            <div className="owner-detail-panel">
-              <div className="owner-detail-panel-label">Logo</div>
-              <div className="owner-detail-panel-body profile-logo-panel">
-                <div className="profile-logo-panel-content">
-                  <UserLogoPreview
-                    logoBase64={user.logoBase64}
-                    fullName={user.fullName}
-                    username={user.username}
-                    email={user.email}
-                  />
+    <div className="w-full max-w-5xl mx-auto space-y-6">
+      <Card>
+        <CardContent className="grid gap-6 md:grid-cols-2 p-6">
+          <Field>
+            <FieldLabel>Username</FieldLabel>
+            <Input value={user.username || "—"} readOnly />
+          </Field>
+          <Field>
+            <FieldLabel>Full name</FieldLabel>
+            <Input value={user.fullName || "—"} readOnly />
+          </Field>
+          <Field>
+            <FieldLabel>Type</FieldLabel>
+            <Input value={user.typeLabel || user.type || "User"} readOnly />
+          </Field>
+          <Field>
+            <FieldLabel>Email</FieldLabel>
+            <Input value={user.email || "—"} readOnly />
+          </Field>
+          <Field>
+            <FieldLabel>Social</FieldLabel>
+            <Input value={user.social || "—"} readOnly />
+          </Field>
+          <Field>
+            <FieldLabel>Phone</FieldLabel>
+            <Input
+              value={formatPhone(user.phoneNumber, user.phoneExtension)}
+              readOnly
+            />
+          </Field>
+          <Field>
+            <FieldLabel>Country</FieldLabel>
+            <Input value={user.countryName || "—"} readOnly />
+          </Field>
+          <Field>
+            <FieldLabel>Time zone</FieldLabel>
+            <Input value={user.timezoneName || "—"} readOnly />
+          </Field>
+
+          <div className="md:col-span-2 pt-4 border-t mt-2 grid gap-6 md:grid-cols-2">
+            <div>
+              <FieldLabel className="mb-2 block">{companyLabel}</FieldLabel>
+              {companyHref ? (
+                <SmartLink
+                  className="text-primary hover:underline font-medium flex items-center h-10"
+                  href={companyHref}
+                >
+                  {user.companyName || "Open company"}
+                </SmartLink>
+              ) : (
+                <div className="flex h-10 items-center">
+                  <span className="text-sm font-medium">
+                    {hasCompany ? user.companyName : "—"}
+                  </span>
                 </div>
-              </div>
+              )}
             </div>
-            <div className="detail-card-spacer" aria-hidden="true" />
+
+            <div>
+              <FieldLabel className="mb-2 block">Logo</FieldLabel>
+              <UserLogoPreview
+                logoBase64={user.logoBase64}
+                fullName={user.fullName}
+                username={user.username}
+                email={user.email}
+              />
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {actions ? (
-        <div className="button-row button-row-end admin-detail-actions">
+        <div className="flex items-center justify-end space-x-3 pt-4">
           {actions}
         </div>
       ) : null}

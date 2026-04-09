@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -12,12 +12,18 @@ interface AppFooterProps {
 
 export default function AppFooter({ className }: AppFooterProps) {
   return (
-    <footer className={className}>
+    <footer
+      className={
+        className ||
+        "mt-auto bg-header-bg text-header-text text-center py-2.5 px-5 font-semibold"
+      }
+    >
       Copyright © {new Date().getFullYear()} Powered by{" "}
       <a
         href="https://github.com/mnemosyne-systems/billetsys"
         target="_blank"
         rel="noreferrer"
+        className="text-header-text hover:underline"
       >
         billetsys
       </a>

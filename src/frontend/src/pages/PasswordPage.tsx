@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -9,13 +9,22 @@
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useToast } from "../components/common/ToastProvider";
+import { toast } from "sonner";
 import DataState from "../components/common/DataState";
 import type { SessionPageProps } from "../types/app";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Field, FieldLabel } from "../components/ui/field";
+import { Input } from "../components/ui/input";
 
 export default function PasswordPage({ sessionState }: SessionPageProps) {
   const location = useLocation();
-  const { showToast } = useToast();
+
   const [formState, setFormState] = useState({
     oldPassword: "",
     newPassword: "",
@@ -30,9 +39,9 @@ export default function PasswordPage({ sessionState }: SessionPageProps) {
 
   useEffect(() => {
     if (routeError) {
-      showToast({ variant: "error", message: routeError });
+      toast.error(routeError);
     }
-  }, [routeError, showToast]);
+  }, [routeError]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -51,10 +60,7 @@ export default function PasswordPage({ sessionState }: SessionPageProps) {
       }
       setFormState({ oldPassword: "", newPassword: "", confirmPassword: "" });
       setSaveState({ saving: false, error: "", saved: true });
-      showToast({
-        variant: "success",
-        message: "Password updated successfully.",
-      });
+      toast.success("Password updated successfully.");
     } catch (error: unknown) {
       setSaveState({
         saving: false,
@@ -66,7 +72,7 @@ export default function PasswordPage({ sessionState }: SessionPageProps) {
   };
 
   return (
-    <section className="panel auth-panel">
+    <section className="w-full max-w-md mx-auto mt-12 px-4">
       <DataState
         state={{
           loading: false,
@@ -79,59 +85,67 @@ export default function PasswordPage({ sessionState }: SessionPageProps) {
         emptyMessage=""
         signInHref="/login"
       >
-        <form className="auth-form" onSubmit={submit}>
-          <label>
-            Old password
-            <input
-              type="password"
-              value={formState.oldPassword}
-              onChange={(event) =>
-                setFormState((current) => ({
-                  ...current,
-                  oldPassword: event.target.value,
-                }))
-              }
-              required
-            />
-          </label>
-          <label>
-            New password
-            <input
-              type="password"
-              value={formState.newPassword}
-              onChange={(event) =>
-                setFormState((current) => ({
-                  ...current,
-                  newPassword: event.target.value,
-                }))
-              }
-              required
-            />
-          </label>
-          <label>
-            Confirm password
-            <input
-              type="password"
-              value={formState.confirmPassword}
-              onChange={(event) =>
-                setFormState((current) => ({
-                  ...current,
-                  confirmPassword: event.target.value,
-                }))
-              }
-              required
-            />
-          </label>
-          <div className="button-row">
-            <button
-              type="submit"
-              className="primary-button"
-              disabled={saveState.saving}
-            >
-              {saveState.saving ? "Saving..." : "Update"}
-            </button>
-          </div>
-        </form>
+        <Card>
+          <CardHeader>
+            <CardTitle>Change Password</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form className="space-y-6" onSubmit={submit}>
+              <Field>
+                <FieldLabel>Old password</FieldLabel>
+                <Input
+                  type="password"
+                  value={formState.oldPassword}
+                  onChange={(event) =>
+                    setFormState((current) => ({
+                      ...current,
+                      oldPassword: event.target.value,
+                    }))
+                  }
+                  required
+                />
+              </Field>
+              <Field>
+                <FieldLabel>New password</FieldLabel>
+                <Input
+                  type="password"
+                  value={formState.newPassword}
+                  onChange={(event) =>
+                    setFormState((current) => ({
+                      ...current,
+                      newPassword: event.target.value,
+                    }))
+                  }
+                  required
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Confirm password</FieldLabel>
+                <Input
+                  type="password"
+                  value={formState.confirmPassword}
+                  onChange={(event) =>
+                    setFormState((current) => ({
+                      ...current,
+                      confirmPassword: event.target.value,
+                    }))
+                  }
+                  required
+                />
+              </Field>
+
+              <div className="pt-2">
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={saveState.saving}
+                >
+                  {saveState.saving ? "Saving..." : "Update Password"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </DataState>
     </section>
   );

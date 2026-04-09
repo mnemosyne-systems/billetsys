@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -11,10 +11,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AttachmentPicker from "../components/common/AttachmentPicker";
 import DataState from "../components/common/DataState";
-import {
-  buildToastNavigationState,
-  useToast,
-} from "../components/common/ToastProvider";
+import { toast } from "sonner";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
 import { postForm, postMultipart } from "../utils/api";
@@ -23,6 +20,34 @@ import { PATHS } from "../routes/paths";
 import { resolvePostRedirectPath } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
 import type { MessageFormBootstrap } from "../types/domain";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../components/ui/alert-dialog";
+import { Field, FieldLabel } from "../components/ui/field";
+import { Input } from "../components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import { Textarea } from "../components/ui/textarea";
 
 interface MessageFormState {
   body: string;
@@ -33,7 +58,7 @@ interface MessageFormState {
 
 export default function MessageFormPage({ sessionState }: SessionPageProps) {
   const navigate = useNavigate();
-  const { showToast } = useToast();
+
   const { id } = useParams();
   const bootstrapState = useJson<MessageFormBootstrap>(
     `/api/messages/bootstrap${toQueryString({ messageId: id })}`,
@@ -79,25 +104,21 @@ export default function MessageFormPage({ sessionState }: SessionPageProps) {
         ["ticketId", formState.ticketId],
         ["attachments", formState.files],
       ]);
-      navigate(await resolvePostRedirectPath(response, PATHS.messages), {
-        state: buildToastNavigationState({
-          variant: "success",
-          message: bootstrap.edit
-            ? "Message updated successfully."
-            : "Message created successfully.",
-        }),
-      });
+      toast.success(
+        bootstrap.edit
+          ? "Message updated successfully."
+          : "Message created successfully.",
+      );
+      navigate(await resolvePostRedirectPath(response, PATHS.messages));
     } catch (error: unknown) {
       setSaveState({
         saving: false,
         error:
           error instanceof Error ? error.message : "Unable to save message.",
       });
-      showToast({
-        variant: "error",
-        message:
-          error instanceof Error ? error.message : "Unable to save message.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "Unable to save message.",
+      );
       return;
     } finally {
       submissionGuard.exit();
@@ -106,33 +127,23 @@ export default function MessageFormPage({ sessionState }: SessionPageProps) {
   };
 
   const deleteMessage = async () => {
-    if (
-      !id ||
-      !window.confirm("Delete this message?") ||
-      !submissionGuard.tryEnter()
-    ) {
+    if (!id || !submissionGuard.tryEnter()) {
       return;
     }
     try {
       setSaveState({ saving: true, error: "" });
       const response = await postForm(`/messages/${id}/delete`, []);
-      navigate(await resolvePostRedirectPath(response, PATHS.messages), {
-        state: buildToastNavigationState({
-          variant: "danger",
-          message: "Message deleted.",
-        }),
-      });
+      toast.success("Message deleted.");
+      navigate(await resolvePostRedirectPath(response, PATHS.messages));
     } catch (error: unknown) {
       setSaveState({
         saving: false,
         error:
           error instanceof Error ? error.message : "Unable to delete message.",
       });
-      showToast({
-        variant: "error",
-        message:
-          error instanceof Error ? error.message : "Unable to delete message.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "Unable to delete message.",
+      );
       return;
     } finally {
       submissionGuard.exit();
@@ -141,20 +152,11 @@ export default function MessageFormPage({ sessionState }: SessionPageProps) {
   };
 
   return (
-    <section className="panel">
-      <div className="section-header">
-        <div className="button-row">
-          {id && (
-            <button
-              type="button"
-              className="secondary-button danger-button"
-              onClick={deleteMessage}
-              disabled={saveState.saving}
-            >
-              Delete message
-            </button>
-          )}
-        </div>
+    <section className="w-full max-w-5xl mx-auto mt-4">
+      <div className="flex items-center justify-between pb-6 px-1">
+        <h2 className="text-3xl font-bold tracking-tight">
+          {bootstrap && bootstrap.edit ? "Edit Message" : "Create Message"}
+        </h2>
       </div>
 
       <DataState
@@ -163,70 +165,121 @@ export default function MessageFormPage({ sessionState }: SessionPageProps) {
         signInHref={sessionState.data?.homePath || "/login"}
       >
         {bootstrap && formState && (
-          <form className="owner-form" onSubmit={submit}>
-            <div className="owner-form-grid">
-              <label className="form-span-2">
-                Body
-                <textarea
-                  rows={8}
-                  value={formState.body}
-                  onChange={(event) =>
-                    updateFormState("body", event.target.value)
-                  }
-                  required
+          <form className="space-y-6 pb-20" onSubmit={submit}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Message Details</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Required fields are marked{" "}
+                  <span className="text-destructive">*</span>.
+                </p>
+              </CardHeader>
+              <CardContent className="grid gap-6 md:grid-cols-2 pt-4">
+                <Field className="md:col-span-2">
+                  <FieldLabel>
+                    Body <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Textarea
+                    rows={8}
+                    value={formState.body}
+                    onChange={(event) =>
+                      updateFormState("body", event.target.value)
+                    }
+                    required
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>
+                    Date <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Input
+                    type="datetime-local"
+                    value={formState.date}
+                    onChange={(event) =>
+                      updateFormState("date", event.target.value)
+                    }
+                    required
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>
+                    Ticket <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Select
+                    value={formState.ticketId || undefined}
+                    onValueChange={(value) =>
+                      updateFormState("ticketId", value)
+                    }
+                    required
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select ticket" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(bootstrap.tickets || []).map((ticket) => (
+                        <SelectItem key={ticket.id} value={String(ticket.id)}>
+                          {ticket.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Attachments</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AttachmentPicker
+                  files={formState.files}
+                  onFilesChange={(files) => updateFormState("files", files)}
+                  existingAttachments={bootstrap.attachments || []}
                 />
-              </label>
-              <label>
-                Date
-                <input
-                  type="datetime-local"
-                  value={formState.date}
-                  onChange={(event) =>
-                    updateFormState("date", event.target.value)
-                  }
-                  required
-                />
-              </label>
-              <label>
-                Ticket
-                <select
-                  value={formState.ticketId}
-                  onChange={(event) =>
-                    updateFormState("ticketId", event.target.value)
-                  }
-                  required
-                >
-                  <option value="">Select ticket</option>
-                  {(bootstrap.tickets || []).map((ticket) => (
-                    <option
-                      key={ticket.id}
-                      value={ticket.id ? String(ticket.id) : ""}
+              </CardContent>
+            </Card>
+
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t">
+              {id && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      disabled={saveState.saving}
+                      className="mr-auto"
                     >
-                      {ticket.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <AttachmentPicker
-              files={formState.files}
-              onFilesChange={(files) => updateFormState("files", files)}
-              existingAttachments={bootstrap.attachments || []}
-            />
-
-            <div className="button-row">
-              <button
-                type="submit"
-                className="primary-button"
-                disabled={saveState.saving}
-              >
+                      Delete message
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently
+                        delete this message.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={deleteMessage}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              <Button type="submit" disabled={saveState.saving}>
                 {saveState.saving
                   ? "Saving..."
                   : bootstrap.edit
-                    ? "Save"
-                    : "Create"}
-              </button>
+                    ? "Save message"
+                    : "Create message"}
+              </Button>
             </div>
           </form>
         )}

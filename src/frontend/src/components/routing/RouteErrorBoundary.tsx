@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -38,12 +38,16 @@ export default class RouteErrorBoundary extends Component<
   render() {
     if (this.state.error) {
       return (
-        <section className="panel">
-          <h2>Unable to load this page</h2>
-          <p className="error-text">
-            {this.state.error?.message ||
-              "A route-level error occurred while loading the page."}
-          </p>
+        <section className="w-full max-w-5xl mx-auto mt-6">
+          <div className="flex flex-col items-center justify-center p-12 text-center border rounded-lg bg-card text-card-foreground">
+            <h1 className="text-4xl font-bold tracking-tight mb-4 text-destructive">
+              Error
+            </h1>
+            <p className="error-text">
+              {this.state.error?.message ||
+                "A route-level error occurred while loading the page."}
+            </p>
+          </div>
         </section>
       );
     }

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -12,6 +12,20 @@ import useJson from "../hooks/useJson";
 import useExternalScript from "../hooks/useExternalScript";
 import DataState from "../components/common/DataState";
 import { toQueryString } from "../utils/formatting";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import type { NamedEntity, TicketListItem } from "../types/domain";
 import type { SessionPageProps } from "../types/app";
 import type {
@@ -207,17 +221,29 @@ function ReportChartCanvas({
   ]);
 
   if (scriptError) {
-    return <div className="report-no-data">Unable to load diagrams.</div>;
+    return (
+      <div className="flex h-[300px] w-full items-center justify-center text-sm text-destructive">
+        Unable to load diagrams.
+      </div>
+    );
   }
   if (!scriptReady) {
-    return <div className="report-no-data">Loading diagrams...</div>;
+    return (
+      <div className="flex h-[300px] w-full items-center justify-center text-sm text-muted-foreground animate-pulse">
+        Loading diagrams...
+      </div>
+    );
   }
   if (normalizedItems.length === 0) {
-    return <div className="report-no-data">No data available</div>;
+    return (
+      <div className="flex h-[300px] w-full items-center justify-center text-sm text-muted-foreground italic">
+        No data available
+      </div>
+    );
   }
   return (
-    <div className="report-chart-container">
-      <canvas ref={canvasRef} />
+    <div className="relative w-full h-full min-h-[300px]">
+      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
     </div>
   );
 }
@@ -229,13 +255,17 @@ function ReportChartCard({
   ...chartProps
 }: ReportChartCardProps) {
   return (
-    <section className="detail-card report-chart-card">
-      <div className="report-title-row">
-        <h3>{title}</h3>
-        {children}
-      </div>
-      <ReportChartCanvas chartKey={chartKey} {...chartProps} />
-    </section>
+    <Card className="flex flex-col overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between bg-muted/30 pb-4 border-b space-y-0">
+        <CardTitle className="text-base font-medium">{title}</CardTitle>
+        {children && (
+          <div className="flex items-center space-x-2">{children}</div>
+        )}
+      </CardHeader>
+      <CardContent className="flex-1 p-4 bg-background">
+        <ReportChartCanvas chartKey={chartKey} {...chartProps} />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -298,20 +328,22 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
 
   if (!supportsReports) {
     return (
-      <section className="panel">
-        <h2>Reports</h2>
-        <p className="muted-text">
-          Reports are available for admin, TAM, and superuser roles.
-        </p>
+      <section className="w-full max-w-7xl mx-auto mt-4">
+        <div className="pb-6 px-1">
+          <h2 className="text-3xl font-bold tracking-tight">Reports</h2>
+          <p className="text-muted-foreground mt-2">
+            Reports are available for admin, TAM, and superuser roles.
+          </p>
+        </div>
       </section>
     );
   }
 
   return (
-    <section className="panel">
-      <div className="section-header">
+    <section className="w-full max-w-7xl mx-auto mt-4">
+      <div className="pb-6 px-1 flex flex-col md:flex-row md:items-end justify-between">
         <div>
-          <h2>Reports</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Reports</h2>
         </div>
       </div>
 
@@ -321,39 +353,57 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
         signInHref={sessionState.data?.homePath || "/login"}
       >
         {reports && (
-          <div className="report-layout">
-            {reports.showCompanyFilter ? (
-              <div className="filter-row">
-                <label>
-                  Company
-                  <select
-                    value={selectedCompanyId}
-                    onChange={(event) =>
-                      setFilters((current) => ({
-                        ...current,
-                        companyId: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="">All companies</option>
-                    {(reports.companies || []).map((company: NamedEntity) => (
-                      <option key={company.id} value={company.id}>
-                        {company.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            ) : (
-              <p className="report-summary">
-                <strong>Company:</strong> {reports.companyName}
-              </p>
-            )}
-            <p className="report-summary">
-              Total tickets: <strong>{reports.totalTickets}</strong>
-            </p>
+          <div className="space-y-8 pb-20">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
+                  {reports.showCompanyFilter ? (
+                    <div className="flex items-center space-x-3">
+                      <span className="text-sm font-medium">Company</span>
+                      <Select
+                        value={selectedCompanyId || "all"}
+                        onValueChange={(value) =>
+                          setFilters((current) => ({
+                            ...current,
+                            companyId: value === "all" ? "" : value,
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="w-fit min-w-[200px]">
+                          <SelectValue placeholder="All companies" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All companies</SelectItem>
+                          {(reports.companies || []).map(
+                            (company: NamedEntity) => (
+                              <SelectItem
+                                key={company.id}
+                                value={String(company.id)}
+                              >
+                                {company.name}
+                              </SelectItem>
+                            ),
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <p className="text-sm">
+                      <strong className="font-medium">Company:</strong>{" "}
+                      {reports.companyName}
+                    </p>
+                  )}
+                  <p className="text-sm">
+                    Total tickets:{" "}
+                    <strong className="font-medium text-lg">
+                      {reports.totalTickets}
+                    </strong>
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="report-grid">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
               <ReportChartCard
                 chartKey="statusChart"
                 title="Tickets by Status"
@@ -397,22 +447,27 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
                 fill
                 onChartReady={onChartReady}
               >
-                <label className="report-inline-filter">
-                  Period
-                  <select
-                    value={filters.period}
-                    onChange={(event) =>
+                <div className="flex items-center space-x-2 text-sm font-normal">
+                  <span className="text-muted-foreground">Period</span>
+                  <Select
+                    value={filters.period || "all"}
+                    onValueChange={(value) =>
                       setFilters((current) => ({
                         ...current,
-                        period: event.target.value,
+                        period: value,
                       }))
                     }
                   >
-                    <option value="all">All</option>
-                    <option value="year">Year</option>
-                    <option value="month">Month</option>
-                  </select>
-                </label>
+                    <SelectTrigger className="h-8 min-w-[100px]">
+                      <SelectValue placeholder="Period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="year">Year</SelectItem>
+                      <SelectItem value="month">Month</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </ReportChartCard>
               <ReportChartCard
                 chartKey="responseTimeChart"
@@ -423,60 +478,6 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
                 scriptError={chartScriptState.error}
                 onChartReady={onChartReady}
               />
-              <section className="detail-card report-chart-card">
-                <div className="report-title-row">
-                  <h3>Resolution Time</h3>
-                </div>
-                <ReportChartCanvas
-                  chartKey="histogramChart"
-                  type="bar"
-                  items={(reports.histogram || []).map(
-                    (bucket: ReportHistogramBucket) => ({
-                      label: bucket.label,
-                      value: bucket.count,
-                    }),
-                  )}
-                  scriptReady={chartScriptState.loaded}
-                  scriptError={chartScriptState.error}
-                  integerScale
-                  onChartReady={onChartReady}
-                />
-                <table className="report-histogram-table">
-                  <thead>
-                    <tr>
-                      <th>Duration</th>
-                      <th>Count</th>
-                      <th>Tickets</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(reports.histogram || []).map(
-                      (bucket: ReportHistogramBucket) => (
-                        <tr key={bucket.label}>
-                          <td>{bucket.label}</td>
-                          <td>{bucket.count}</td>
-                          <td>
-                            {bucket.tickets.length === 0
-                              ? "—"
-                              : bucket.tickets.map(
-                                  (ticket: TicketListItem, index: number) => (
-                                    <span key={ticket.id}>
-                                      <a href={`/tickets/${ticket.id}`}>
-                                        {ticket.name}
-                                      </a>
-                                      {index < bucket.tickets.length - 1
-                                        ? ", "
-                                        : ""}
-                                    </span>
-                                  ),
-                                )}
-                          </td>
-                        </tr>
-                      ),
-                    )}
-                  </tbody>
-                </table>
-              </section>
               <ReportChartCard
                 chartKey="resolutionTimeChart"
                 title="Avg. Resolution Time (hours)"
@@ -488,15 +489,93 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
               />
             </div>
 
-            <div className="button-row button-row-end">
-              <button
-                type="button"
-                className="action-button export-btn"
+            <Card className="overflow-hidden">
+              <CardHeader className="bg-muted/30 pb-4 border-b">
+                <CardTitle className="text-base font-medium">
+                  Resolution Time
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 grid gap-8 lg:grid-cols-2">
+                <div>
+                  <ReportChartCanvas
+                    chartKey="histogramChart"
+                    type="bar"
+                    items={(reports.histogram || []).map(
+                      (bucket: ReportHistogramBucket) => ({
+                        label: bucket.label,
+                        value: bucket.count,
+                      }),
+                    )}
+                    scriptReady={chartScriptState.loaded}
+                    scriptError={chartScriptState.error}
+                    integerScale
+                    onChartReady={onChartReady}
+                  />
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left border-collapse">
+                    <thead className="bg-muted/50 text-muted-foreground uppercase text-xs">
+                      <tr>
+                        <th className="px-4 py-3 font-medium border-b">
+                          Duration
+                        </th>
+                        <th className="px-4 py-3 font-medium border-b text-right">
+                          Count
+                        </th>
+                        <th className="px-4 py-3 font-medium border-b">
+                          Tickets
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(reports.histogram || []).map(
+                        (bucket: ReportHistogramBucket) => (
+                          <tr
+                            key={bucket.label}
+                            className="border-b last:border-0 hover:bg-muted/20"
+                          >
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {bucket.label}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {bucket.count}
+                            </td>
+                            <td className="px-4 py-3">
+                              {bucket.tickets.length === 0
+                                ? "—"
+                                : bucket.tickets.map(
+                                    (ticket: TicketListItem, index: number) => (
+                                      <span key={ticket.id}>
+                                        <a
+                                          className="text-primary hover:underline hover:text-primary/80"
+                                          href={`/tickets/${ticket.id}`}
+                                        >
+                                          {ticket.name}
+                                        </a>
+                                        {index < bucket.tickets.length - 1
+                                          ? ", "
+                                          : ""}
+                                      </span>
+                                    ),
+                                  )}
+                            </td>
+                          </tr>
+                        ),
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t">
+              <Button
+                variant="outline"
                 onClick={exportReport}
                 disabled={!chartScriptState.loaded}
               >
-                Export
-              </button>
+                Export PDF
+              </Button>
             </div>
           </div>
         )}

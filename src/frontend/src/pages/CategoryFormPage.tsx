@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -9,18 +9,37 @@
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  buildToastNavigationState,
-  useToast,
-} from "../components/common/ToastProvider";
+import { toast } from "sonner";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
 import DataState from "../components/common/DataState";
-import MarkdownEditor from "../components/markdown/MarkdownEditor";
+import LexicalEditor from "../components/editor/LexicalEditor";
 import { postForm, postMultipart } from "../utils/api";
 import { resolvePostRedirectPath } from "../utils/routing";
 import type { FormMode, SessionPageProps } from "../types/app";
 import type { CategoryRecord } from "../types/domain";
+import { Card, CardContent, CardFooter } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../components/ui/alert-dialog";
+import { Field, FieldLabel } from "../components/ui/field";
+import { Input } from "../components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 
 interface CategoryFormState {
   name: string;
@@ -37,7 +56,7 @@ export default function CategoryFormPage({
   mode,
 }: CategoryFormPageProps) {
   const navigate = useNavigate();
-  const { showToast } = useToast();
+
   const { id } = useParams();
   const categoryState = useJson<CategoryRecord>(
     mode === "edit" && id
@@ -90,19 +109,16 @@ export default function CategoryFormPage({
           ["isDefault", String(formState.isDefault)],
         ],
       );
+      toast.success(
+        isEdit
+          ? "Category updated successfully."
+          : "Category created successfully.",
+      );
       navigate(
         await resolvePostRedirectPath(
           response,
           isEdit && id ? `/categories/${id}` : "/categories",
         ),
-        {
-          state: buildToastNavigationState({
-            variant: "success",
-            message: isEdit
-              ? "Category updated successfully."
-              : "Category created successfully.",
-          }),
-        },
       );
     } catch (error: unknown) {
       setSaveState({
@@ -110,11 +126,9 @@ export default function CategoryFormPage({
         error:
           error instanceof Error ? error.message : "Unable to save category.",
       });
-      showToast({
-        variant: "error",
-        message:
-          error instanceof Error ? error.message : "Unable to save category.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "Unable to save category.",
+      );
       return;
     } finally {
       submissionGuard.exit();
@@ -123,33 +137,23 @@ export default function CategoryFormPage({
   };
 
   const deleteCategory = async () => {
-    if (
-      !id ||
-      !window.confirm("Delete this category?") ||
-      !submissionGuard.tryEnter()
-    ) {
+    if (!id || !submissionGuard.tryEnter()) {
       return;
     }
     try {
       setSaveState({ saving: true, error: "" });
       const response = await postForm(`/categories/${id}/delete`, []);
-      navigate(await resolvePostRedirectPath(response, "/categories"), {
-        state: buildToastNavigationState({
-          variant: "danger",
-          message: "Category deleted.",
-        }),
-      });
+      toast.success("Category deleted.");
+      navigate(await resolvePostRedirectPath(response, "/categories"));
     } catch (error: unknown) {
       setSaveState({
         saving: false,
         error:
           error instanceof Error ? error.message : "Unable to delete category.",
       });
-      showToast({
-        variant: "error",
-        message:
-          error instanceof Error ? error.message : "Unable to delete category.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "Unable to delete category.",
+      );
       return;
     } finally {
       submissionGuard.exit();
@@ -158,74 +162,103 @@ export default function CategoryFormPage({
   };
 
   return (
-    <section className="panel">
+    <section className="w-full max-w-5xl mx-auto mt-4">
+      <div className="flex items-center justify-between pb-6 px-1">
+        <h2 className="text-3xl font-bold tracking-tight">
+          {isEdit && category
+            ? category.name || "Edit category"
+            : "Create category"}
+        </h2>
+      </div>
+
       <DataState
         state={categoryState}
         emptyMessage="Category unavailable."
         signInHref={sessionState.data?.homePath || "/login"}
       >
         {formState && (
-          <div className="form-card ticket-detail-card">
-            <form className="owner-form" onSubmit={submit}>
-              <div className="owner-form-grid ticket-detail-grid">
-                <label>
-                  Name
-                  <input
+          <Card>
+            <form onSubmit={submit}>
+              <CardContent className="grid gap-6 md:grid-cols-2 pt-6 pb-6">
+                <Field>
+                  <FieldLabel>Name</FieldLabel>
+                  <Input
                     value={formState.name}
                     onChange={(event) =>
                       updateFormState("name", event.target.value)
                     }
                     required
                   />
-                </label>
-                <label>
-                  Default
-                  <select
+                </Field>
+                <Field>
+                  <FieldLabel>Default</FieldLabel>
+                  <Select
                     value={String(formState.isDefault)}
-                    onChange={(event) =>
-                      updateFormState(
-                        "isDefault",
-                        event.target.value === "true",
-                      )
+                    onValueChange={(value) =>
+                      updateFormState("isDefault", value === "true")
                     }
                   >
-                    <option value="false">No</option>
-                    <option value="true">Yes</option>
-                  </select>
-                </label>
-                <label className="form-span-2">
-                  Description
-                  <MarkdownEditor
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="false">No</SelectItem>
+                      <SelectItem value="true">Yes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field className="md:col-span-2">
+                  <FieldLabel>Description</FieldLabel>
+                  <LexicalEditor
                     value={formState.description}
                     onChange={(value) => updateFormState("description", value)}
                     inputRef={descriptionInputRef}
                     rows={10}
                   />
-                </label>
-              </div>
-              <div
-                className={`button-row${isEdit ? " button-row-split" : " button-row-end"}`}
+                </Field>
+              </CardContent>
+              <CardFooter
+                className={`flex items-center pt-6 border-t mt-4 bg-muted/20 ${isEdit ? "justify-between" : "justify-end"}`}
               >
-                {isEdit && (
-                  <button
-                    type="button"
-                    className="secondary-button danger-button"
-                    onClick={deleteCategory}
-                    disabled={saveState.saving}
-                  >
-                    Delete
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  className="primary-button"
-                  disabled={saveState.saving}
-                >
+                <div>
+                  {isEdit && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          disabled={saveState.saving}
+                        >
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently
+                            delete this category.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={deleteCategory}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+                <Button type="submit" disabled={saveState.saving}>
                   {saveState.saving ? "Saving..." : isEdit ? "Save" : "Create"}
-                </button>
-              </div>
+                </Button>
+              </CardFooter>
             </form>
-          </div>
+          </Card>
         )}
       </DataState>
     </section>

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -17,6 +17,10 @@ import {
 } from "../utils/formatting";
 import type { SessionPageProps } from "../types/app";
 import type { CompanyAssignment, CompanyRecord } from "../types/domain";
+import { Card, CardContent, CardFooter } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Field, FieldLabel } from "../components/ui/field";
+import { Input } from "../components/ui/input";
 
 export default function CompanyDetailPage({ sessionState }: SessionPageProps) {
   const { id } = useParams();
@@ -32,107 +36,111 @@ export default function CompanyDetailPage({ sessionState }: SessionPageProps) {
   const sortedTams = sortUsersByName(company?.selectedTams || []);
 
   return (
-    <section className="panel">
+    <section className="w-full max-w-5xl mx-auto mt-4">
       <DataState
         state={companyState}
         emptyMessage="Company not found."
         signInHref={sessionState.data?.homePath || "/login"}
       >
         {company && (
-          <div className="article-detail">
-            <div className="form-card ticket-detail-card">
-              <div className="owner-form owner-detail-form">
-                <div className="owner-form-grid ticket-detail-grid">
-                  <label>
-                    Name
-                    <input value={company.name || "—"} readOnly />
-                  </label>
-                  <label>
-                    Phone
-                    <input value={company.phoneNumber || "—"} readOnly />
-                  </label>
-                  <label>
-                    Country
-                    <input value={company.countryName || "—"} readOnly />
-                  </label>
-                  <label>
-                    Time zone
-                    <input value={company.timezoneName || "—"} readOnly />
-                  </label>
-                  <label>
-                    Address1
-                    <input value={company.address1 || "—"} readOnly />
-                  </label>
-                  <label>
-                    Address2
-                    <input value={company.address2 || "—"} readOnly />
-                  </label>
-                  <label>
-                    City
-                    <input value={company.city || "—"} readOnly />
-                  </label>
-                  <label>
-                    State
-                    <input value={company.state || "—"} readOnly />
-                  </label>
-                  <label>
-                    Zip
-                    <input value={company.zip || "—"} readOnly />
-                  </label>
-                  <div className="owner-detail-panel">
-                    <div className="owner-detail-panel-label">Entitlements</div>
-                    <div className="owner-detail-panel-body">
-                      {sortedEntitlements.length === 0 ? (
-                        <p className="muted-text">—</p>
-                      ) : (
-                        <ul className="plain-list">
-                          {sortedEntitlements.map(
-                            (entry: CompanyAssignment, index) => (
-                              <li
-                                key={`${entry.entitlementId}-${entry.levelId}-${index}`}
-                              >
-                                {entry.entitlementName} • {entry.levelName}
-                              </li>
-                            ),
-                          )}
-                        </ul>
-                      )}
-                    </div>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <Field>
+                  <FieldLabel>Name</FieldLabel>
+                  <Input value={company.name || "—"} readOnly />
+                </Field>
+                <Field>
+                  <FieldLabel>Phone</FieldLabel>
+                  <Input value={company.phoneNumber || "—"} readOnly />
+                </Field>
+                <Field>
+                  <FieldLabel>Country</FieldLabel>
+                  <Input value={company.countryName || "—"} readOnly />
+                </Field>
+                <Field>
+                  <FieldLabel>Time zone</FieldLabel>
+                  <Input value={company.timezoneName || "—"} readOnly />
+                </Field>
+                <Field>
+                  <FieldLabel>Address1</FieldLabel>
+                  <Input value={company.address1 || "—"} readOnly />
+                </Field>
+                <Field>
+                  <FieldLabel>Address2</FieldLabel>
+                  <Input value={company.address2 || "—"} readOnly />
+                </Field>
+                <Field>
+                  <FieldLabel>City</FieldLabel>
+                  <Input value={company.city || "—"} readOnly />
+                </Field>
+                <Field>
+                  <FieldLabel>State</FieldLabel>
+                  <Input value={company.state || "—"} readOnly />
+                </Field>
+                <Field>
+                  <FieldLabel>Zip</FieldLabel>
+                  <Input value={company.zip || "—"} readOnly />
+                </Field>
+
+                <div className="md:col-span-2 bg-muted/30 p-5 rounded-lg border border-border">
+                  <h3 className="font-semibold text-sm mb-3">Entitlements</h3>
+                  <div>
+                    {sortedEntitlements.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">—</p>
+                    ) : (
+                      <ul className="space-y-1 list-disc list-inside text-sm">
+                        {sortedEntitlements.map(
+                          (entry: CompanyAssignment, index) => (
+                            <li
+                              key={`${entry.entitlementId}-${entry.levelId}-${index}`}
+                            >
+                              {entry.entitlementName}{" "}
+                              <span className="text-muted-foreground mx-1">
+                                •
+                              </span>{" "}
+                              {entry.levelName}
+                            </li>
+                          ),
+                        )}
+                      </ul>
+                    )}
                   </div>
-                  <div className="owner-detail-panel">
-                    <div className="owner-detail-panel-label">Superuser</div>
-                    <div className="owner-detail-panel-body">
-                      <SelectableUserSummary users={sortedSuperusers} />
-                    </div>
+                </div>
+
+                <div className="bg-muted/30 p-5 rounded-lg border border-border">
+                  <h3 className="font-semibold text-sm mb-3">Superusers</h3>
+                  <div className="text-sm">
+                    <SelectableUserSummary users={sortedSuperusers} />
                   </div>
-                  <div className="owner-detail-panel">
-                    <div className="owner-detail-panel-label">User</div>
-                    <div className="owner-detail-panel-body">
-                      <SelectableUserSummary users={sortedUsers} />
-                    </div>
+                </div>
+
+                <div className="bg-muted/30 p-5 rounded-lg border border-border">
+                  <h3 className="font-semibold text-sm mb-3">Users</h3>
+                  <div className="text-sm">
+                    <SelectableUserSummary users={sortedUsers} />
                   </div>
-                  <div className="owner-detail-panel">
-                    <div className="owner-detail-panel-label">TAMs</div>
-                    <div className="owner-detail-panel-body">
-                      <SelectableUserSummary users={sortedTams} />
-                    </div>
+                </div>
+
+                <div className="bg-muted/30 p-5 rounded-lg border border-border">
+                  <h3 className="font-semibold text-sm mb-3">TAMs</h3>
+                  <div className="text-sm">
+                    <SelectableUserSummary users={sortedTams} />
                   </div>
-                  <div className="detail-card-spacer" aria-hidden="true" />
                 </div>
               </div>
-            </div>
+            </CardContent>
 
             {company.id && (
-              <div className="button-row button-row-end admin-detail-actions">
-                <SmartLink
-                  className="primary-button"
-                  href={`/companies/${company.id}/edit`}
-                >
-                  Edit
-                </SmartLink>
-              </div>
+              <CardFooter className="flex justify-end pt-6 border-t bg-muted/20">
+                <Button asChild>
+                  <SmartLink href={`/companies/${company.id}/edit`}>
+                    Edit
+                  </SmartLink>
+                </Button>
+              </CardFooter>
             )}
-          </div>
+          </Card>
         )}
       </DataState>
     </section>

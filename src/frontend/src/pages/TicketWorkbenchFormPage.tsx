@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -9,10 +9,7 @@
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import {
-  buildToastNavigationState,
-  useToast,
-} from "../components/common/ToastProvider";
+import { toast } from "sonner";
 import DataState from "../components/common/DataState";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
@@ -28,12 +25,39 @@ import type {
 } from "../types/domain";
 import type { TicketWorkbenchFormState } from "../types/forms";
 import { SUPPORT_TICKET_STATUSES } from "../types/tickets";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../components/ui/alert-dialog";
+import { Field, FieldLabel } from "../components/ui/field";
+import { Input } from "../components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 
 export default function TicketWorkbenchFormPage({
   sessionState,
 }: SessionPageProps) {
   const navigate = useNavigate();
-  const { showToast } = useToast();
+
   const { id } = useParams();
   const location = useLocation();
   const query = new URLSearchParams(location.search);
@@ -132,25 +156,21 @@ export default function TicketWorkbenchFormPage({
         ["affectsVersionId", formState.affectsVersionId],
         ["resolvedVersionId", formState.resolvedVersionId],
       ]);
-      navigate(await resolvePostRedirectPath(response, "/tickets"), {
-        state: buildToastNavigationState({
-          variant: "success",
-          message: bootstrap.edit
-            ? "Ticket updated successfully."
-            : "Ticket created successfully.",
-        }),
-      });
+      toast.success(
+        bootstrap.edit
+          ? "Ticket updated successfully."
+          : "Ticket created successfully.",
+      );
+      navigate(await resolvePostRedirectPath(response, "/tickets"));
     } catch (error: unknown) {
       setSaveState({
         saving: false,
         error:
           error instanceof Error ? error.message : "Unable to save ticket.",
       });
-      showToast({
-        variant: "error",
-        message:
-          error instanceof Error ? error.message : "Unable to save ticket.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "Unable to save ticket.",
+      );
       return;
     } finally {
       submissionGuard.exit();
@@ -159,33 +179,23 @@ export default function TicketWorkbenchFormPage({
   };
 
   const deleteTicket = async () => {
-    if (
-      !id ||
-      !window.confirm("Delete this ticket?") ||
-      !submissionGuard.tryEnter()
-    ) {
+    if (!id || !submissionGuard.tryEnter()) {
       return;
     }
     try {
       setSaveState({ saving: true, error: "" });
       const response = await postForm(`/tickets/${id}/delete`, []);
-      navigate(await resolvePostRedirectPath(response, "/tickets"), {
-        state: buildToastNavigationState({
-          variant: "danger",
-          message: "Ticket deleted.",
-        }),
-      });
+      toast.success("Ticket deleted.");
+      navigate(await resolvePostRedirectPath(response, "/tickets"));
     } catch (error: unknown) {
       setSaveState({
         saving: false,
         error:
           error instanceof Error ? error.message : "Unable to delete ticket.",
       });
-      showToast({
-        variant: "error",
-        message:
-          error instanceof Error ? error.message : "Unable to delete ticket.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "Unable to delete ticket.",
+      );
       return;
     } finally {
       submissionGuard.exit();
@@ -194,23 +204,42 @@ export default function TicketWorkbenchFormPage({
   };
 
   return (
-    <section className="panel">
-      <div className="section-header">
-        <div>
-          <h2>{bootstrap?.title || "Ticket form"}</h2>
-        </div>
-        <div className="button-row">
-          {id && (
-            <button
-              type="button"
-              className="secondary-button danger-button"
-              onClick={deleteTicket}
-              disabled={saveState.saving}
-            >
-              Delete ticket
-            </button>
-          )}
-        </div>
+    <section className="w-full max-w-5xl mx-auto mt-4">
+      <div className="flex items-center justify-between pb-6 px-1">
+        <h2 className="text-3xl font-bold tracking-tight">
+          {bootstrap?.title || "Ticket form"}
+        </h2>
+        {id && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={saveState.saving}
+              >
+                Delete ticket
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete
+                  this ticket.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={deleteTicket}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       <DataState
@@ -219,183 +248,240 @@ export default function TicketWorkbenchFormPage({
         signInHref={sessionState.data?.homePath || "/login"}
       >
         {bootstrap && formState && (
-          <form className="owner-form" onSubmit={submit}>
-            <div className="owner-form-grid">
-              <label>
-                Title
-                <input
-                  value={formState.title}
-                  onChange={(event) =>
-                    updateFormState("title", event.target.value)
-                  }
-                  required
-                />
-              </label>
-              <label>
-                Status
-                <select
-                  value={formState.status}
-                  onChange={(event) =>
-                    updateFormState("status", event.target.value)
-                  }
-                >
-                  {SUPPORT_TICKET_STATUSES.filter(
-                    (status) => status !== "Resolved",
-                  ).map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Company
-                <select
-                  value={formState.companyId}
-                  onChange={(event) =>
-                    setFormState((current) =>
-                      current
-                        ? {
-                            ...current,
-                            companyId: event.target.value,
-                            companyEntitlementId: "",
-                            affectsVersionId: "",
-                            resolvedVersionId: "",
-                          }
-                        : current,
-                    )
-                  }
-                >
-                  {(bootstrap.companies || []).map((company: NamedEntity) => (
-                    <option
-                      key={company.id}
-                      value={company.id ? String(company.id) : ""}
+          <form className="space-y-6 pb-20" onSubmit={submit}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Ticket Details</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-6">
+                <Field>
+                  <FieldLabel>
+                    Title <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Input
+                    value={formState.title}
+                    onChange={(event) =>
+                      updateFormState("title", event.target.value)
+                    }
+                    required
+                  />
+                </Field>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <Field>
+                    <FieldLabel>Status</FieldLabel>
+                    <Select
+                      value={formState.status || undefined}
+                      onValueChange={(value) =>
+                        updateFormState("status", value)
+                      }
                     >
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Entitlement
-                <select
-                  value={formState.companyEntitlementId}
-                  onChange={(event) =>
-                    updateFormState("companyEntitlementId", event.target.value)
-                  }
-                >
-                  {(bootstrap.entitlements || []).map(
-                    (entitlement: CompanyEntitlementOption) => (
-                      <option
-                        key={entitlement.id}
-                        value={entitlement.id ? String(entitlement.id) : ""}
-                      >
-                        {entitlement.name}
-                      </option>
-                    ),
-                  )}
-                </select>
-              </label>
-              <label>
-                Category
-                <select
-                  value={formState.categoryId}
-                  onChange={(event) =>
-                    updateFormState("categoryId", event.target.value)
-                  }
-                >
-                  {(bootstrap.categories || []).map((category: NamedEntity) => (
-                    <option
-                      key={category.id}
-                      value={category.id ? String(category.id) : ""}
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUPPORT_TICKET_STATUSES.filter(
+                          (status) => status !== "Resolved",
+                        ).map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {status}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field>
+                    <FieldLabel>Company</FieldLabel>
+                    <Select
+                      value={formState.companyId || undefined}
+                      onValueChange={(value) =>
+                        setFormState((current) =>
+                          current
+                            ? {
+                                ...current,
+                                companyId: value,
+                                companyEntitlementId: "",
+                                affectsVersionId: "",
+                                resolvedVersionId: "",
+                              }
+                            : current,
+                        )
+                      }
                     >
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Affects version
-                <select
-                  value={formState.affectsVersionId}
-                  onChange={(event) =>
-                    updateFormState("affectsVersionId", event.target.value)
-                  }
-                >
-                  <option value="">Select version</option>
-                  {(bootstrap.versions || []).map((version: VersionInfo) => (
-                    <option
-                      key={version.id}
-                      value={version.id ? String(version.id) : ""}
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select company" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(bootstrap.companies || []).map(
+                          (company: NamedEntity) => (
+                            <SelectItem
+                              key={company.id}
+                              value={String(company.id)}
+                            >
+                              {company.name}
+                            </SelectItem>
+                          ),
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field>
+                    <FieldLabel>Entitlement</FieldLabel>
+                    <Select
+                      value={formState.companyEntitlementId || undefined}
+                      onValueChange={(value) =>
+                        updateFormState("companyEntitlementId", value)
+                      }
                     >
-                      {version.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Resolved version
-                <select
-                  value={formState.resolvedVersionId}
-                  onChange={(event) =>
-                    updateFormState("resolvedVersionId", event.target.value)
-                  }
-                >
-                  <option value="">Select version</option>
-                  {(bootstrap.versions || []).map((version: VersionInfo) => (
-                    <option
-                      key={version.id}
-                      value={version.id ? String(version.id) : ""}
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select entitlement" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(bootstrap.entitlements || []).map(
+                          (entitlement: CompanyEntitlementOption) => (
+                            <SelectItem
+                              key={entitlement.id}
+                              value={String(entitlement.id)}
+                            >
+                              {entitlement.name}
+                            </SelectItem>
+                          ),
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field>
+                    <FieldLabel>Category</FieldLabel>
+                    <Select
+                      value={formState.categoryId || undefined}
+                      onValueChange={(value) =>
+                        updateFormState("categoryId", value)
+                      }
                     >
-                      {version.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="form-span-2">
-                External issue
-                <input
-                  value={formState.externalIssueLink}
-                  onChange={(event) =>
-                    updateFormState("externalIssueLink", event.target.value)
-                  }
-                  placeholder="https://github.com/..."
-                />
-              </label>
-            </div>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(bootstrap.categories || []).map(
+                          (category: NamedEntity) => (
+                            <SelectItem
+                              key={category.id}
+                              value={String(category.id)}
+                            >
+                              {category.name}
+                            </SelectItem>
+                          ),
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field>
+                    <FieldLabel>Affects version</FieldLabel>
+                    <Select
+                      value={formState.affectsVersionId || undefined}
+                      onValueChange={(value) =>
+                        updateFormState("affectsVersionId", value)
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select version" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(bootstrap.versions || []).map(
+                          (version: VersionInfo) => (
+                            <SelectItem
+                              key={version.id}
+                              value={String(version.id)}
+                            >
+                              {version.name}
+                            </SelectItem>
+                          ),
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field>
+                    <FieldLabel>Resolved version</FieldLabel>
+                    <Select
+                      value={formState.resolvedVersionId || undefined}
+                      onValueChange={(value) =>
+                        updateFormState("resolvedVersionId", value)
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select version" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(bootstrap.versions || []).map(
+                          (version: VersionInfo) => (
+                            <SelectItem
+                              key={version.id}
+                              value={String(version.id)}
+                            >
+                              {version.name}
+                            </SelectItem>
+                          ),
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </div>
+
+                <Field>
+                  <FieldLabel>External issue</FieldLabel>
+                  <Input
+                    value={formState.externalIssueLink}
+                    onChange={(event) =>
+                      updateFormState("externalIssueLink", event.target.value)
+                    }
+                    placeholder="https://github.com/..."
+                  />
+                </Field>
+              </CardContent>
+            </Card>
 
             {bootstrap.edit && (
-              <section className="detail-card">
-                <h3>Messages</h3>
-                <ul className="plain-list">
-                  {(bootstrap.messages || []).map((message) => (
-                    <li key={message.id}>
-                      <strong>{message.dateLabel || "-"}</strong> -{" "}
-                      {message.body || "No message body"}
-                    </li>
-                  ))}
-                  {(!bootstrap.messages || bootstrap.messages.length === 0) && (
-                    <li>No messages yet.</li>
-                  )}
-                </ul>
-              </section>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Messages</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3">
+                    {(bootstrap.messages || []).map((message) => (
+                      <li key={message.id} className="text-sm">
+                        <strong className="font-medium text-foreground">
+                          {message.dateLabel || "-"}
+                        </strong>{" "}
+                        <span className="text-muted-foreground">
+                          - {message.body || "No message body"}
+                        </span>
+                      </li>
+                    ))}
+                    {(!bootstrap.messages ||
+                      bootstrap.messages.length === 0) && (
+                      <li className="text-sm text-muted-foreground italic">
+                        No messages yet.
+                      </li>
+                    )}
+                  </ul>
+                </CardContent>
+              </Card>
             )}
 
-            <div className="button-row">
-              <button
-                type="submit"
-                className="primary-button"
-                disabled={saveState.saving}
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t">
+              <SmartLink
+                className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+                href="/tickets"
               >
+                Cancel
+              </SmartLink>
+              <Button type="submit" disabled={saveState.saving}>
                 {saveState.saving
                   ? "Saving..."
                   : bootstrap.edit
-                    ? "Save"
-                    : "Create"}
-              </button>
-              <SmartLink className="secondary-button" href="/tickets">
-                Cancel
-              </SmartLink>
+                    ? "Save Ticket"
+                    : "Create Ticket"}
+              </Button>
             </div>
           </form>
         )}

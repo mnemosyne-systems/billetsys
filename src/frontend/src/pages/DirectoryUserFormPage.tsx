@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -9,10 +9,7 @@
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import {
-  buildToastNavigationState,
-  useToast,
-} from "../components/common/ToastProvider";
+import { toast } from "sonner";
 import DataState from "../components/common/DataState";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
@@ -32,6 +29,31 @@ import type {
   TimezoneOption,
 } from "../types/domain";
 import type { DirectoryUserFormState } from "../utils/forms";
+import { Card, CardContent, CardFooter } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../components/ui/alert-dialog";
+import { Field, FieldLabel, FieldDescription } from "../components/ui/field";
+import { Input } from "../components/ui/input";
+import { PhoneInput } from "../components/ui/aevr/phone-input";
+import { CountryDropdown } from "../components/ui/aevr/country-dropdown";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import { countries } from "country-data-list";
 
 interface DirectoryUserFormPageProps extends SessionPageProps {
   bootstrapBase: string;
@@ -49,7 +71,7 @@ export default function DirectoryUserFormPage({
   navigateFallback,
 }: DirectoryUserFormPageProps) {
   const navigate = useNavigate();
-  const { showToast } = useToast();
+
   const { id } = useParams();
   const location = useLocation();
   const query = new URLSearchParams(location.search);
@@ -137,30 +159,23 @@ export default function DirectoryUserFormPage({
         ["companyId", formState.companyId],
         ["password", formState.password],
       ]);
+      toast.success(
+        isEdit ? "User updated successfully." : "User created successfully.",
+      );
       navigate(
         await resolvePostRedirectPath(
           response,
           resolveClientPath(bootstrap.cancelPath, navigateFallback),
         ),
-        {
-          state: buildToastNavigationState({
-            variant: "success",
-            message: isEdit
-              ? "User updated successfully."
-              : "User created successfully.",
-          }),
-        },
       );
     } catch (error: unknown) {
       setSaveState({
         saving: false,
         error: error instanceof Error ? error.message : "Unable to save user.",
       });
-      showToast({
-        variant: "error",
-        message:
-          error instanceof Error ? error.message : "Unable to save user.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "Unable to save user.",
+      );
       return;
     } finally {
       submissionGuard.exit();
@@ -172,7 +187,6 @@ export default function DirectoryUserFormPage({
     if (
       !id ||
       !bootstrap?.submitPath?.startsWith("/user/") ||
-      !window.confirm("Delete this user?") ||
       !submissionGuard.tryEnter()
     ) {
       return;
@@ -180,17 +194,12 @@ export default function DirectoryUserFormPage({
     try {
       setSaveState({ saving: true, error: "" });
       const response = await postForm(`/user/${id}/delete`, []);
+      toast.success("User deleted.");
       navigate(
         await resolvePostRedirectPath(
           response,
           resolveClientPath(bootstrap.cancelPath, navigateFallback),
         ),
-        {
-          state: buildToastNavigationState({
-            variant: "danger",
-            message: "User deleted.",
-          }),
-        },
       );
     } catch (error: unknown) {
       setSaveState({
@@ -198,11 +207,9 @@ export default function DirectoryUserFormPage({
         error:
           error instanceof Error ? error.message : "Unable to delete user.",
       });
-      showToast({
-        variant: "error",
-        message:
-          error instanceof Error ? error.message : "Unable to delete user.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "Unable to delete user.",
+      );
       return;
     } finally {
       submissionGuard.exit();
@@ -211,28 +218,43 @@ export default function DirectoryUserFormPage({
   };
 
   return (
-    <section className="panel">
+    <section className="w-full max-w-5xl mx-auto mt-4">
       {!isAdminCreate && (
-        <div className="section-header">
-          <div>
-            <SmartLink
-              className="inline-link back-link"
-              href={bootstrap?.cancelPath || navigateFallback}
-            >
-              Back
-            </SmartLink>
-            <h2>{bootstrap?.title || (isEdit ? "Edit user" : "New user")}</h2>
-          </div>
-          <div className="button-row">
+        <div className="flex items-center justify-between pb-6 px-1">
+          <h2 className="text-3xl font-bold tracking-tight">
+            {bootstrap?.title || (isEdit ? "Edit user" : "New user")}
+          </h2>
+          <div className="flex items-center">
             {isEdit && bootstrap?.submitPath?.startsWith("/user/") && (
-              <button
-                type="button"
-                className="secondary-button danger-button"
-                onClick={deleteUser}
-                disabled={saveState.saving}
-              >
-                Delete user
-              </button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={saveState.saving}
+                  >
+                    Delete user
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete
+                      this user.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={deleteUser}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
         </div>
@@ -244,205 +266,215 @@ export default function DirectoryUserFormPage({
         signInHref={sessionState.data?.homePath || "/login"}
       >
         {formState && bootstrap && (
-          <form className="owner-form" onSubmit={submit}>
-            <div
-              className={isAdminCreate ? "form-card ticket-detail-card" : ""}
-            >
-              <div
-                className={isAdminCreate ? "owner-form owner-detail-form" : ""}
-              >
-                <div
-                  className={`owner-form-grid${isAdminCreate ? " ticket-detail-grid" : ""}`}
-                >
-                  <label>
-                    Username
-                    <input
-                      value={formState.name}
-                      onChange={(event) =>
-                        updateFormState("name", event.target.value)
-                      }
-                      required
-                    />
-                  </label>
-                  <label>
-                    Full name
-                    <input
-                      value={formState.fullName}
-                      onChange={(event) =>
-                        updateFormState("fullName", event.target.value)
-                      }
-                    />
-                  </label>
-                  <label>
-                    Email
-                    <input
-                      type="email"
-                      value={formState.email}
-                      onChange={(event) =>
-                        updateFormState("email", event.target.value)
-                      }
-                      required
-                    />
-                  </label>
-                  <label>
-                    Social
-                    <input
-                      value={formState.social}
-                      onChange={(event) =>
-                        updateFormState("social", event.target.value)
-                      }
-                    />
-                  </label>
-                  <label>
-                    Phone number
-                    <input
-                      value={formState.phoneNumber}
-                      onChange={(event) =>
-                        updateFormState("phoneNumber", event.target.value)
-                      }
-                    />
-                  </label>
-                  <label>
-                    Extension
-                    <input
-                      value={formState.phoneExtension}
-                      onChange={(event) =>
-                        updateFormState("phoneExtension", event.target.value)
-                      }
-                    />
-                  </label>
-                  <label>
-                    Country
-                    <select
-                      value={formState.countryId}
-                      onChange={(event) =>
-                        setFormState((current) =>
-                          current
-                            ? {
-                                ...current,
-                                countryId: event.target.value,
-                                timezoneId: "",
-                              }
-                            : current,
-                        )
-                      }
-                    >
-                      <option value="">Select country</option>
-                      {(bootstrap.countries || []).map(
-                        (country: CountryOption) => (
-                          <option
-                            key={country.id}
-                            value={country.id ? String(country.id) : ""}
-                          >
-                            {country.name}
-                          </option>
-                        ),
-                      )}
-                    </select>
-                  </label>
-                  <label>
-                    Time zone
-                    <select
-                      value={formState.timezoneId}
-                      onChange={(event) =>
-                        updateFormState("timezoneId", event.target.value)
-                      }
-                    >
-                      <option value="">Select time zone</option>
+          <Card>
+            <form onSubmit={submit}>
+              <CardContent className="grid gap-6 sm:grid-cols-2 pt-6 pb-6">
+                <Field>
+                  <FieldLabel>
+                    Username <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Input
+                    value={formState.name}
+                    onChange={(event) =>
+                      updateFormState("name", event.target.value)
+                    }
+                    required
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Full name</FieldLabel>
+                  <Input
+                    value={formState.fullName}
+                    onChange={(event) =>
+                      updateFormState("fullName", event.target.value)
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>
+                    Email <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Input
+                    type="email"
+                    value={formState.email}
+                    onChange={(event) =>
+                      updateFormState("email", event.target.value)
+                    }
+                    required
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Social</FieldLabel>
+                  <Input
+                    value={formState.social}
+                    onChange={(event) =>
+                      updateFormState("social", event.target.value)
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Phone number</FieldLabel>
+                  <PhoneInput
+                    defaultCountry="US"
+                    value={formState.phoneNumber}
+                    onChange={(value) =>
+                      updateFormState("phoneNumber", value || "")
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Extension</FieldLabel>
+                  <Input
+                    value={formState.phoneExtension}
+                    onChange={(event) =>
+                      updateFormState("phoneExtension", event.target.value)
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Country</FieldLabel>
+                  <CountryDropdown
+                    defaultValue={
+                      countries.all.find(
+                        (c) =>
+                          c.name ===
+                          (bootstrap.countries || []).find(
+                            (bc: CountryOption) =>
+                              String(bc.id) === formState.countryId,
+                          )?.name,
+                      )?.alpha2 || ""
+                    }
+                    onChange={(country) => {
+                      const matched = (bootstrap.countries || []).find(
+                        (c: CountryOption) => c.name === country.name,
+                      );
+                      const nextCountryId = matched ? String(matched.id) : "";
+                      setFormState((current) =>
+                        current
+                          ? {
+                              ...current,
+                              countryId: nextCountryId,
+                              timezoneId: "",
+                            }
+                          : current,
+                      );
+                    }}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Time zone</FieldLabel>
+                  <Select
+                    value={formState.timezoneId || undefined}
+                    onValueChange={(value) =>
+                      updateFormState("timezoneId", value)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select time zone" />
+                    </SelectTrigger>
+                    <SelectContent>
                       {(bootstrap.timezones || []).map(
                         (timezone: TimezoneOption) => (
-                          <option
+                          <SelectItem
                             key={timezone.id}
-                            value={timezone.id ? String(timezone.id) : ""}
+                            value={String(timezone.id)}
                           >
                             {timezone.name}
-                          </option>
+                          </SelectItem>
                         ),
                       )}
-                    </select>
-                  </label>
-                  <label>
-                    Type
-                    <select
-                      value={formState.type}
-                      onChange={(event) =>
-                        updateFormState("type", event.target.value)
-                      }
-                      required
-                    >
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field>
+                  <FieldLabel>
+                    Type <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Select
+                    value={formState.type || undefined}
+                    onValueChange={(value) => updateFormState("type", value)}
+                    required
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a type" />
+                    </SelectTrigger>
+                    <SelectContent>
                       {(bootstrap.types || []).map((type: UserTypeOption) => (
-                        <option key={type.value} value={type.value}>
+                        <SelectItem key={type.value} value={type.value || ""}>
                           {type.label || type.value}
-                        </option>
+                        </SelectItem>
                       ))}
-                    </select>
-                  </label>
-                  <label>
-                    Company
-                    <select
-                      value={formState.companyId}
-                      disabled={bootstrap.companyLocked}
-                      onChange={(event) =>
-                        updateFormState("companyId", event.target.value)
-                      }
-                    >
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field>
+                  <FieldLabel>Company</FieldLabel>
+                  <Select
+                    value={formState.companyId || undefined}
+                    disabled={bootstrap.companyLocked}
+                    onValueChange={(value) =>
+                      updateFormState("companyId", value)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select company" />
+                    </SelectTrigger>
+                    <SelectContent>
                       {(bootstrap.companies || []).map(
                         (company: NamedEntity) => (
-                          <option
+                          <SelectItem
                             key={company.id}
-                            value={company.id ? String(company.id) : ""}
+                            value={String(company.id)}
                           >
                             {company.name}
-                          </option>
+                          </SelectItem>
                         ),
                       )}
-                    </select>
-                  </label>
-                  <label>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field className="sm:col-span-2">
+                  <FieldLabel>
                     Password{" "}
-                    {bootstrap.passwordRequired
-                      ? ""
-                      : "(leave blank to keep current password)"}
-                    <input
-                      type="password"
-                      value={formState.password}
-                      onChange={(event) =>
-                        updateFormState("password", event.target.value)
-                      }
-                      required={bootstrap.passwordRequired}
-                    />
-                  </label>
-                  {isAdminCreate && (
-                    <div className="detail-card-spacer" aria-hidden="true" />
+                    {bootstrap.passwordRequired && (
+                      <span className="text-destructive">*</span>
+                    )}
+                  </FieldLabel>
+                  <Input
+                    type="password"
+                    value={formState.password}
+                    onChange={(event) =>
+                      updateFormState("password", event.target.value)
+                    }
+                    required={bootstrap.passwordRequired}
+                  />
+                  {!bootstrap.passwordRequired && (
+                    <FieldDescription>
+                      Leave blank to keep current password.
+                    </FieldDescription>
                   )}
-                </div>
-              </div>
-            </div>
+                </Field>
+              </CardContent>
 
-            <div
-              className={`button-row${isAdminCreate ? " button-row-end" : ""}`}
-            >
-              <button
-                type="submit"
-                className="primary-button"
-                disabled={saveState.saving}
-              >
-                {saveState.saving
-                  ? "Saving..."
-                  : isAdminCreate
-                    ? "Create"
-                    : bootstrap.title || (isEdit ? "Save user" : "Create user")}
-              </button>
-              {!isAdminCreate && (
-                <SmartLink
-                  className="secondary-button"
-                  href={bootstrap.cancelPath || navigateFallback}
-                >
-                  Cancel
-                </SmartLink>
-              )}
-            </div>
-          </form>
+              <CardFooter className="flex items-center space-x-3 justify-end border-t bg-muted/20 px-6 py-4">
+                {!isAdminCreate && (
+                  <Button variant="outline" asChild>
+                    <SmartLink href={bootstrap?.cancelPath || navigateFallback}>
+                      Cancel
+                    </SmartLink>
+                  </Button>
+                )}
+                <Button type="submit" disabled={saveState.saving}>
+                  {saveState.saving
+                    ? "Saving..."
+                    : isAdminCreate
+                      ? "Create"
+                      : bootstrap.title ||
+                        (isEdit ? "Save user" : "Create user")}
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
         )}
       </DataState>
     </section>

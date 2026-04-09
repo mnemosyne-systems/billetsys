@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -15,9 +15,18 @@ interface MarkdownContentProps {
 }
 
 export default function MarkdownContent({ children }: MarkdownContentProps) {
+  let content = typeof children === "string" ? children : "";
+
+  // Auto-correct common markdown formatting mistakes (e.g. spaces inside asterisks `** bold **`)
+  if (content) {
+    content = content.replace(/\*\*([ \t]+)?([^*]+?)([ \t]+)?\*\*/g, "**$2**");
+    content = content.replace(
+      /(^|[^A-Za-z0-9_*])\*([ \t]+)?([^*]+?)([ \t]+)?\*/g,
+      "$1*$3*",
+    );
+  }
+
   return (
-    <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
-      {typeof children === "string" ? children : ""}
-    </ReactMarkdown>
+    <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{content}</ReactMarkdown>
   );
 }

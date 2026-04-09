@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -12,6 +12,8 @@ import useJson from "../hooks/useJson";
 import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
 import type { AttachmentDetail } from "../types/domain";
+import { Card, CardContent } from "../components/ui/card";
+import { Button } from "../components/ui/button";
 
 export default function AttachmentPage({ sessionState }: SessionPageProps) {
   const { id } = useParams();
@@ -22,20 +24,10 @@ export default function AttachmentPage({ sessionState }: SessionPageProps) {
   const attachmentTitle = attachment?.ticketName
     ? `${attachment.ticketName}: ${attachment.name || "Attachment"}`
     : attachment?.name || "Attachment";
-  const actionRowClassName = `button-row${
-    attachment?.backPath && attachment?.downloadPath
-      ? " button-row-split"
-      : attachment?.downloadPath
-        ? " button-row-end"
-        : ""
-  } attachment-detail-actions`;
-
   return (
-    <section className="panel">
-      <div className="section-header">
-        <div>
-          <h2>{attachmentTitle}</h2>
-        </div>
+    <section className="w-full max-w-5xl mx-auto mt-4">
+      <div className="pb-6 px-1 border-b mb-6">
+        <h2 className="text-3xl font-bold tracking-tight">{attachmentTitle}</h2>
       </div>
 
       <DataState
@@ -44,51 +36,59 @@ export default function AttachmentPage({ sessionState }: SessionPageProps) {
         signInHref={sessionState.data?.homePath || "/login"}
       >
         {attachment && (
-          <div className="article-detail">
+          <div className="space-y-6">
             {attachment.image ? (
-              <div className="markdown-card">
-                <img
-                  src={attachment.downloadPath}
-                  alt={attachment.name}
-                  style={{ maxWidth: "100%" }}
-                />
-              </div>
+              <Card>
+                <CardContent className="p-0 overflow-hidden rounded-lg flex items-center justify-center bg-muted/10 border-none shadow-none">
+                  <img
+                    src={attachment.downloadPath}
+                    alt={attachment.name}
+                    className="max-w-full h-auto object-contain max-h-[80vh] rounded-lg"
+                  />
+                </CardContent>
+              </Card>
             ) : (
-              <pre className="markdown-card attachment-content">
-                {(attachment.lines || [])
-                  .map((line) => line.content)
-                  .join("\n") ||
-                  attachment.messageBody ||
-                  ""}
-              </pre>
+              <Card>
+                <CardContent className="p-0">
+                  <pre className="p-4 overflow-x-auto text-sm font-mono bg-muted/10 rounded-lg whitespace-pre-wrap break-words">
+                    {(attachment.lines || [])
+                      .map((line) => line.content)
+                      .join("\n") ||
+                      attachment.messageBody ||
+                      ""}
+                  </pre>
+                </CardContent>
+              </Card>
             )}
 
-            <div className="attachment-meta-line">
-              {attachment.mimeType || "—"}
-              {attachment.sizeLabel ? ` (${attachment.sizeLabel})` : ""}
+            <div className="text-sm text-muted-foreground flex items-center space-x-2">
+              <span className="font-medium bg-muted px-2 py-0.5 rounded-md text-xs border">
+                {attachment.mimeType || "Unknown Type"}
+              </span>
+              {attachment.sizeLabel && <span>{attachment.sizeLabel}</span>}
             </div>
 
             {(attachment.backPath || attachment.downloadPath) && (
-              <div className={actionRowClassName}>
+              <div className="flex items-center justify-between pt-4 border-t">
                 {attachment.backPath ? (
-                  <SmartLink
-                    className="secondary-button danger-button"
-                    href={attachment.backPath}
-                  >
-                    Ticket
-                  </SmartLink>
+                  <Button variant="outline" asChild>
+                    <SmartLink href={attachment.backPath}>
+                      Back to Ticket
+                    </SmartLink>
+                  </Button>
                 ) : (
                   <span aria-hidden="true" />
                 )}
                 {attachment.downloadPath && (
-                  <a
-                    className="primary-button"
-                    href={attachment.downloadPath}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Open
-                  </a>
+                  <Button asChild>
+                    <a
+                      href={attachment.downloadPath}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Download File
+                    </a>
+                  </Button>
                 )}
               </div>
             )}

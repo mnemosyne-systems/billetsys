@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -17,6 +17,10 @@ import type {
   LevelRecord,
   VersionInfo,
 } from "../types/domain";
+import { Card, CardContent, CardFooter } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Field, FieldLabel } from "../components/ui/field";
+import { Input } from "../components/ui/input";
 
 export default function EntitlementDetailPage({
   sessionState,
@@ -29,100 +33,113 @@ export default function EntitlementDetailPage({
   const supportLevels = (entitlement?.supportLevels || []) as LevelRecord[];
 
   return (
-    <section className="panel">
+    <section className="w-full max-w-5xl mx-auto mt-4">
       <DataState
         state={entitlementState}
         emptyMessage="Entitlement not found."
         signInHref={sessionState.data?.homePath || "/login"}
       >
         {entitlement && (
-          <div className="article-detail">
-            <div className="form-card ticket-detail-card">
-              <div className="owner-form owner-detail-form">
-                <div className="owner-form-grid ticket-detail-grid">
-                  <label className="form-span-2">
-                    Name
-                    <input value={entitlement.name || "—"} readOnly />
-                  </label>
-                  <div className="detail-card form-span-2">
-                    <h3>Description</h3>
-                    <div className="markdown-card">
-                      {entitlement.description ? (
-                        <MarkdownContent>
-                          {entitlement.description}
-                        </MarkdownContent>
-                      ) : (
-                        <p className="muted-text">No description.</p>
-                      )}
+          <Card>
+            <CardContent className="p-6 md:p-8 space-y-6">
+              {/* Top row: Name + Description side by side */}
+              <div className="grid gap-6 md:grid-cols-[1fr_2fr]">
+                <Field>
+                  <FieldLabel>Name</FieldLabel>
+                  <Input value={entitlement.name || "\u2014"} readOnly />
+                </Field>
+                <div className="bg-muted/30 p-4 rounded-lg border border-border">
+                  <h3 className="font-semibold text-sm mb-2">Description</h3>
+                  {entitlement.description ? (
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <MarkdownContent>
+                        {entitlement.description}
+                      </MarkdownContent>
                     </div>
-                  </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No description.
+                    </p>
+                  )}
                 </div>
+              </div>
 
-                <section className="detail-card">
-                  <h3>Support levels</h3>
-                  <div className="entitlement-support-level-list">
+              {/* Bottom row: Support levels + Versions side by side */}
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="bg-muted/30 p-4 rounded-lg border border-border">
+                  <h3 className="font-semibold text-sm mb-3">Support levels</h3>
+                  <div>
                     {supportLevels.map((level) => (
                       <div
                         key={level.id}
-                        className="entitlement-support-level-row"
+                        className="flex items-center justify-between py-2 border-b last:border-0 border-border"
                       >
-                        <span className="entitlement-support-level-name">
+                        <span className="font-medium text-sm">
                           {level.name}
                         </span>
-                        <span className="entitlement-support-level-window">
-                          {level.fromLabel} - {level.toLabel}
+                        <span className="text-sm text-muted-foreground">
+                          {level.fromLabel} <span className="mx-1">&bull;</span>{" "}
+                          {level.toLabel}
                         </span>
                       </div>
                     ))}
                     {supportLevels.length === 0 && (
-                      <p className="muted-text">No support levels.</p>
+                      <p className="text-sm text-muted-foreground">
+                        No support levels.
+                      </p>
                     )}
                   </div>
-                </section>
+                </div>
 
-                <section className="detail-card">
-                  <h3>Versions</h3>
-                  <div className="version-editor-list">
-                    {(entitlement.versions || []).map(
-                      (version: VersionInfo) => (
-                        <div
-                          key={version.id || `${version.name}-${version.date}`}
-                          className="version-editor-card entitlement-version-card"
-                        >
-                          <div className="entitlement-version-grid">
-                            <label>
-                              Version
-                              <input value={version.name || "—"} readOnly />
-                            </label>
-                            <label>
-                              Date
-                              <input value={version.date || "—"} readOnly />
-                            </label>
-                            <div className="button-row button-row-end entitlement-version-actions" />
-                          </div>
-                        </div>
-                      ),
-                    )}
-                    {(!entitlement.versions ||
-                      entitlement.versions.length === 0) && (
-                      <p className="muted-text">No versions.</p>
-                    )}
-                  </div>
-                </section>
+                <div className="bg-muted/30 p-4 rounded-lg border border-border">
+                  <h3 className="font-semibold text-sm mb-3">Versions</h3>
+                  {(entitlement.versions || []).length > 0 ? (
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-muted-foreground">
+                          <th className="text-left font-medium pb-2">
+                            Version
+                          </th>
+                          <th className="text-left font-medium pb-2">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(entitlement.versions || []).map(
+                          (version: VersionInfo) => (
+                            <tr
+                              key={
+                                version.id || `${version.name}-${version.date}`
+                              }
+                              className="border-b last:border-0 border-border"
+                            >
+                              <td className="py-2 font-medium">
+                                {version.name || "\u2014"}
+                              </td>
+                              <td className="py-2 text-muted-foreground">
+                                {version.date || "\u2014"}
+                              </td>
+                            </tr>
+                          ),
+                        )}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No versions.
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
+            </CardContent>
 
             {entitlement.editPath && (
-              <div className="button-row button-row-end admin-detail-actions">
-                <SmartLink
-                  className="primary-button"
-                  href={entitlement.editPath}
-                >
-                  Edit
-                </SmartLink>
-              </div>
+              <CardFooter className="flex justify-end pt-6 border-t bg-muted/20">
+                <Button asChild>
+                  <SmartLink href={entitlement.editPath}>Edit</SmartLink>
+                </Button>
+              </CardFooter>
             )}
-          </div>
+          </Card>
         )}
       </DataState>
     </section>

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -9,12 +9,31 @@
 import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useToast } from "../components/common/ToastProvider";
+import { toast } from "sonner";
 import DataState from "../components/common/DataState";
 import { UserLogoPreview } from "../components/users/UserProfileSections";
 import useJson from "../hooks/useJson";
 import type { SessionPageProps } from "../types/app";
 import type { ProfileRecord } from "../types/domain";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { PhoneInput } from "../components/ui/aevr/phone-input";
+import { CountryDropdown } from "../components/ui/aevr/country-dropdown";
+import { Field, FieldLabel } from "../components/ui/field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import { countries } from "country-data-list";
 
 interface ProfileFormState {
   name: string;
@@ -31,7 +50,7 @@ interface ProfileFormState {
 
 export default function ProfilePage({ sessionState }: SessionPageProps) {
   const location = useLocation();
-  const { showToast } = useToast();
+
   const profileState = useJson<ProfileRecord>("/api/profile");
   const profile = profileState.data;
   const [formState, setFormState] = useState<ProfileFormState | null>(null);
@@ -64,9 +83,9 @@ export default function ProfilePage({ sessionState }: SessionPageProps) {
 
   useEffect(() => {
     if (routeError) {
-      showToast({ variant: "error", message: routeError });
+      toast.error(routeError);
     }
-  }, [routeError, showToast]);
+  }, [routeError]);
 
   const availableTimezones =
     profile?.timezones?.filter(
@@ -168,7 +187,7 @@ export default function ProfilePage({ sessionState }: SessionPageProps) {
           : current,
       );
       setSaveState({ saving: false, error: "", saved: true });
-      showToast({ variant: "success", message: "Profile saved successfully." });
+      toast.success("Profile saved successfully.");
     } catch (error: unknown) {
       setSaveState({
         saving: false,
@@ -180,11 +199,9 @@ export default function ProfilePage({ sessionState }: SessionPageProps) {
   };
 
   return (
-    <section className="panel">
-      <div className="section-header">
-        <div>
-          <h2>Profile</h2>
-        </div>
+    <section className="w-full max-w-5xl mx-auto mt-4">
+      <div className="flex items-center justify-between pb-6 px-1">
+        <h2 className="text-3xl font-bold tracking-tight">Profile</h2>
       </div>
 
       <DataState
@@ -193,182 +210,203 @@ export default function ProfilePage({ sessionState }: SessionPageProps) {
         signInHref={sessionState.data?.homePath || "/login"}
       >
         {formState && profile && (
-          <div className="article-detail">
-            <div className="form-card ticket-detail-card">
-              <form className="owner-form" onSubmit={submit}>
-                <div className="owner-form-grid ticket-detail-grid">
-                  <label>
-                    Username
-                    <input
-                      value={formState.name}
-                      onChange={(event) =>
-                        updateField("name", event.target.value)
-                      }
-                      required
-                    />
-                  </label>
-                  <label>
-                    Full name
-                    <input
-                      value={formState.fullName}
-                      onChange={(event) =>
-                        updateField("fullName", event.target.value)
-                      }
-                    />
-                  </label>
-                  <label>
-                    Email
-                    <input
-                      type="email"
-                      value={formState.email}
-                      onChange={(event) =>
-                        updateField("email", event.target.value)
-                      }
-                    />
-                  </label>
-                  <label>
-                    Social
-                    <input
-                      value={formState.social}
-                      onChange={(event) =>
-                        updateField("social", event.target.value)
-                      }
-                    />
-                  </label>
-                  <label>
-                    Phone number
-                    <input
-                      value={formState.phoneNumber}
-                      onChange={(event) =>
-                        updateField("phoneNumber", event.target.value)
-                      }
-                    />
-                  </label>
-                  <label>
-                    Phone extension
-                    <input
-                      value={formState.phoneExtension}
-                      onChange={(event) =>
-                        updateField("phoneExtension", event.target.value)
-                      }
-                    />
-                  </label>
-                  <label>
-                    Country
-                    <select
-                      value={formState.countryId}
-                      onChange={(event) => {
-                        const nextCountryId = event.target.value;
-                        const timezoneStillValid = profile.timezones.some(
-                          (timezone) =>
-                            String(timezone.id) === formState.timezoneId &&
-                            String(timezone.countryId) === nextCountryId,
-                        );
-                        setFormState((current) =>
-                          current
-                            ? {
-                                ...current,
-                                countryId: nextCountryId,
-                                timezoneId: timezoneStillValid
-                                  ? current.timezoneId
-                                  : "",
-                              }
-                            : current,
-                        );
-                        setSaveState((current) => ({
-                          ...current,
-                          saved: false,
-                        }));
-                      }}
-                    >
-                      <option value="">Select a country</option>
-                      {profile.countries.map((country) => (
-                        <option key={country.id} value={country.id}>
-                          {country.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Time zone
-                    <select
-                      value={formState.timezoneId}
-                      onChange={(event) =>
-                        updateField("timezoneId", event.target.value)
-                      }
-                    >
-                      <option value="">Select a time zone</option>
+          <form className="space-y-6 pb-20" onSubmit={submit}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Personal Information</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Update your contact details and preferences.
+                </p>
+              </CardHeader>
+              <CardContent className="grid gap-6 md:grid-cols-2">
+                <Field>
+                  <FieldLabel>
+                    Username <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Input
+                    value={formState.name}
+                    onChange={(event) =>
+                      updateField("name", event.target.value)
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Full name</FieldLabel>
+                  <Input
+                    value={formState.fullName}
+                    onChange={(event) =>
+                      updateField("fullName", event.target.value)
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Email</FieldLabel>
+                  <Input
+                    type="email"
+                    value={formState.email}
+                    onChange={(event) =>
+                      updateField("email", event.target.value)
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Social</FieldLabel>
+                  <Input
+                    value={formState.social}
+                    onChange={(event) =>
+                      updateField("social", event.target.value)
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Phone number</FieldLabel>
+                  <PhoneInput
+                    defaultCountry="US"
+                    value={formState.phoneNumber}
+                    onChange={(value) =>
+                      updateField("phoneNumber", value || "")
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Phone extension</FieldLabel>
+                  <Input
+                    value={formState.phoneExtension}
+                    onChange={(event) =>
+                      updateField("phoneExtension", event.target.value)
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Country</FieldLabel>
+                  <CountryDropdown
+                    defaultValue={
+                      countries.all.find(
+                        (c) =>
+                          c.name ===
+                          profile.countries.find(
+                            (pc) => String(pc.id) === formState.countryId,
+                          )?.name,
+                      )?.alpha2 || ""
+                    }
+                    onChange={(country) => {
+                      const matched = profile.countries.find(
+                        (c) => c.name === country.name,
+                      );
+                      const nextCountryId = matched ? String(matched.id) : "";
+                      const timezoneStillValid = profile.timezones.some(
+                        (timezone) =>
+                          String(timezone.id) === formState.timezoneId &&
+                          String(timezone.countryId) === nextCountryId,
+                      );
+                      setFormState((current) =>
+                        current
+                          ? {
+                              ...current,
+                              countryId: nextCountryId,
+                              timezoneId: timezoneStillValid
+                                ? current.timezoneId
+                                : "",
+                            }
+                          : current,
+                      );
+                      setSaveState((current) => ({
+                        ...current,
+                        saved: false,
+                      }));
+                    }}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Time zone</FieldLabel>
+                  <Select
+                    value={formState.timezoneId}
+                    onValueChange={(value) =>
+                      updateField("timezoneId", value === "none" ? "" : value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a time zone" />
+                    </SelectTrigger>
+                    <SelectContent position="popper">
+                      <SelectItem value="none">Select a time zone</SelectItem>
                       {availableTimezones.map((timezone) => (
-                        <option key={timezone.id} value={timezone.id}>
-                          {timezone.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  {profile.canSelectCompany ? (
-                    <label>
-                      Company
-                      <select
-                        value={formState.companyId}
-                        onChange={(event) =>
-                          updateField("companyId", event.target.value)
-                        }
-                      >
-                        <option value="">Select a company</option>
-                        {profile.companies.map((company) => (
-                          <option key={company.id} value={company.id}>
-                            {company.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ) : (
-                    <label className="ticket-detail-spacer" aria-hidden="true">
-                      <input value="-" readOnly />
-                    </label>
-                  )}
-                  <div className="owner-detail-panel">
-                    <div className="owner-detail-panel-label">Logo</div>
-                    <div className="owner-detail-panel-body profile-logo-panel">
-                      <div className="profile-logo-panel-content">
-                        <UserLogoPreview
-                          logoBase64={formState.logoBase64}
-                          fullName={formState.fullName}
-                          username={formState.name}
-                          email={formState.email}
-                        />
-                        <input
-                          ref={logoInputRef}
-                          type="file"
-                          accept="image/*"
-                          className="hidden-file-input"
-                          onChange={uploadLogo}
-                        />
-                        <button
-                          type="button"
-                          className="primary-button profile-logo-upload-button"
-                          onClick={openLogoPicker}
+                        <SelectItem
+                          key={timezone.id}
+                          value={String(timezone.id)}
                         >
-                          Upload
-                        </button>
-                      </div>
+                          {timezone.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                {profile.canSelectCompany && (
+                  <Field>
+                    <FieldLabel>Company</FieldLabel>
+                    <Select
+                      value={formState.companyId}
+                      onValueChange={(value) =>
+                        updateField("companyId", value === "none" ? "" : value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a company" />
+                      </SelectTrigger>
+                      <SelectContent position="popper">
+                        <SelectItem value="none">Select a company</SelectItem>
+                        {profile.companies.map((company) => (
+                          <SelectItem
+                            key={company.id}
+                            value={String(company.id)}
+                          >
+                            {company.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                )}
+
+                <div className="md:col-span-2 pt-4">
+                  <FieldLabel className="mb-2 block">Profile Logo</FieldLabel>
+                  <div className="flex items-center space-x-6">
+                    <UserLogoPreview
+                      logoBase64={formState.logoBase64}
+                      fullName={formState.fullName}
+                      username={formState.name}
+                      email={formState.email}
+                    />
+                    <div>
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={uploadLogo}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={openLogoPicker}
+                      >
+                        Upload logo
+                      </Button>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Upload a personal logo or avatar.
+                      </p>
                     </div>
                   </div>
-                  <div className="detail-card-spacer" aria-hidden="true" />
                 </div>
+              </CardContent>
+            </Card>
 
-                <div className="button-row button-row-end">
-                  <button
-                    type="submit"
-                    className="primary-button"
-                    disabled={saveState.saving}
-                  >
-                    {saveState.saving ? "Saving..." : "Save"}
-                  </button>
-                </div>
-              </form>
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t">
+              <Button type="submit" disabled={saveState.saving}>
+                {saveState.saving ? "Saving..." : "Save profile"}
+              </Button>
             </div>
-          </div>
+          </form>
         )}
       </DataState>
     </section>

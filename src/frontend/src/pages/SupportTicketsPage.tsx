@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -12,6 +12,15 @@ import { isWhiteColorValue, toQueryString } from "../utils/formatting";
 import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
 import type { CollectionResponse, TicketListItem } from "../types/domain";
+import { Button } from "../components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
 
 interface SupportTicketsPageProps extends SessionPageProps {
   view: "assigned" | "open" | "closed";
@@ -38,113 +47,177 @@ export default function SupportTicketsPage({
   );
 
   return (
-    <section className="panel">
+    <div className="w-full mx-auto mt-2">
       {showCreateButton && (
-        <div className="button-row support-ticket-actions">
-          <SmartLink
-            className="primary-button"
-            href={ticketsState.data?.createPath || createFallbackPath}
-          >
-            Create
-          </SmartLink>
+        <div className="flex justify-end pb-4">
+          <Button asChild>
+            <SmartLink
+              href={ticketsState.data?.createPath || createFallbackPath}
+            >
+              Create
+            </SmartLink>
+          </Button>
         </div>
       )}
 
-      <DataState
-        state={ticketsState}
-        emptyMessage="No tickets are available in this queue."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
-        <div className="ticket-table-wrap">
-          <table className="support-ticket-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Title</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Category</th>
-                <th>Support</th>
-                <th>Company</th>
-                <th>Entitlement</th>
-                {showLevelColumn && <th>Level</th>}
-                <th>Affects</th>
-                {currentView === "closed" && <th>Resolved</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {(ticketsState.data?.items || []).map(
-                (ticket: TicketListItem) => {
-                  const useLightText =
-                    ticket.slaColor && !isWhiteColorValue(ticket.slaColor);
-                  return (
-                    <tr
-                      key={ticket.id}
-                      className={
-                        useLightText ? "ticket-row-highlight" : undefined
-                      }
-                      style={
-                        ticket.slaColor
-                          ? {
-                              backgroundColor: ticket.slaColor,
-                              color: useLightText ? "#ffffff" : undefined,
-                            }
-                          : undefined
-                      }
-                    >
-                      <td>
-                        <SmartLink
-                          className="inline-link"
-                          href={ticket.detailPath}
+      <div className="w-full">
+        <DataState
+          state={ticketsState}
+          emptyMessage="No tickets are available in this queue."
+          signInHref={sessionState.data?.homePath || "/login"}
+        >
+          <div className="max-w-full overflow-x-auto">
+            <Table className="text-base">
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="whitespace-nowrap">Name</TableHead>
+                  <TableHead className="min-w-[160px]">Title</TableHead>
+                  <TableHead className="whitespace-nowrap">Date</TableHead>
+                  <TableHead className="whitespace-nowrap">Status</TableHead>
+                  <TableHead className="whitespace-nowrap">Category</TableHead>
+                  <TableHead className="whitespace-nowrap">Support</TableHead>
+                  <TableHead className="whitespace-nowrap">Company</TableHead>
+                  <TableHead className="whitespace-nowrap">
+                    Entitlement
+                  </TableHead>
+                  {showLevelColumn && (
+                    <TableHead className="whitespace-nowrap">Level</TableHead>
+                  )}
+                  <TableHead className="whitespace-nowrap">Affects</TableHead>
+                  {currentView === "closed" && (
+                    <TableHead className="whitespace-nowrap">
+                      Resolved
+                    </TableHead>
+                  )}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(ticketsState.data?.items || []).map(
+                  (ticket: TicketListItem) => {
+                    const useLightText =
+                      ticket.slaColor && !isWhiteColorValue(ticket.slaColor);
+                    return (
+                      <TableRow
+                        key={ticket.id}
+                        className={
+                          useLightText
+                            ? "hover:opacity-90 transition-opacity"
+                            : ""
+                        }
+                        style={
+                          ticket.slaColor
+                            ? {
+                                backgroundColor: ticket.slaColor,
+                                color: useLightText ? "#ffffff" : undefined,
+                              }
+                            : undefined
+                        }
+                      >
+                        <TableCell className="font-medium py-3 px-4">
+                          <div className="flex items-center gap-1.5 whitespace-nowrap">
+                            <SmartLink
+                              className={`font-semibold hover:underline ${useLightText ? "text-white" : "text-primary"}`}
+                              href={ticket.detailPath}
+                            >
+                              {ticket.name}
+                            </SmartLink>
+                            {ticket.messageDirectionArrow && (
+                              <span className="opacity-70 text-sm translate-y-px">
+                                {ticket.messageDirectionArrow}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell
+                          className={`py-3 px-4 ${useLightText ? "" : "text-muted-foreground"}`}
                         >
-                          {ticket.name}
-                        </SmartLink>
-                        {ticket.messageDirectionArrow && (
-                          <span className="ticket-direction">
-                            {ticket.messageDirectionArrow}
-                          </span>
-                        )}
-                      </td>
-                      <td>{ticket.title || "-"}</td>
-                      <td>{ticket.messageDateLabel || "-"}</td>
-                      <td>{ticket.status || "-"}</td>
-                      <td>{ticket.categoryName || "-"}</td>
-                      <td>
-                        {ticket.supportUser ? (
-                          <a
-                            className="inline-link"
-                            href={ticket.supportUser.detailPath}
+                          {ticket.title || "-"}
+                        </TableCell>
+                        <TableCell
+                          className={`whitespace-nowrap py-3 px-4 ${useLightText ? "" : "text-muted-foreground"}`}
+                        >
+                          {ticket.messageDateLabel || "-"}
+                        </TableCell>
+                        <TableCell
+                          className={`whitespace-nowrap py-3 px-4 ${useLightText ? "" : "text-muted-foreground"}`}
+                        >
+                          {ticket.status || "-"}
+                        </TableCell>
+                        <TableCell
+                          className={`whitespace-nowrap py-3 px-4 ${useLightText ? "" : "text-muted-foreground"}`}
+                        >
+                          {ticket.categoryName || "-"}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap py-3 px-4">
+                          {ticket.supportUser ? (
+                            <a
+                              className={`hover:underline ${useLightText ? "text-white" : "text-primary"}`}
+                              href={ticket.supportUser.detailPath}
+                            >
+                              {ticket.supportUser.displayName ||
+                                ticket.supportUser.username}
+                            </a>
+                          ) : (
+                            <span
+                              className={
+                                useLightText ? "" : "text-muted-foreground"
+                              }
+                            >
+                              —
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap py-3 px-4">
+                          {ticket.companyPath ? (
+                            <a
+                              className={`hover:underline ${useLightText ? "text-white" : "text-primary"}`}
+                              href={ticket.companyPath}
+                            >
+                              {ticket.companyName}
+                            </a>
+                          ) : (
+                            <span
+                              className={
+                                useLightText ? "" : "text-muted-foreground"
+                              }
+                            >
+                              {ticket.companyName || "—"}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell
+                          className={`whitespace-nowrap py-3 px-4 ${useLightText ? "" : "text-muted-foreground"}`}
+                        >
+                          {ticket.entitlementName || "-"}
+                        </TableCell>
+                        {showLevelColumn && (
+                          <TableCell
+                            className={`whitespace-nowrap py-3 px-4 ${useLightText ? "" : "text-muted-foreground"}`}
                           >
-                            {ticket.supportUser.displayName ||
-                              ticket.supportUser.username}
-                          </a>
-                        ) : (
-                          "—"
+                            {ticket.levelName || "-"}
+                          </TableCell>
                         )}
-                      </td>
-                      <td>
-                        {ticket.companyPath ? (
-                          <a className="inline-link" href={ticket.companyPath}>
-                            {ticket.companyName}
-                          </a>
-                        ) : (
-                          ticket.companyName || "—"
+                        <TableCell
+                          className={`whitespace-nowrap py-3 px-4 ${useLightText ? "" : "text-muted-foreground"}`}
+                        >
+                          {ticket.affectsVersionName || "-"}
+                        </TableCell>
+                        {currentView === "closed" && (
+                          <TableCell
+                            className={`whitespace-nowrap py-3 px-4 ${useLightText ? "" : "text-muted-foreground"}`}
+                          >
+                            {ticket.resolvedVersionName || "-"}
+                          </TableCell>
                         )}
-                      </td>
-                      <td>{ticket.entitlementName || "-"}</td>
-                      {showLevelColumn && <td>{ticket.levelName || "-"}</td>}
-                      <td>{ticket.affectsVersionName || "-"}</td>
-                      {currentView === "closed" && (
-                        <td>{ticket.resolvedVersionName || "-"}</td>
-                      )}
-                    </tr>
-                  );
-                },
-              )}
-            </tbody>
-          </table>
-        </div>
-      </DataState>
-    </section>
+                      </TableRow>
+                    );
+                  },
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </DataState>
+      </div>
+    </div>
   );
 }

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -13,6 +13,11 @@ import useJson from "../hooks/useJson";
 import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
 import type { LevelRecord } from "../types/domain";
+import { Card, CardContent, CardFooter } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Field, FieldLabel } from "../components/ui/field";
+import { Input } from "../components/ui/input";
+import { Textarea } from "../components/ui/textarea";
 
 export default function LevelDetailPage({ sessionState }: SessionPageProps) {
   const { id } = useParams();
@@ -20,11 +25,11 @@ export default function LevelDetailPage({ sessionState }: SessionPageProps) {
   const level = levelState.data;
 
   return (
-    <section className="panel">
-      <div className="section-header">
-        <div>
-          <h2>{level?.name || "Level details"}</h2>
-        </div>
+    <section className="w-full max-w-5xl mx-auto mt-4">
+      <div className="flex items-center justify-between pb-6 px-1">
+        <h2 className="text-3xl font-bold tracking-tight">
+          {level?.name || "Level details"}
+        </h2>
       </div>
 
       <DataState
@@ -33,62 +38,61 @@ export default function LevelDetailPage({ sessionState }: SessionPageProps) {
         signInHref={sessionState.data?.homePath || "/login"}
       >
         {level && (
-          <div className="article-detail">
-            <div className="form-card ticket-detail-card">
-              <div className="owner-form owner-detail-form">
-                <div className="owner-form-grid ticket-detail-grid">
-                  <label>
-                    Name
-                    <input value={level.name || "—"} readOnly />
-                  </label>
-                  <label>
-                    Business level
-                    <input value={level.level ?? "—"} readOnly />
-                  </label>
-                  <label>
-                    Color
-                    <LevelColorFieldValue
-                      color={level.color}
-                      display={level.colorDisplay}
-                    />
-                  </label>
-                  <label>
-                    Country
-                    <input value={level.countryName || "—"} readOnly />
-                  </label>
-                  <label>
-                    From
-                    <input value={level.fromLabel || "—"} readOnly />
-                  </label>
-                  <label>
-                    To
-                    <input value={level.toLabel || "—"} readOnly />
-                  </label>
-                  <label>
-                    Time zone
-                    <input value={level.timezoneName || "—"} readOnly />
-                  </label>
-                  <div className="detail-card-spacer" aria-hidden="true" />
-                  <label className="form-span-2">
-                    Description
-                    <textarea
-                      value={level.description || "—"}
-                      readOnly
-                      rows={6}
-                    />
-                  </label>
+          <Card>
+            <CardContent className="grid gap-6 md:grid-cols-2 pt-6">
+              <Field>
+                <FieldLabel>Name</FieldLabel>
+                <Input value={level.name || "—"} readOnly />
+              </Field>
+              <Field>
+                <FieldLabel>Business level</FieldLabel>
+                <Input value={level.level ?? "—"} readOnly />
+              </Field>
+              <Field>
+                <FieldLabel>Color</FieldLabel>
+                <div className="h-10 px-3 py-2 border rounded-md bg-muted/50 flex items-center">
+                  <LevelColorFieldValue
+                    color={level.color}
+                    display={level.colorDisplay}
+                  />
                 </div>
-              </div>
-            </div>
+              </Field>
+              <Field>
+                <FieldLabel>Country</FieldLabel>
+                <Input value={level.countryName || "—"} readOnly />
+              </Field>
+              <Field>
+                <FieldLabel>From</FieldLabel>
+                <Input value={level.fromLabel || "—"} readOnly />
+              </Field>
+              <Field>
+                <FieldLabel>To</FieldLabel>
+                <Input value={level.toLabel || "—"} readOnly />
+              </Field>
+              <Field>
+                <FieldLabel>Time zone</FieldLabel>
+                <Input value={level.timezoneName || "—"} readOnly />
+              </Field>
+              <div className="hidden md:block" aria-hidden="true" />
+              <Field className="md:col-span-2">
+                <FieldLabel>Description</FieldLabel>
+                <Textarea
+                  value={level.description || "—"}
+                  readOnly
+                  rows={6}
+                  className="resize-none"
+                />
+              </Field>
+            </CardContent>
 
             {level.editPath && (
-              <div className="button-row button-row-end admin-detail-actions">
-                <SmartLink className="primary-button" href={level.editPath}>
-                  Edit
-                </SmartLink>
-              </div>
+              <CardFooter className="flex justify-end pt-6 border-t bg-muted/20">
+                <Button asChild>
+                  <SmartLink href={level.editPath}>Edit</SmartLink>
+                </Button>
+              </CardFooter>
             )}
-          </div>
+          </Card>
         )}
       </DataState>
     </section>

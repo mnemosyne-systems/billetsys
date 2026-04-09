@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -18,6 +18,25 @@ import {
 } from "../components/users/UserComponents";
 import type { SessionPageProps } from "../types/app";
 import type { OwnerCompany } from "../types/domain";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Field, FieldLabel } from "../components/ui/field";
+import { Input } from "../components/ui/input";
+import { PhoneInput } from "../components/ui/aevr/phone-input";
+import { CountryDropdown } from "../components/ui/aevr/country-dropdown";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import { countries } from "country-data-list";
 
 interface OwnerFormState {
   name: string;
@@ -38,72 +57,74 @@ export function OwnerPage({ sessionState }: SessionPageProps) {
   const owner = ownerState.data;
 
   return (
-    <section className="panel">
+    <section className="w-full max-w-5xl mx-auto mt-4">
       <DataState
         state={ownerState}
         emptyMessage="Owner company not found."
         signInHref={sessionState.data?.homePath || "/login"}
       >
         {owner && (
-          <div className="article-detail">
-            <div className="form-card ticket-detail-card">
-              <div className="owner-form owner-detail-form">
-                <div className="owner-form-grid ticket-detail-grid">
-                  <label>
-                    Owner
-                    <input value={owner.name || "—"} readOnly />
-                  </label>
-                  <label>
-                    Phone
-                    <input value={owner.phoneNumber || "—"} readOnly />
-                  </label>
-                  <label>
-                    Country
-                    <input value={owner.countryName || "—"} readOnly />
-                  </label>
-                  <label>
-                    Time zone
-                    <input value={owner.timezoneName || "—"} readOnly />
-                  </label>
-                  <label>
-                    Address1
-                    <input value={owner.address1 || "—"} readOnly />
-                  </label>
-                  <label>
-                    Address2
-                    <input value={owner.address2 || "—"} readOnly />
-                  </label>
-                  <label>
-                    City
-                    <input value={owner.city || "—"} readOnly />
-                  </label>
-                  <label>
-                    State
-                    <input value={owner.state || "—"} readOnly />
-                  </label>
-                  <label>
-                    Zip
-                    <input value={owner.zip || "—"} readOnly />
-                  </label>
-                  <div className="detail-card-spacer" aria-hidden="true" />
-                  <div className="owner-detail-panel">
-                    <div className="owner-detail-panel-label">Support</div>
-                    <div className="owner-detail-panel-body">
-                      <OwnerUserList users={owner.supportUsers} />
-                    </div>
+          <div className="space-y-6 pb-20">
+            <Card>
+              <CardHeader>
+                <CardTitle>Owner Details</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-6 md:grid-cols-2">
+                <Field>
+                  <FieldLabel>Owner</FieldLabel>
+                  <Input value={owner.name || "—"} readOnly />
+                </Field>
+                <Field>
+                  <FieldLabel>Phone</FieldLabel>
+                  <Input value={owner.phoneNumber || "—"} readOnly />
+                </Field>
+                <Field>
+                  <FieldLabel>Country</FieldLabel>
+                  <Input value={owner.countryName || "—"} readOnly />
+                </Field>
+                <Field>
+                  <FieldLabel>Time zone</FieldLabel>
+                  <Input value={owner.timezoneName || "—"} readOnly />
+                </Field>
+                <Field>
+                  <FieldLabel>Address1</FieldLabel>
+                  <Input value={owner.address1 || "—"} readOnly />
+                </Field>
+                <Field>
+                  <FieldLabel>Address2</FieldLabel>
+                  <Input value={owner.address2 || "—"} readOnly />
+                </Field>
+                <Field>
+                  <FieldLabel>City</FieldLabel>
+                  <Input value={owner.city || "—"} readOnly />
+                </Field>
+                <Field>
+                  <FieldLabel>State</FieldLabel>
+                  <Input value={owner.state || "—"} readOnly />
+                </Field>
+                <Field className="md:col-span-2">
+                  <FieldLabel>Zip</FieldLabel>
+                  <Input value={owner.zip || "—"} readOnly />
+                </Field>
+
+                <div className="md:col-span-2 grid gap-6 md:grid-cols-2 pt-6 border-t mt-2">
+                  <div className="space-y-3">
+                    <FieldLabel className="text-base">Support</FieldLabel>
+                    <OwnerUserList users={owner.supportUsers} />
                   </div>
-                  <div className="owner-detail-panel">
-                    <div className="owner-detail-panel-label">TAMs</div>
-                    <div className="owner-detail-panel-body">
-                      <OwnerUserList users={owner.tamUsers} />
-                    </div>
+                  <div className="space-y-3">
+                    <FieldLabel className="text-base">TAMs</FieldLabel>
+                    <OwnerUserList users={owner.tamUsers} />
                   </div>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div className="button-row button-row-end admin-detail-actions">
-              <SmartLink className="primary-button" href="/owner/edit">
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t">
+              <SmartLink
+                className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                href="/owner/edit"
+              >
                 Edit
               </SmartLink>
             </div>
@@ -214,41 +235,56 @@ export function OwnerEditPage({ sessionState }: SessionPageProps) {
   };
 
   return (
-    <section className="panel">
+    <section className="w-full max-w-5xl mx-auto mt-4">
       <DataState
         state={ownerState}
         emptyMessage="Owner company not found."
         signInHref={sessionState.data?.homePath || "/login"}
       >
         {formState && owner && (
-          <form className="owner-form owner-detail-form" onSubmit={submit}>
-            <div className="form-card ticket-detail-card">
-              <div className="owner-form-grid ticket-detail-grid">
-                <label>
-                  Name
-                  <input
+          <form className="space-y-6 pb-20" onSubmit={submit}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Edit Owner Details</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-6 md:grid-cols-2">
+                <Field>
+                  <FieldLabel>Name</FieldLabel>
+                  <Input
                     value={formState.name}
                     onChange={(event) =>
                       updateField("name", event.target.value)
                     }
                     required
                   />
-                </label>
-                <label>
-                  Phone
-                  <input
+                </Field>
+                <Field>
+                  <FieldLabel>Phone</FieldLabel>
+                  <PhoneInput
+                    defaultCountry="US"
                     value={formState.phoneNumber}
-                    onChange={(event) =>
-                      updateField("phoneNumber", event.target.value)
+                    onChange={(value) =>
+                      updateField("phoneNumber", value || "")
                     }
                   />
-                </label>
-                <label>
-                  Country
-                  <select
-                    value={formState.countryId}
-                    onChange={(event) => {
-                      const nextCountryId = event.target.value;
+                </Field>
+                <Field>
+                  <FieldLabel>Country</FieldLabel>
+                  <CountryDropdown
+                    defaultValue={
+                      countries.all.find(
+                        (c) =>
+                          c.name ===
+                          owner.countries.find(
+                            (oc) => String(oc.id) === formState.countryId,
+                          )?.name,
+                      )?.alpha2 || ""
+                    }
+                    onChange={(country) => {
+                      const matched = owner.countries.find(
+                        (c) => c.name === country.name,
+                      );
+                      const nextCountryId = matched ? String(matched.id) : "";
                       const timezoneStillValid = owner.timezones.some(
                         (timezone) =>
                           String(timezone.id) === formState.timezoneId &&
@@ -266,101 +302,118 @@ export function OwnerEditPage({ sessionState }: SessionPageProps) {
                           : current,
                       );
                     }}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Time zone</FieldLabel>
+                  <Select
+                    value={formState.timezoneId || undefined}
+                    onValueChange={(value) => updateField("timezoneId", value)}
                   >
-                    <option value="">Select a country</option>
-                    {owner.countries.map((country) => (
-                      <option key={country.id} value={country.id}>
-                        {country.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Time zone
-                  <select
-                    value={formState.timezoneId}
-                    onChange={(event) =>
-                      updateField("timezoneId", event.target.value)
-                    }
-                  >
-                    <option value="">Select a time zone</option>
-                    {availableTimezones.map((timezone) => (
-                      <option key={timezone.id} value={timezone.id}>
-                        {timezone.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Address 1
-                  <input
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a time zone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableTimezones.map((timezone) => (
+                        <SelectItem
+                          key={timezone.id}
+                          value={String(timezone.id)}
+                        >
+                          {timezone.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field>
+                  <FieldLabel>Address 1</FieldLabel>
+                  <Input
                     value={formState.address1}
                     onChange={(event) =>
                       updateField("address1", event.target.value)
                     }
                   />
-                </label>
-                <label>
-                  Address 2
-                  <input
+                </Field>
+                <Field>
+                  <FieldLabel>Address 2</FieldLabel>
+                  <Input
                     value={formState.address2}
                     onChange={(event) =>
                       updateField("address2", event.target.value)
                     }
                   />
-                </label>
-                <label>
-                  City
-                  <input
+                </Field>
+                <Field>
+                  <FieldLabel>City</FieldLabel>
+                  <Input
                     value={formState.city}
                     onChange={(event) =>
                       updateField("city", event.target.value)
                     }
                   />
-                </label>
-                <label>
-                  State
-                  <input
+                </Field>
+                <Field>
+                  <FieldLabel>State</FieldLabel>
+                  <Input
                     value={formState.state}
                     onChange={(event) =>
                       updateField("state", event.target.value)
                     }
                   />
-                </label>
-                <label className="form-span-2">
-                  Zip
-                  <input
+                </Field>
+                <Field className="md:col-span-2">
+                  <FieldLabel>Zip</FieldLabel>
+                  <Input
                     value={formState.zip}
                     onChange={(event) => updateField("zip", event.target.value)}
                   />
-                </label>
-                <OwnerSelector
-                  title="Support"
-                  users={owner.supportOptions}
-                  selectedIds={formState.supportIds}
-                  onToggle={(userId) =>
-                    toggleSelectedUser("supportIds", userId)
-                  }
-                />
-                <OwnerSelector
-                  title="TAMs"
-                  users={owner.tamOptions}
-                  selectedIds={formState.tamIds}
-                  onToggle={(userId) => toggleSelectedUser("tamIds", userId)}
-                />
-              </div>
-            </div>
+                </Field>
 
-            {saveState.error && <p className="error-text">{saveState.error}</p>}
+                <div className="md:col-span-2 grid gap-6 md:grid-cols-2 pt-6 border-t mt-2">
+                  <div className="space-y-4">
+                    <FieldLabel className="text-base text-foreground mb-4">
+                      Support
+                    </FieldLabel>
+                    <div className="mt-2">
+                      <OwnerSelector
+                        title=""
+                        users={owner.supportOptions}
+                        selectedIds={formState.supportIds}
+                        onToggle={(userId) =>
+                          toggleSelectedUser("supportIds", userId)
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <FieldLabel className="text-base text-foreground mb-4">
+                      TAMs
+                    </FieldLabel>
+                    <div className="mt-2">
+                      <OwnerSelector
+                        title=""
+                        users={owner.tamOptions}
+                        selectedIds={formState.tamIds}
+                        onToggle={(userId) =>
+                          toggleSelectedUser("tamIds", userId)
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="button-row button-row-end admin-detail-actions">
-              <button
-                type="submit"
-                className="primary-button"
-                disabled={saveState.saving}
-              >
+            {saveState.error && (
+              <p className="text-sm font-medium text-destructive">
+                {saveState.error}
+              </p>
+            )}
+
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t">
+              <Button type="submit" disabled={saveState.saving}>
                 {saveState.saving ? "Saving..." : "Save"}
-              </button>
+              </Button>
             </div>
           </form>
         )}

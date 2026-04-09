@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -9,10 +9,7 @@
 import { useParams } from "react-router-dom";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  buildToastNavigationState,
-  useToast,
-} from "../components/common/ToastProvider";
+import { toast } from "sonner";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
 import DataState from "../components/common/DataState";
@@ -21,6 +18,27 @@ import { resolvePostRedirectPath, SmartLink } from "../utils/routing";
 import { postForm } from "../utils/api";
 import type { SessionPageProps } from "../types/app";
 import type { ArticleRecord } from "../types/domain";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../components/ui/alert-dialog";
+import { Field, FieldLabel } from "../components/ui/field";
+import { Input } from "../components/ui/input";
 
 interface DeleteArticleButtonProps {
   articleId: string | number;
@@ -32,35 +50,26 @@ function DeleteArticleButton({
   label = "Delete article",
 }: DeleteArticleButtonProps) {
   const navigate = useNavigate();
-  const { showToast } = useToast();
+
   const [deleting, setDeleting] = useState(false);
   const submissionGuard = useSubmissionGuard();
 
   const remove = async () => {
-    if (
-      !window.confirm("Delete this article?") ||
-      !submissionGuard.tryEnter()
-    ) {
+    if (!submissionGuard.tryEnter()) {
       return;
     }
     try {
       setDeleting(true);
       const response = await postForm(`/articles/${articleId}/delete`, []);
-      navigate(await resolvePostRedirectPath(response, "/articles"), {
-        state: buildToastNavigationState({
-          variant: "danger",
-          message: "Article deleted.",
-        }),
-      });
+      toast.success("Article deleted.");
+      navigate(await resolvePostRedirectPath(response, "/articles"));
     } catch (submitError: unknown) {
       setDeleting(false);
-      showToast({
-        variant: "error",
-        message:
-          submitError instanceof Error
-            ? submitError.message
-            : "Unable to delete article.",
-      });
+      toast.error(
+        submitError instanceof Error
+          ? submitError.message
+          : "Unable to delete article.",
+      );
       return;
     } finally {
       submissionGuard.exit();
@@ -69,16 +78,31 @@ function DeleteArticleButton({
   };
 
   return (
-    <>
-      <button
-        type="button"
-        className="secondary-button danger-button"
-        onClick={remove}
-        disabled={deleting}
-      >
-        {deleting ? "Deleting..." : label}
-      </button>
-    </>
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button type="button" variant="destructive" disabled={deleting}>
+          {deleting ? "Deleting..." : label}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete this
+            article.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={remove}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -92,86 +116,96 @@ export default function ArticleDetailPage({ sessionState }: SessionPageProps) {
   const article = articleState.data;
 
   return (
-    <section className="panel">
+    <section className="w-full max-w-5xl mx-auto mt-4">
       <DataState
         state={articleState}
         emptyMessage="Article not found."
         signInHref={sessionState.data?.homePath || "/login"}
       >
         {article && (
-          <div className="article-detail">
-            <div className="form-card ticket-detail-card">
-              <h1>{article.title || "Article details"}</h1>
-              <div className="owner-form owner-detail-form">
-                <div className="owner-form-grid ticket-detail-grid">
-                  <label>
-                    Title
-                    <input value={article.title || "—"} readOnly />
-                  </label>
-                  <label>
-                    Tags
-                    <input value={article.tags || "—"} readOnly />
-                  </label>
-                  <div className="owner-detail-panel form-span-2">
-                    <div className="owner-detail-panel-label">Body</div>
-                    <div className="owner-detail-panel-body">
-                      {article.body ? (
-                        <div className="markdown-output">
-                          <MarkdownContent>{article.body}</MarkdownContent>
-                        </div>
-                      ) : (
-                        <p className="muted-text">No body.</p>
-                      )}
-                    </div>
+          <Card>
+            <CardHeader className="pb-6">
+              <CardTitle className="text-3xl font-bold tracking-tight">
+                {article.title || "Article details"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6 md:grid-cols-2">
+                <Field>
+                  <FieldLabel>Title</FieldLabel>
+                  <Input value={article.title || "—"} readOnly />
+                </Field>
+                <Field>
+                  <FieldLabel>Tags</FieldLabel>
+                  <Input value={article.tags || "—"} readOnly />
+                </Field>
+                <div className="md:col-span-2 bg-muted/30 p-5 rounded-lg border border-border">
+                  <h3 className="font-semibold text-sm mb-3">Body</h3>
+                  <div>
+                    {article.body ? (
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <MarkdownContent>{article.body}</MarkdownContent>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No body.</p>
+                    )}
                   </div>
-                  <div className="owner-detail-panel form-span-2">
-                    <div className="owner-detail-panel-label">Attachments</div>
-                    <div className="owner-detail-panel-body">
-                      {article.attachments.length === 0 ? (
-                        <p className="muted-text">No attachments.</p>
-                      ) : (
-                        <div className="attachment-table">
-                          <div className="attachment-row attachment-header-row">
-                            <span>Name</span>
-                            <span>Mimetype</span>
-                            <span>Size</span>
-                          </div>
-                          {article.attachments.map((attachment) => (
-                            <div key={attachment.id} className="attachment-row">
-                              <a
-                                href={attachment.downloadPath}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                {attachment.name}
-                              </a>
-                              <span>{attachment.mimeType}</span>
-                              <span>{attachment.sizeLabel}</span>
-                            </div>
-                          ))}
+                </div>
+                <div className="md:col-span-2 bg-muted/30 p-5 rounded-lg border border-border">
+                  <h3 className="font-semibold text-sm mb-3">Attachments</h3>
+                  <div>
+                    {article.attachments.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No attachments.
+                      </p>
+                    ) : (
+                      <div className="rounded-md border bg-background overflow-hidden">
+                        <div className="grid grid-cols-[1fr_auto_auto] gap-4 p-2.5 bg-muted font-semibold text-sm text-muted-foreground">
+                          <span>Name</span>
+                          <span>Type</span>
+                          <span>Size</span>
                         </div>
-                      )}
-                    </div>
+                        {article.attachments.map((attachment) => (
+                          <div
+                            key={attachment.id}
+                            className="grid grid-cols-[1fr_auto_auto] gap-4 p-2.5 border-t text-sm items-center"
+                          >
+                            <a
+                              href={attachment.downloadPath}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-primary hover:underline truncate"
+                            >
+                              {attachment.name}
+                            </a>
+                            <span className="text-muted-foreground">
+                              {attachment.mimeType}
+                            </span>
+                            <span className="text-muted-foreground whitespace-nowrap">
+                              {attachment.sizeLabel}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            </div>
+            </CardContent>
 
             {(article.canDelete || (article.canEdit && article.editPath)) && (
-              <div
-                className={`button-row${article.canDelete && article.canEdit && article.editPath ? " button-row-split" : " button-row-end"} admin-detail-actions`}
-              >
+              <CardFooter className="flex justify-end gap-3 pt-6 border-t mt-4 bg-muted/20">
                 {article.canDelete && (
                   <DeleteArticleButton articleId={article.id} label="Delete" />
                 )}
                 {article.canEdit && article.editPath && (
-                  <SmartLink className="primary-button" href={article.editPath}>
-                    Edit
-                  </SmartLink>
+                  <Button asChild>
+                    <SmartLink href={article.editPath}>Edit</SmartLink>
+                  </Button>
                 )}
-              </div>
+              </CardFooter>
             )}
-          </div>
+          </Card>
         )}
       </DataState>
     </section>

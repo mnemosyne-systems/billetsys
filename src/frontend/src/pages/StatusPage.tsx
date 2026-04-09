@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -8,6 +8,13 @@
 
 import { SmartLink } from "../utils/routing";
 import type { StatusPageProps } from "../types/app";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
 
 export default function StatusPage({
   sessionState,
@@ -17,18 +24,16 @@ export default function StatusPage({
   const homeHref = sessionState.data?.homePath || "/login";
 
   return (
-    <section className="panel auth-panel">
-      <div className="section-header">
-        <div>
-          <h2>{title}</h2>
-          <p className="section-copy">{message}</p>
-        </div>
-      </div>
-      <div className="button-row">
-        <SmartLink className="primary-button" href={homeHref}>
-          Return to app
-        </SmartLink>
-      </div>
-    </section>
+    <Card className="w-full max-w-2xl mx-auto mt-12 bg-card">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl font-bold">{title}</CardTitle>
+        <p className="text-muted-foreground">{message}</p>
+      </CardHeader>
+      <CardContent className="flex flex-wrap gap-3">
+        <Button asChild>
+          <SmartLink href={homeHref}>Return to app</SmartLink>
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

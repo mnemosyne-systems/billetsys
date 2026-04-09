@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -9,6 +9,17 @@
 import type { ChangeEvent, RefObject } from "react";
 import { useRef } from "react";
 import MarkdownContent from "./MarkdownContent";
+import {
+  Bold,
+  Italic,
+  Heading,
+  List,
+  Quote,
+  Code,
+  Link as LinkIcon,
+  Image as ImageIcon,
+} from "lucide-react";
+import { Button } from "../ui/button";
 
 type MarkdownAction =
   | "bold"
@@ -133,52 +144,72 @@ export default function MarkdownEditor({
   };
 
   return (
-    <div className="markdown-editor">
-      <div className="markdown-toolbar">
-        <button
+    <div className="flex flex-col rounded-md border border-input overflow-hidden shadow-sm">
+      <div className="flex items-center flex-wrap gap-1 border-b border-input bg-muted/40 p-1">
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
           onClick={() => applyAction("bold")}
-          aria-label="Bold"
+          title="Bold"
         >
-          <strong>B</strong>
-        </button>
-        <button
+          <Bold className="h-4 w-4" />
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
           onClick={() => applyAction("italic")}
-          aria-label="Italic"
+          title="Italic"
         >
-          <em>I</em>
-        </button>
-        <button
+          <Italic className="h-4 w-4" />
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
           onClick={() => applyAction("heading")}
-          aria-label="Heading"
+          title="Heading"
         >
-          H
-        </button>
-        <button
+          <Heading className="h-4 w-4" />
+        </Button>
+        <div className="h-4 w-px bg-border mx-1" />
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
           onClick={() => applyAction("list")}
-          aria-label="List"
+          title="List"
         >
-          •
-        </button>
-        <button
+          <List className="h-4 w-4" />
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
           onClick={() => applyAction("quote")}
-          aria-label="Quote"
+          title="Quote"
         >
-          &quot;
-        </button>
-        <button
+          <Quote className="h-4 w-4" />
+        </Button>
+        <div className="h-4 w-px bg-border mx-1" />
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
           onClick={() => applyAction("code")}
-          aria-label="Code"
+          title="Inline Code"
         >
-          {"</>"}
-        </button>
+          <Code className="h-4 w-4" />
+        </Button>
         <select
-          className="markdown-toolbar-select"
+          className="h-8 rounded-md border border-input bg-background px-2 py-1 text-xs text-muted-foreground outline-none focus:ring-1 focus:ring-ring focus:text-foreground transition-colors"
           defaultValue="__label"
           onChange={(event: ChangeEvent<HTMLSelectElement>) => {
             const selectedLanguage = event.target.value;
@@ -191,7 +222,7 @@ export default function MarkdownEditor({
           aria-label="Code block language"
         >
           <option value="__label" hidden>
-            Code
+            Code Block
           </option>
           {MARKDOWN_CODE_BLOCK_LANGUAGES.map(([code, label]) => (
             <option key={code || "plaintext"} value={code}>
@@ -199,24 +230,34 @@ export default function MarkdownEditor({
             </option>
           ))}
         </select>
-        <button
+        <div className="h-4 w-px bg-border mx-1" />
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
           onClick={() => applyAction("link")}
-          aria-label="Link"
+          title="Link"
         >
-          Link
-        </button>
-        <button
+          <LinkIcon className="h-4 w-4" />
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
           onClick={() => applyAction("media")}
-          aria-label="Media"
+          title="Image/Media"
         >
-          Img
-        </button>
+          <ImageIcon className="h-4 w-4" />
+        </Button>
       </div>
-      <div className="markdown-panels">
-        <div className="markdown-panel">
-          <div className="markdown-panel-header">Write</div>
+
+      <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border bg-background">
+        <div className="flex flex-col min-h-[300px]">
+          <div className="bg-muted/40 px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
+            Write
+          </div>
           <textarea
             ref={textareaRef}
             name={name}
@@ -226,12 +267,22 @@ export default function MarkdownEditor({
               onChange(event.target.value)
             }
             required={required}
+            className="flex-1 w-full resize-y p-3 outline-none bg-transparent text-sm font-mono focus:ring-0 leading-relaxed"
+            placeholder="Write using markdown syntax..."
           />
         </div>
-        <div className="markdown-panel">
-          <div className="markdown-panel-header">Preview</div>
-          <div className="markdown-preview markdown-output">
-            <MarkdownContent>{value || ""}</MarkdownContent>
+        <div className="flex flex-col min-h-[300px] bg-muted/10">
+          <div className="bg-muted/40 px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
+            Preview
+          </div>
+          <div className="flex-1 p-4 prose prose-sm dark:prose-invert max-w-none overflow-y-auto max-h-[600px]">
+            {value ? (
+              <MarkdownContent>{value}</MarkdownContent>
+            ) : (
+              <span className="text-muted-foreground opacity-50 italic">
+                Nothing to preview.
+              </span>
+            )}
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -9,10 +9,7 @@
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  buildToastNavigationState,
-  useToast,
-} from "../components/common/ToastProvider";
+import { toast } from "sonner";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
 import DataState from "../components/common/DataState";
@@ -27,6 +24,36 @@ import type { FormMode, SessionPageProps } from "../types/app";
 import type { CompanyFormBootstrap } from "../types/domain";
 import type { CompanyEntitlementEntry, CompanyFormState } from "../types/forms";
 import type { BrowserFormEntries } from "../utils/forms";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../components/ui/alert-dialog";
+import { Field, FieldLabel } from "../components/ui/field";
+import { Input } from "../components/ui/input";
+import { PhoneInput } from "../components/ui/aevr/phone-input";
+import { CountryDropdown } from "../components/ui/aevr/country-dropdown";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import { countries } from "country-data-list";
 
 interface CompanyFormPageProps extends SessionPageProps {
   mode: FormMode;
@@ -62,7 +89,7 @@ export default function CompanyFormPage({
   mode,
 }: CompanyFormPageProps) {
   const navigate = useNavigate();
-  const { showToast } = useToast();
+
   const { id } = useParams();
   const companyState = useJson<CompanyFormBootstrap>(
     mode === "edit" && id ? `/api/companies/${id}` : "/api/companies/bootstrap",
@@ -270,14 +297,12 @@ export default function CompanyFormPage({
         isEdit ? `/companies/${id}` : "/companies",
         entries,
       );
-      navigate(await resolvePostRedirectPath(response, "/companies"), {
-        state: buildToastNavigationState({
-          variant: "success",
-          message: isEdit
-            ? "Company updated successfully."
-            : "Company created successfully.",
-        }),
-      });
+      toast.success(
+        isEdit
+          ? "Company updated successfully."
+          : "Company created successfully.",
+      );
+      navigate(await resolvePostRedirectPath(response, "/companies"));
     } catch (error: unknown) {
       if (isNetworkRequestError(error)) {
         setSaveState({ saving: false, error: "" });
@@ -290,11 +315,9 @@ export default function CompanyFormPage({
         error:
           error instanceof Error ? error.message : "Unable to save company.",
       });
-      showToast({
-        variant: "error",
-        message:
-          error instanceof Error ? error.message : "Unable to save company.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "Unable to save company.",
+      );
       return;
     } finally {
       submissionGuard.exit();
@@ -303,33 +326,23 @@ export default function CompanyFormPage({
   };
 
   const deleteCompany = async () => {
-    if (
-      !id ||
-      !window.confirm("Delete this company?") ||
-      !submissionGuard.tryEnter()
-    ) {
+    if (!id || !submissionGuard.tryEnter()) {
       return;
     }
     try {
       setSaveState({ saving: true, error: "" });
       const response = await postForm(`/companies/${id}/delete`, []);
-      navigate(await resolvePostRedirectPath(response, "/companies"), {
-        state: buildToastNavigationState({
-          variant: "danger",
-          message: "Company deleted.",
-        }),
-      });
+      toast.success("Company deleted.");
+      navigate(await resolvePostRedirectPath(response, "/companies"));
     } catch (error: unknown) {
       setSaveState({
         saving: false,
         error:
           error instanceof Error ? error.message : "Unable to delete company.",
       });
-      showToast({
-        variant: "error",
-        message:
-          error instanceof Error ? error.message : "Unable to delete company.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "Unable to delete company.",
+      );
       return;
     } finally {
       submissionGuard.exit();
@@ -338,719 +351,512 @@ export default function CompanyFormPage({
   };
 
   return (
-    <section className="panel">
+    <section className="w-full max-w-5xl mx-auto mt-4">
+      <div className="flex items-center justify-between pb-6 px-1">
+        <h2 className="text-3xl font-bold tracking-tight">
+          {isEdit && company
+            ? company.name || "Edit company"
+            : "Create company"}
+        </h2>
+      </div>
+
       <DataState
         state={companyState}
         emptyMessage="Company not found."
         signInHref={sessionState.data?.homePath || "/login"}
       >
         {formState && company && (
-          <form
-            className={`owner-form${!isEdit ? " owner-detail-form" : ""}`}
-            onSubmit={submit}
-          >
-            {isEdit ? (
-              <div className="form-card ticket-detail-card">
-                <div className="owner-form owner-detail-form">
-                  <div className="owner-form-grid ticket-detail-grid">
-                    <label>
-                      Name
-                      <input
-                        value={formState.name}
-                        onChange={(event) =>
-                          updateFormState("name", event.target.value)
-                        }
-                        required
-                      />
-                    </label>
-                    <label>
-                      Phone
-                      <input
-                        value={formState.phoneNumber}
-                        onChange={(event) =>
-                          updateFormState("phoneNumber", event.target.value)
-                        }
-                      />
-                    </label>
-                    <label>
-                      Country
-                      <select
-                        value={formState.countryId}
-                        onChange={(event) => {
-                          const nextCountryId = event.target.value;
-                          const timezoneStillValid = (
-                            company.timezones || []
-                          ).some(
-                            (timezone) =>
-                              String(timezone.id) === formState.timezoneId &&
-                              String(timezone.countryId) === nextCountryId,
-                          );
-                          setFormState((current) =>
-                            current
-                              ? {
-                                  ...current,
-                                  countryId: nextCountryId,
-                                  timezoneId: timezoneStillValid
-                                    ? current.timezoneId
-                                    : "",
-                                }
-                              : current,
-                          );
-                        }}
-                      >
-                        <option value="">Select a country</option>
-                        {(company.countries || []).map((country) => (
-                          <option key={country.id} value={country.id}>
-                            {country.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Time zone
-                      <select
-                        value={formState.timezoneId}
-                        onChange={(event) =>
-                          updateFormState("timezoneId", event.target.value)
-                        }
-                      >
-                        <option value="">Select a time zone</option>
-                        {availableTimezones.map((timezone) => (
-                          <option key={timezone.id} value={timezone.id}>
-                            {timezone.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Address1
-                      <input
-                        value={formState.address1}
-                        onChange={(event) =>
-                          updateFormState("address1", event.target.value)
-                        }
-                      />
-                    </label>
-                    <label>
-                      Address2
-                      <input
-                        value={formState.address2}
-                        onChange={(event) =>
-                          updateFormState("address2", event.target.value)
-                        }
-                      />
-                    </label>
-                    <label>
-                      City
-                      <input
-                        value={formState.city}
-                        onChange={(event) =>
-                          updateFormState("city", event.target.value)
-                        }
-                      />
-                    </label>
-                    <label>
-                      State
-                      <input
-                        value={formState.state}
-                        onChange={(event) =>
-                          updateFormState("state", event.target.value)
-                        }
-                      />
-                    </label>
-                    <label>
-                      Zip
-                      <input
-                        value={formState.zip}
-                        onChange={(event) =>
-                          updateFormState("zip", event.target.value)
-                        }
-                      />
-                    </label>
-                    <div className="owner-detail-panel">
-                      <div className="owner-detail-panel-label">Superuser</div>
-                      <div className="owner-detail-panel-body">
-                        <SelectableUserSummary
-                          users={company.selectedSuperusers}
-                        />
-                      </div>
-                    </div>
-                    <SelectableUserPicker
-                      title="User"
-                      users={company.userOptions || []}
-                      selectedIds={formState.selectedUserIds}
-                      onToggle={(userId) =>
-                        toggleSelection("selectedUserIds", userId)
-                      }
-                    />
-                    <SelectableUserPicker
-                      title="TAMs"
-                      users={company.tamOptions || []}
-                      selectedIds={formState.selectedTamIds}
-                      onToggle={(userId) =>
-                        toggleSelection("selectedTamIds", userId)
-                      }
-                    />
-                    <div className="detail-card-spacer" aria-hidden="true" />
-                  </div>
-                  <section className="detail-card">
-                    <div className="section-header compact-header">
-                      <div>
-                        <h3>Entitlements</h3>
-                      </div>
-                    </div>
-                    <div className="version-editor-list">
-                      {formState.entitlements.map((entry, index) => (
-                        <div
-                          key={`${entry.entitlementId || "new"}-${entry.levelId || "level"}-${index}`}
-                          className="version-editor-card"
-                        >
-                          <div className="owner-form-grid">
-                            <label>
-                              Entitlement
-                              <select
-                                value={entry.entitlementId}
-                                onChange={(event) =>
-                                  updateEntitlement(
-                                    index,
-                                    "entitlementId",
-                                    event.target.value,
-                                  )
-                                }
-                                required
-                              >
-                                <option value="">Select entitlement</option>
-                                {(company.entitlements || []).map((option) => (
-                                  <option key={option.id} value={option.id}>
-                                    {option.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                            <label>
-                              Level
-                              <select
-                                value={entry.levelId}
-                                onChange={(event) =>
-                                  updateEntitlement(
-                                    index,
-                                    "levelId",
-                                    event.target.value,
-                                  )
-                                }
-                                required
-                              >
-                                <option value="">Select level</option>
-                                {(company.levels || []).map((option) => (
-                                  <option key={option.id} value={option.id}>
-                                    {option.name} ({option.level})
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                            <label>
-                              Date
-                              <input
-                                type="date"
-                                value={entry.date}
-                                onChange={(event) =>
-                                  updateEntitlement(
-                                    index,
-                                    "date",
-                                    event.target.value,
-                                  )
-                                }
-                                required
-                              />
-                            </label>
-                            <label>
-                              Duration
-                              <select
-                                value={entry.duration}
-                                onChange={(event) =>
-                                  updateEntitlement(
-                                    index,
-                                    "duration",
-                                    event.target.value,
-                                  )
-                                }
-                                required
-                              >
-                                {(company.durations || []).map((option) => (
-                                  <option
-                                    key={option.value}
-                                    value={option.value}
-                                  >
-                                    {option.label}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                          </div>
-                          <div className="button-row button-row-end">
-                            <button
-                              type="button"
-                              className="secondary-button danger-button"
-                              onClick={() => removeEntitlement(index)}
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                      {formState.entitlements.length === 0 && (
-                        <p className="muted-text">
-                          No entitlements selected yet.
-                        </p>
-                      )}
-                    </div>
-                    <div className="button-row button-row-end">
-                      <button
-                        type="button"
-                        className="secondary-button danger-button"
-                        onClick={addEntitlement}
-                      >
-                        Add
-                      </button>
-                    </div>
-                  </section>
-                </div>
-              </div>
-            ) : (
-              <div className="form-card ticket-detail-card">
-                <div className="owner-form owner-detail-form">
-                  <p className="required-fields-note">
+          <form className="space-y-6 pb-20" onSubmit={submit}>
+            {/* COMPANY DETAILS SECTION */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Company Details</CardTitle>
+                {!isEdit && (
+                  <p className="text-sm text-muted-foreground mt-1">
                     Required fields are marked{" "}
-                    <span className="required-indicator">*</span>.
+                    <span className="text-destructive">*</span>.
                   </p>
-                  <div className="owner-form-grid ticket-detail-grid">
-                    <label>
-                      Name <span className="required-indicator">*</span>
-                      <input
-                        value={formState.name}
-                        onChange={(event) =>
-                          updateFormState("name", event.target.value)
-                        }
-                        required
-                      />
-                    </label>
-                    <label>
-                      Phone number
-                      <input
-                        value={formState.phoneNumber}
-                        onChange={(event) =>
-                          updateFormState("phoneNumber", event.target.value)
-                        }
-                      />
-                    </label>
-                    <label>
-                      Address 1
-                      <input
-                        value={formState.address1}
-                        onChange={(event) =>
-                          updateFormState("address1", event.target.value)
-                        }
-                      />
-                    </label>
-                    <label>
-                      Address 2
-                      <input
-                        value={formState.address2}
-                        onChange={(event) =>
-                          updateFormState("address2", event.target.value)
-                        }
-                      />
-                    </label>
-                    <label>
-                      City
-                      <input
-                        value={formState.city}
-                        onChange={(event) =>
-                          updateFormState("city", event.target.value)
-                        }
-                      />
-                    </label>
-                    <label>
-                      State
-                      <input
-                        value={formState.state}
-                        onChange={(event) =>
-                          updateFormState("state", event.target.value)
-                        }
-                      />
-                    </label>
-                    <label>
-                      Zip
-                      <input
-                        value={formState.zip}
-                        onChange={(event) =>
-                          updateFormState("zip", event.target.value)
-                        }
-                      />
-                    </label>
-                    <label>
-                      Country
-                      <select
-                        value={formState.countryId}
-                        onChange={(event) => {
-                          const nextCountryId = event.target.value;
-                          const timezoneStillValid = (
-                            company.timezones || []
-                          ).some(
-                            (timezone) =>
-                              String(timezone.id) === formState.timezoneId &&
-                              String(timezone.countryId) === nextCountryId,
-                          );
-                          setFormState((current) =>
-                            current
-                              ? {
-                                  ...current,
-                                  countryId: nextCountryId,
-                                  timezoneId: timezoneStillValid
-                                    ? current.timezoneId
-                                    : "",
-                                }
-                              : current,
-                          );
-                        }}
-                      >
-                        <option value="">Select a country</option>
-                        {(company.countries || []).map((country) => (
-                          <option key={country.id} value={country.id}>
-                            {country.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Time zone
-                      <select
-                        value={formState.timezoneId}
-                        onChange={(event) =>
-                          updateFormState("timezoneId", event.target.value)
-                        }
-                      >
-                        <option value="">Select a time zone</option>
-                        {availableTimezones.map((timezone) => (
-                          <option key={timezone.id} value={timezone.id}>
-                            {timezone.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <div className="detail-card-spacer" aria-hidden="true" />
-                    <SelectableUserPicker
-                      title="Users"
-                      users={company.userOptions || []}
-                      selectedIds={formState.selectedUserIds}
-                      onToggle={(userId) =>
-                        toggleSelection("selectedUserIds", userId)
-                      }
-                    />
-                    <section className="detail-card">
-                      <h3>Superuser</h3>
-                      <div className="owner-form-grid">
-                        <label>
-                          Username <span className="required-indicator">*</span>
-                          <input
-                            value={formState.superuserUsername}
-                            onChange={(event) =>
-                              updateFormState(
-                                "superuserUsername",
-                                event.target.value,
-                              )
+                )}
+              </CardHeader>
+              <CardContent className="grid gap-6 md:grid-cols-2">
+                <Field>
+                  <FieldLabel>
+                    Name{" "}
+                    {!isEdit && <span className="text-destructive">*</span>}
+                  </FieldLabel>
+                  <Input
+                    value={formState.name}
+                    onChange={(event) =>
+                      updateFormState("name", event.target.value)
+                    }
+                    required
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Phone number</FieldLabel>
+                  <PhoneInput
+                    defaultCountry="US"
+                    value={formState.phoneNumber}
+                    onChange={(value) =>
+                      updateFormState("phoneNumber", value || "")
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Address 1</FieldLabel>
+                  <Input
+                    value={formState.address1}
+                    onChange={(event) =>
+                      updateFormState("address1", event.target.value)
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Address 2</FieldLabel>
+                  <Input
+                    value={formState.address2}
+                    onChange={(event) =>
+                      updateFormState("address2", event.target.value)
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>City</FieldLabel>
+                  <Input
+                    value={formState.city}
+                    onChange={(event) =>
+                      updateFormState("city", event.target.value)
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>State</FieldLabel>
+                  <Input
+                    value={formState.state}
+                    onChange={(event) =>
+                      updateFormState("state", event.target.value)
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Zip</FieldLabel>
+                  <Input
+                    value={formState.zip}
+                    onChange={(event) =>
+                      updateFormState("zip", event.target.value)
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Country</FieldLabel>
+                  <CountryDropdown
+                    defaultValue={
+                      countries.all.find(
+                        (c) =>
+                          c.name ===
+                          (company.countries || []).find(
+                            (cc) => String(cc.id) === formState.countryId,
+                          )?.name,
+                      )?.alpha2 || ""
+                    }
+                    onChange={(country) => {
+                      const matched = (company.countries || []).find(
+                        (c) => c.name === country.name,
+                      );
+                      const nextCountryId = matched ? String(matched.id) : "";
+                      const timezoneStillValid = (company.timezones || []).some(
+                        (timezone) =>
+                          String(timezone.id) === formState.timezoneId &&
+                          String(timezone.countryId) === nextCountryId,
+                      );
+                      setFormState((current) =>
+                        current
+                          ? {
+                              ...current,
+                              countryId: nextCountryId,
+                              timezoneId: timezoneStillValid
+                                ? current.timezoneId
+                                : "",
                             }
-                            required
-                          />
-                        </label>
-                        <label>
-                          Full name
-                          <input
-                            value={formState.superuserFullName}
-                            onChange={(event) =>
-                              updateFormState(
-                                "superuserFullName",
-                                event.target.value,
-                              )
-                            }
-                          />
-                        </label>
-                        <label>
-                          Email <span className="required-indicator">*</span>
-                          <input
-                            type="email"
-                            value={formState.superuserEmail}
-                            onChange={(event) =>
-                              updateFormState(
-                                "superuserEmail",
-                                event.target.value,
-                              )
-                            }
-                            required
-                          />
-                        </label>
-                        <label>
-                          Social
-                          <input
-                            value={formState.superuserSocial}
-                            onChange={(event) =>
-                              updateFormState(
-                                "superuserSocial",
-                                event.target.value,
-                              )
-                            }
-                          />
-                        </label>
-                        <label>
-                          Phone number
-                          <input
-                            value={formState.superuserPhoneNumber}
-                            onChange={(event) =>
-                              updateFormState(
-                                "superuserPhoneNumber",
-                                event.target.value,
-                              )
-                            }
-                          />
-                        </label>
-                        <label>
-                          Phone extension
-                          <input
-                            value={formState.superuserPhoneExtension}
-                            onChange={(event) =>
-                              updateFormState(
-                                "superuserPhoneExtension",
-                                event.target.value,
-                              )
-                            }
-                          />
-                        </label>
-                        <label>
-                          Country
-                          <select
-                            value={formState.superuserCountryId}
-                            onChange={(event) => {
-                              const nextCountryId = event.target.value;
-                              const timezoneStillValid = (
-                                company.timezones || []
-                              ).some(
-                                (timezone) =>
-                                  String(timezone.id) ===
-                                    formState.superuserTimezoneId &&
-                                  String(timezone.countryId) === nextCountryId,
-                              );
-                              setFormState((current) =>
-                                current
-                                  ? {
-                                      ...current,
-                                      superuserCountryId: nextCountryId,
-                                      superuserTimezoneId: timezoneStillValid
-                                        ? current.superuserTimezoneId
-                                        : "",
-                                    }
-                                  : current,
-                              );
-                            }}
-                          >
-                            <option value="">Select a country</option>
-                            {(company.countries || []).map((country) => (
-                              <option key={country.id} value={country.id}>
-                                {country.name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <label>
-                          Time zone
-                          <select
-                            value={formState.superuserTimezoneId}
-                            onChange={(event) =>
-                              updateFormState(
-                                "superuserTimezoneId",
-                                event.target.value,
-                              )
-                            }
-                          >
-                            <option value="">Select a time zone</option>
-                            {availableSuperuserTimezones.map((timezone) => (
-                              <option key={timezone.id} value={timezone.id}>
-                                {timezone.name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <label className="form-span-2">
-                          Password <span className="required-indicator">*</span>
-                          <input
-                            type="password"
-                            value={formState.superuserPassword}
-                            onChange={(event) =>
-                              updateFormState(
-                                "superuserPassword",
-                                event.target.value,
-                              )
-                            }
-                            required
-                          />
-                        </label>
-                      </div>
-                    </section>
-                    <SelectableUserPicker
-                      title="TAMs"
-                      users={company.tamOptions || []}
-                      selectedIds={formState.selectedTamIds}
-                      onToggle={(userId) =>
-                        toggleSelection("selectedTamIds", userId)
-                      }
-                    />
-                    <div className="detail-card-spacer" aria-hidden="true" />
-                  </div>
-
-                  <section className="detail-card">
-                    <div className="section-header compact-header">
-                      <div>
-                        <h3>Entitlements</h3>
-                      </div>
-                    </div>
-                    <div className="version-editor-list">
-                      {formState.entitlements.map((entry, index) => (
-                        <div
-                          key={`${entry.entitlementId || "new"}-${entry.levelId || "level"}-${index}`}
-                          className="version-editor-card"
+                          : current,
+                      );
+                    }}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Time zone</FieldLabel>
+                  <Select
+                    value={formState.timezoneId || undefined}
+                    onValueChange={(value) =>
+                      updateFormState("timezoneId", value)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a time zone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableTimezones.map((timezone) => (
+                        <SelectItem
+                          key={timezone.id}
+                          value={String(timezone.id)}
                         >
-                          <div className="owner-form-grid">
-                            <label>
-                              Entitlement
-                              <select
-                                value={entry.entitlementId}
-                                onChange={(event) =>
-                                  updateEntitlement(
-                                    index,
-                                    "entitlementId",
-                                    event.target.value,
-                                  )
-                                }
-                                required
-                              >
-                                <option value="">Select entitlement</option>
-                                {(company.entitlements || []).map((option) => (
-                                  <option key={option.id} value={option.id}>
-                                    {option.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                            <label>
-                              Level
-                              <select
-                                value={entry.levelId}
-                                onChange={(event) =>
-                                  updateEntitlement(
-                                    index,
-                                    "levelId",
-                                    event.target.value,
-                                  )
-                                }
-                                required
-                              >
-                                <option value="">Select level</option>
-                                {(company.levels || []).map((option) => (
-                                  <option key={option.id} value={option.id}>
-                                    {option.name} ({option.level})
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                            <label>
-                              Date
-                              <input
-                                type="date"
-                                value={entry.date}
-                                onChange={(event) =>
-                                  updateEntitlement(
-                                    index,
-                                    "date",
-                                    event.target.value,
-                                  )
-                                }
-                                required
-                              />
-                            </label>
-                            <label>
-                              Duration
-                              <select
-                                value={entry.duration}
-                                onChange={(event) =>
-                                  updateEntitlement(
-                                    index,
-                                    "duration",
-                                    event.target.value,
-                                  )
-                                }
-                                required
-                              >
-                                {(company.durations || []).map((option) => (
-                                  <option
-                                    key={option.value}
-                                    value={option.value}
-                                  >
-                                    {option.label}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                          </div>
-                          <div className="button-row button-row-end">
-                            <button
-                              type="button"
-                              className="secondary-button danger-button"
-                              onClick={() => removeEntitlement(index)}
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        </div>
+                          {timezone.name}
+                        </SelectItem>
                       ))}
-                      {formState.entitlements.length === 0 && (
-                        <p className="muted-text">
-                          No entitlements selected yet.
-                        </p>
-                      )}
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                {isEdit && (
+                  <div className="md:col-span-2 pt-2">
+                    <FieldLabel>Superuser</FieldLabel>
+                    <div className="mt-2">
+                      <SelectableUserSummary
+                        users={company.selectedSuperusers}
+                      />
                     </div>
-                    <div className="button-row button-row-end">
-                      <button
-                        type="button"
-                        className="secondary-button danger-button"
-                        onClick={addEntitlement}
-                      >
-                        Add
-                      </button>
-                    </div>
-                  </section>
+                  </div>
+                )}
+
+                <div className="md:col-span-2 mt-2 space-y-4 pt-4 border-t">
+                  <SelectableUserPicker
+                    title="Users"
+                    users={company.userOptions || []}
+                    selectedIds={formState.selectedUserIds}
+                    onToggle={(userId) =>
+                      toggleSelection("selectedUserIds", userId)
+                    }
+                  />
+                  <SelectableUserPicker
+                    title="TAMs"
+                    users={company.tamOptions || []}
+                    selectedIds={formState.selectedTamIds}
+                    onToggle={(userId) =>
+                      toggleSelection("selectedTamIds", userId)
+                    }
+                  />
                 </div>
-              </div>
+              </CardContent>
+            </Card>
+
+            {/* SUPERUSER SECTION */}
+            {!isEdit && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Superuser Details</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-6 md:grid-cols-2">
+                  <Field>
+                    <FieldLabel>
+                      Username <span className="text-destructive">*</span>
+                    </FieldLabel>
+                    <Input
+                      value={formState.superuserUsername}
+                      onChange={(event) =>
+                        updateFormState("superuserUsername", event.target.value)
+                      }
+                      required
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel>Full name</FieldLabel>
+                    <Input
+                      value={formState.superuserFullName}
+                      onChange={(event) =>
+                        updateFormState("superuserFullName", event.target.value)
+                      }
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel>
+                      Email <span className="text-destructive">*</span>
+                    </FieldLabel>
+                    <Input
+                      type="email"
+                      value={formState.superuserEmail}
+                      onChange={(event) =>
+                        updateFormState("superuserEmail", event.target.value)
+                      }
+                      required
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel>Social</FieldLabel>
+                    <Input
+                      value={formState.superuserSocial}
+                      onChange={(event) =>
+                        updateFormState("superuserSocial", event.target.value)
+                      }
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel>Phone number</FieldLabel>
+                    <PhoneInput
+                      defaultCountry="US"
+                      value={formState.superuserPhoneNumber}
+                      onChange={(value) =>
+                        updateFormState("superuserPhoneNumber", value || "")
+                      }
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel>Phone extension</FieldLabel>
+                    <Input
+                      value={formState.superuserPhoneExtension}
+                      onChange={(event) =>
+                        updateFormState(
+                          "superuserPhoneExtension",
+                          event.target.value,
+                        )
+                      }
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel>Country</FieldLabel>
+                    <CountryDropdown
+                      defaultValue={
+                        countries.all.find(
+                          (c) =>
+                            c.name ===
+                            (company.countries || []).find(
+                              (cc) =>
+                                String(cc.id) === formState.superuserCountryId,
+                            )?.name,
+                        )?.alpha2 || ""
+                      }
+                      onChange={(country) => {
+                        const matched = (company.countries || []).find(
+                          (c) => c.name === country.name,
+                        );
+                        const nextCountryId = matched ? String(matched.id) : "";
+                        const timezoneStillValid = (
+                          company.timezones || []
+                        ).some(
+                          (timezone) =>
+                            String(timezone.id) ===
+                              formState.superuserTimezoneId &&
+                            String(timezone.countryId) === nextCountryId,
+                        );
+                        setFormState((current) =>
+                          current
+                            ? {
+                                ...current,
+                                superuserCountryId: nextCountryId,
+                                superuserTimezoneId: timezoneStillValid
+                                  ? current.superuserTimezoneId
+                                  : "",
+                              }
+                            : current,
+                        );
+                      }}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel>Time zone</FieldLabel>
+                    <Select
+                      value={formState.superuserTimezoneId || undefined}
+                      onValueChange={(value) =>
+                        updateFormState("superuserTimezoneId", value)
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a time zone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableSuperuserTimezones.map((timezone) => (
+                          <SelectItem
+                            key={timezone.id}
+                            value={String(timezone.id)}
+                          >
+                            {timezone.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field className="md:col-span-2">
+                    <FieldLabel>
+                      Password <span className="text-destructive">*</span>
+                    </FieldLabel>
+                    <Input
+                      type="password"
+                      value={formState.superuserPassword}
+                      onChange={(event) =>
+                        updateFormState("superuserPassword", event.target.value)
+                      }
+                      required
+                    />
+                  </Field>
+                </CardContent>
+              </Card>
             )}
 
-            <div
-              className={`button-row${isEdit ? " button-row-split" : " button-row-end"}`}
-            >
-              {isEdit ? (
-                <button
+            {/* ENTITLEMENTS SECTION */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Entitlements</CardTitle>
+                </div>
+                <Button
                   type="button"
-                  className="secondary-button danger-button"
-                  onClick={deleteCompany}
-                  disabled={saveState.saving}
+                  variant="outline"
+                  size="sm"
+                  onClick={addEntitlement}
                 >
-                  Delete
-                </button>
-              ) : null}
-              <button
-                type="submit"
-                className="primary-button"
-                disabled={saveState.saving}
-              >
-                {saveState.saving ? "Saving..." : isEdit ? "Save" : "Create"}
-              </button>
+                  Add Entitlement
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {formState.entitlements.map((entry, index) => (
+                  <div
+                    key={`${entry.entitlementId || "new"}-${entry.levelId || "level"}-${index}`}
+                    className="p-4 border rounded-lg bg-card text-card-foreground shadow-sm flex flex-col md:flex-row md:items-end gap-4"
+                  >
+                    <div className="grid gap-4 md:grid-cols-4 flex-grow">
+                      <Field>
+                        <FieldLabel>Entitlement</FieldLabel>
+                        <Select
+                          value={entry.entitlementId || undefined}
+                          onValueChange={(value) =>
+                            updateEntitlement(index, "entitlementId", value)
+                          }
+                          required
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select entitlement" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(company.entitlements || []).map((option) => (
+                              <SelectItem
+                                key={option.id}
+                                value={String(option.id)}
+                              >
+                                {option.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                      <Field>
+                        <FieldLabel>Level</FieldLabel>
+                        <Select
+                          value={entry.levelId || undefined}
+                          onValueChange={(value) =>
+                            updateEntitlement(index, "levelId", value)
+                          }
+                          required
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select level" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(company.levels || []).map((option) => (
+                              <SelectItem
+                                key={option.id}
+                                value={String(option.id)}
+                              >
+                                {option.name} ({option.level})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                      <Field>
+                        <FieldLabel>Date</FieldLabel>
+                        <Input
+                          type="date"
+                          value={entry.date}
+                          onChange={(event) =>
+                            updateEntitlement(index, "date", event.target.value)
+                          }
+                          required
+                        />
+                      </Field>
+                      <Field>
+                        <FieldLabel>Duration</FieldLabel>
+                        <Select
+                          value={entry.duration || undefined}
+                          onValueChange={(value) =>
+                            updateEntitlement(index, "duration", value)
+                          }
+                          required
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select duration" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(company.durations || []).map((option) => (
+                              <SelectItem
+                                key={option.value}
+                                value={String(option.value)}
+                              >
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                    </div>
+                    <div className="flex-shrink-0 mt-4 md:mt-0">
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => removeEntitlement(index)}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+
+                {formState.entitlements.length === 0 && (
+                  <p className="text-sm text-muted-foreground italic text-center py-4">
+                    No entitlements added yet.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t">
+              {isEdit && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      disabled={saveState.saving}
+                      className="mr-auto"
+                    >
+                      Delete company
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently
+                        delete this company.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={deleteCompany}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              <Button type="submit" disabled={saveState.saving}>
+                {saveState.saving
+                  ? "Saving..."
+                  : isEdit
+                    ? "Save company"
+                    : "Create company"}
+              </Button>
             </div>
           </form>
         )}
