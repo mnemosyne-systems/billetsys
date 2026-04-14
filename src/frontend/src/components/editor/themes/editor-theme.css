@@ -1,8 +1,8 @@
 .EditorTheme__code {
-  background-color: transparent;
+  background-color: #f6f8fa;
   font-family: Menlo, Consolas, Monaco, monospace;
   display: block;
-  padding: 8px 8px 8px 52px;
+  padding: 12px;
   line-height: 1.53;
   font-size: 13px;
   margin: 0;
@@ -12,10 +12,11 @@
   border: 1px solid #ccc;
   position: relative;
   border-radius: 8px;
-  tab-size: 2;
+  tab-size: 4;
+  white-space: pre;
 }
 .EditorTheme__code:before {
-  content: attr(data-gutter);
+  content: none;
   position: absolute;
   background-color: transparent;
   border-right: 1px solid #ccc;

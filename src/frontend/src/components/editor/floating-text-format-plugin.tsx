@@ -9,7 +9,7 @@ import {
 
 import { createPortal } from "react-dom";
 
-import { $isCodeHighlightNode } from "@lexical/code";
+import { $createCodeNode, $isCodeHighlightNode } from "@lexical/code";
 import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { mergeRegister } from "@lexical/utils";
@@ -77,6 +77,30 @@ function TextFormatFloatingToolbar({
       editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
     }
   }, [editor, isLink, setIsLinkEditMode]);
+
+  const formatCode = useCallback(() => {
+    editor.update(() => {
+      const selection = $getSelection();
+
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
+
+      const textContent = selection.getTextContent();
+      if (textContent.includes("\n") || textContent.includes("\r")) {
+        const codeNode = $createCodeNode();
+        selection.insertNodes([codeNode]);
+
+        const codeSelection = $getSelection();
+        if ($isRangeSelection(codeSelection)) {
+          codeSelection.insertRawText(textContent);
+        }
+        return;
+      }
+
+      editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code");
+    });
+  }, [editor]);
 
   function mouseMoveListener(e: MouseEvent) {
     if (
@@ -252,9 +276,7 @@ function TextFormatFloatingToolbar({
             <ToggleGroupItem
               value="code"
               aria-label="Toggle code"
-              onClick={() => {
-                editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code");
-              }}
+              onClick={formatCode}
               size="sm"
             >
               <CodeIcon className="h-4 w-4" />

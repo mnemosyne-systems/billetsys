@@ -259,24 +259,24 @@ export function DraggableBlockPlugin({
         menuComponent={
           <div
             ref={menuRef}
-            className="draggable-block-menu absolute top-0 left-0 flex items-center opacity-0 will-change-transform"
+            className="draggable-block-menu absolute top-0 left-0 flex items-center gap-0.5 opacity-0 will-change-transform"
           >
             <Button
               variant="ghost"
               size="icon-xs"
               title="Click to add below (Alt/Ctrl: add above)"
-              className="cursor-pointer rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="h-5 w-5 cursor-pointer rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground"
               onClick={openComponentPicker}
             >
-              <PlusIcon />
+              <PlusIcon className="size-3" />
             </Button>
             <Button
               variant="ghost"
               size="icon-xs"
-              className="cursor-grab rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground active:cursor-grabbing"
+              className="h-5 w-5 cursor-grab rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground active:cursor-grabbing"
               tabIndex={-1}
             >
-              <GripVerticalIcon className="opacity-60" />
+              <GripVerticalIcon className="size-3 opacity-60" />
             </Button>
           </div>
         }
