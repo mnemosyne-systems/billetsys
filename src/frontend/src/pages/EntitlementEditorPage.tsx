@@ -64,7 +64,6 @@ interface EntitlementFormBootstrap extends EntitlementRecord {
 }
 
 export default function EntitlementEditorPage({
-  sessionState,
   mode,
 }: EntitlementFormPageProps) {
   const navigate = useNavigate();
@@ -255,18 +254,12 @@ export default function EntitlementEditorPage({
 
   return (
     <section className="w-full mt-4">
-      <DataState
-        state={entitlementState}
-        emptyMessage="Entitlement not found."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={entitlementState} emptyMessage="Entitlement not found.">
         {formState && entitlement && (
           <form className="space-y-6 pb-20" onSubmit={submit}>
             <PageHeader
               title={
-                isEdit && entitlement
-                  ? entitlement.name || "Edit Entitlement"
-                  : "Create Entitlement"
+                isEdit && entitlement ? entitlement.name || "Edit" : "Create"
               }
             />
             {/* ENTITLEMENT DETAILS SECTION */}
@@ -440,11 +433,7 @@ export default function EntitlementEditorPage({
                 </AlertDialog>
               )}
               <Button type="submit" disabled={saveState.saving}>
-                {saveState.saving
-                  ? "Saving..."
-                  : isEdit
-                    ? "Save entitlement"
-                    : "Create entitlement"}
+                {saveState.saving ? "Saving..." : isEdit ? "Save" : "Create"}
               </Button>
             </div>
           </form>

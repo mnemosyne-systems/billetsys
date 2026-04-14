@@ -7,6 +7,7 @@
  */
 
 import DataState from "../components/common/DataState";
+import PageHeader from "../components/layout/PageHeader";
 import useJson from "../hooks/useJson";
 import { isWhiteColorValue, toQueryString } from "../utils/formatting";
 import { SmartLink } from "../utils/routing";
@@ -33,7 +34,6 @@ interface TicketListResponse extends CollectionResponse<TicketListItem> {
 }
 
 export default function SupportTicketsPage({
-  sessionState,
   view,
   apiBase = "/api/support/tickets",
   createFallbackPath = "/support/tickets/new",
@@ -45,27 +45,32 @@ export default function SupportTicketsPage({
   const showCreateButton = !(
     apiBase === "/api/user/tickets" && currentView === "closed"
   );
+  const pageTitle =
+    currentView === "open"
+      ? "Open tickets"
+      : currentView === "closed"
+        ? "Closed tickets"
+        : "Active tickets";
 
   return (
     <div className="w-full mx-auto mt-2">
-      {showCreateButton && (
-        <div className="flex justify-end pb-4">
-          <Button asChild>
-            <SmartLink
-              href={ticketsState.data?.createPath || createFallbackPath}
-            >
-              Create
-            </SmartLink>
-          </Button>
-        </div>
-      )}
+      <PageHeader
+        title={pageTitle}
+        actions={
+          showCreateButton ? (
+            <Button asChild>
+              <SmartLink
+                href={ticketsState.data?.createPath || createFallbackPath}
+              >
+                Create
+              </SmartLink>
+            </Button>
+          ) : null
+        }
+      />
 
       <div className="w-full">
-        <DataState
-          state={ticketsState}
-          emptyMessage="No tickets are available in this queue."
-          signInHref={sessionState.data?.homePath || "/login"}
-        >
+        <DataState state={ticketsState} emptyMessage="No tickets">
           <div className="max-w-full overflow-x-auto">
             <Table className="text-base">
               <TableHeader>

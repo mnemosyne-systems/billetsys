@@ -49,7 +49,8 @@ interface ProfileFormState {
   logoBase64: string;
 }
 
-export default function ProfilePage({ sessionState }: SessionPageProps) {
+export default function ProfilePage(props: SessionPageProps) {
+  void props;
   const location = useLocation();
 
   const profileState = useJson<ProfileRecord>("/api/profile");
@@ -203,11 +204,7 @@ export default function ProfilePage({ sessionState }: SessionPageProps) {
     <section className="w-full mt-4">
       <PageHeader title="Profile" />
 
-      <DataState
-        state={profileState}
-        emptyMessage="Profile unavailable."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={profileState} emptyMessage="Profile unavailable.">
         {formState && profile && (
           <form className="space-y-6 pb-20" onSubmit={submit}>
             <Card>
@@ -402,7 +399,7 @@ export default function ProfilePage({ sessionState }: SessionPageProps) {
 
             <div className="flex items-center justify-end space-x-3 pt-4 border-t">
               <Button type="submit" disabled={saveState.saving}>
-                {saveState.saving ? "Saving..." : "Save profile"}
+                {saveState.saving ? "Saving..." : "Save"}
               </Button>
             </div>
           </form>

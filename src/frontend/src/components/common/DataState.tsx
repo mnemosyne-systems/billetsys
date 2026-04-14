@@ -7,21 +7,19 @@
  */
 
 import type { ReactNode } from "react";
+import { Navigate } from "react-router-dom";
 import type { AsyncState } from "../../types/app";
-import { Button } from "../ui/button";
 import { Spinner } from "../ui/spinner";
 
 interface DataStateProps<T> {
   state: AsyncState<T>;
   emptyMessage: string;
-  signInHref: string;
   children?: ReactNode;
 }
 
 export default function DataState<T>({
   state,
   emptyMessage,
-  signInHref,
   children,
 }: DataStateProps<T>) {
   if (state.loading) {
@@ -34,14 +32,7 @@ export default function DataState<T>({
   }
 
   if (state.unauthorized) {
-    return (
-      <div className="grid gap-3.5 justify-items-start pt-4">
-        <p>You need to sign in to view this area.</p>
-        <Button asChild>
-          <a href={signInHref}>Sign in</a>
-        </Button>
-      </div>
-    );
+    return <Navigate replace to="/login" />;
   }
 
   if (state.forbidden) {

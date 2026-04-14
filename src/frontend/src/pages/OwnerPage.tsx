@@ -53,18 +53,15 @@ interface OwnerFormState {
   tamIds: Array<string | number>;
 }
 
-export function OwnerPage({ sessionState }: SessionPageProps) {
+export function OwnerPage(props: SessionPageProps) {
+  void props;
   const ownerState = useJson<OwnerCompany>("/api/owner");
   const owner = ownerState.data;
 
   return (
     <section className="w-full mt-4">
       <PageHeader title="Owner" />
-      <DataState
-        state={ownerState}
-        emptyMessage="Owner company not found."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={ownerState} emptyMessage="Owner company not found.">
         {owner && (
           <div className="space-y-6 pb-20">
             <Card>
@@ -131,7 +128,8 @@ export function OwnerPage({ sessionState }: SessionPageProps) {
   );
 }
 
-export function OwnerEditPage({ sessionState }: SessionPageProps) {
+export function OwnerEditPage(props: SessionPageProps) {
+  void props;
   const navigate = useNavigate();
   const ownerState = useJson<OwnerCompany>("/api/owner");
   const owner = ownerState.data;
@@ -232,11 +230,7 @@ export function OwnerEditPage({ sessionState }: SessionPageProps) {
 
   return (
     <section className="w-full mt-4">
-      <DataState
-        state={ownerState}
-        emptyMessage="Owner company not found."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={ownerState} emptyMessage="Owner company not found.">
         {formState && owner && (
           <form className="space-y-6 pb-20" onSubmit={submit}>
             <PageHeader title="Edit Owner" />

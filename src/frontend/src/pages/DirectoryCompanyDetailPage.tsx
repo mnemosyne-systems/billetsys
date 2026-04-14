@@ -69,7 +69,6 @@ interface DirectoryCompanyDetailPageProps extends SessionPageProps {
 }
 
 export default function DirectoryCompanyDetailPage({
-  sessionState,
   apiBase,
   backFallback,
 }: DirectoryCompanyDetailPageProps) {
@@ -101,11 +100,7 @@ export default function DirectoryCompanyDetailPage({
         </h2>
       </div>
 
-      <DataState
-        state={companyState}
-        emptyMessage="Company not found."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={companyState} emptyMessage="Company not found.">
         {company && (
           <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

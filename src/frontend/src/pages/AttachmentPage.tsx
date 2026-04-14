@@ -15,7 +15,8 @@ import type { AttachmentDetail } from "../types/domain";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 
-export default function AttachmentPage({ sessionState }: SessionPageProps) {
+export default function AttachmentPage(props: SessionPageProps) {
+  void props;
   const { id } = useParams();
   const attachmentState = useJson<AttachmentDetail>(
     id ? `/api/attachments/${id}` : null,
@@ -30,11 +31,7 @@ export default function AttachmentPage({ sessionState }: SessionPageProps) {
         <h2 className="text-3xl font-bold tracking-tight">{attachmentTitle}</h2>
       </div>
 
-      <DataState
-        state={attachmentState}
-        emptyMessage="Attachment not found."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={attachmentState} emptyMessage="Attachment not found.">
         {attachment && (
           <div className="space-y-6">
             {attachment.image ? (

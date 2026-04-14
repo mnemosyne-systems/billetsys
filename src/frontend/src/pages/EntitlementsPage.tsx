@@ -32,7 +32,8 @@ function sortedSupportLevels(
   );
 }
 
-export default function EntitlementsPage({ sessionState }: SessionPageProps) {
+export default function EntitlementsPage(props: SessionPageProps) {
+  void props;
   const entitlementsState =
     useJson<CollectionResponse<EntitlementRecord>>("/api/entitlements");
 
@@ -50,7 +51,6 @@ export default function EntitlementsPage({ sessionState }: SessionPageProps) {
       <DataState
         state={entitlementsState}
         emptyMessage="No entitlements are available yet."
-        signInHref={sessionState.data?.homePath || "/login"}
       >
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {entitlementsState.data?.items.map(

@@ -17,7 +17,8 @@ import type { CollectionResponse, LevelRecord } from "../types/domain";
 import { Card, CardHeader } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 
-export default function LevelsPage({ sessionState }: SessionPageProps) {
+export default function LevelsPage(props: SessionPageProps) {
+  void props;
   const levelsState = useJson<CollectionResponse<LevelRecord>>("/api/levels");
 
   return (
@@ -34,7 +35,6 @@ export default function LevelsPage({ sessionState }: SessionPageProps) {
       <DataState
         state={levelsState}
         emptyMessage="No support levels are available yet."
-        signInHref={sessionState.data?.homePath || "/login"}
       >
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {levelsState.data?.items.map((level: LevelRecord) => (

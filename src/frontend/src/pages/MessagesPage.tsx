@@ -15,7 +15,8 @@ import { Card, CardHeader } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 
-export default function MessagesPage({ sessionState }: SessionPageProps) {
+export default function MessagesPage(props: SessionPageProps) {
+  void props;
   const messageState =
     useJson<CollectionResponse<MessageReference>>("/api/messages");
   const messages = messageState.data;
@@ -35,11 +36,7 @@ export default function MessagesPage({ sessionState }: SessionPageProps) {
         </div>
       </div>
 
-      <DataState
-        state={messageState}
-        emptyMessage="No messages are available."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={messageState} emptyMessage="No messages are available.">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {(messages?.items || []).map((message: MessageReference) => (
             <Card

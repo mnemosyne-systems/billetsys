@@ -20,7 +20,8 @@ import { Field, FieldLabel } from "../components/ui/field";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 
-export default function LevelDetailPage({ sessionState }: SessionPageProps) {
+export default function LevelDetailPage(props: SessionPageProps) {
+  void props;
   const { id } = useParams();
   const levelState = useJson<LevelRecord>(id ? `/api/levels/${id}` : null);
   const level = levelState.data;
@@ -29,11 +30,7 @@ export default function LevelDetailPage({ sessionState }: SessionPageProps) {
     <section className="w-full mt-4">
       <PageHeader title={level?.name || "Support level"} />
 
-      <DataState
-        state={levelState}
-        emptyMessage="Level not found."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={levelState} emptyMessage="Level not found.">
         {level && (
           <Card>
             <CardContent className="grid gap-6 md:grid-cols-2 pt-6">

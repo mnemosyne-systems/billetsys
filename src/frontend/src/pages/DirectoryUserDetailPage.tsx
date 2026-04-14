@@ -40,7 +40,6 @@ interface DirectoryUserDetailPageProps extends SessionPageProps {
 }
 
 export default function DirectoryUserDetailPage({
-  sessionState,
   apiBase,
   backFallback,
 }: DirectoryUserDetailPageProps) {
@@ -83,11 +82,7 @@ export default function DirectoryUserDetailPage({
         }
       />
 
-      <DataState
-        state={detailState}
-        emptyMessage="User not found."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={detailState} emptyMessage="User not found.">
         {detail && (
           <UserDetailCard
             user={{

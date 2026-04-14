@@ -56,7 +56,8 @@ interface MessageFormState {
   files: File[];
 }
 
-export default function MessageFormPage({ sessionState }: SessionPageProps) {
+export default function MessageFormPage(props: SessionPageProps) {
+  void props;
   const navigate = useNavigate();
 
   const { id } = useParams();
@@ -155,14 +156,13 @@ export default function MessageFormPage({ sessionState }: SessionPageProps) {
     <section className="w-full mt-4">
       <div className="flex items-center justify-between pb-6 px-1">
         <h2 className="text-3xl font-bold tracking-tight">
-          {bootstrap && bootstrap.edit ? "Edit Message" : "Create Message"}
+          {bootstrap && bootstrap.edit ? "Edit" : "Create"}
         </h2>
       </div>
 
       <DataState
         state={bootstrapState}
         emptyMessage="Unable to load the message form."
-        signInHref={sessionState.data?.homePath || "/login"}
       >
         {bootstrap && formState && (
           <form className="space-y-6 pb-20" onSubmit={submit}>
@@ -277,8 +277,8 @@ export default function MessageFormPage({ sessionState }: SessionPageProps) {
                 {saveState.saving
                   ? "Saving..."
                   : bootstrap.edit
-                    ? "Save message"
-                    : "Create message"}
+                    ? "Save"
+                    : "Create"}
               </Button>
             </div>
           </form>

@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import DataState from "../components/common/DataState";
+import PageHeader from "../components/layout/PageHeader";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
 import { postForm } from "../utils/api";
@@ -27,9 +28,9 @@ import type { TicketWorkbenchFormState } from "../types/forms";
 import { SUPPORT_TICKET_STATUSES } from "../types/tickets";
 import {
   Card,
+  CardContent,
   CardHeader,
   CardTitle,
-  CardContent,
 } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import {
@@ -53,9 +54,8 @@ import {
   SelectValue,
 } from "../components/ui/select";
 
-export default function TicketWorkbenchFormPage({
-  sessionState,
-}: SessionPageProps) {
+export default function TicketWorkbenchFormPage(props: SessionPageProps) {
+  void props;
   const navigate = useNavigate();
 
   const { id } = useParams();
@@ -205,54 +205,50 @@ export default function TicketWorkbenchFormPage({
 
   return (
     <section className="w-full mt-4">
-      <div className="flex items-center justify-between pb-6 px-1">
-        <h2 className="text-3xl font-bold tracking-tight">
-          {bootstrap?.title || "Ticket form"}
-        </h2>
-        {id && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                type="button"
-                variant="destructive"
-                disabled={saveState.saving}
-              >
-                Delete ticket
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete
-                  this ticket.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={deleteTicket}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+      <PageHeader
+        title={bootstrap?.title || "Ticket form"}
+        actions={
+          id ? (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={saveState.saving}
                 >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
-      </div>
+                  Delete ticket
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete
+                    this ticket.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={deleteTicket}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : null
+        }
+      />
 
       <DataState
         state={bootstrapState}
         emptyMessage="Unable to load the ticket form."
-        signInHref={sessionState.data?.homePath || "/login"}
       >
         {bootstrap && formState && (
           <form className="space-y-6 pb-20" onSubmit={submit}>
             <Card>
-              <CardHeader>
-                <CardTitle>Ticket Details</CardTitle>
-              </CardHeader>
               <CardContent className="grid gap-6">
                 <Field>
                   <FieldLabel>
@@ -479,8 +475,8 @@ export default function TicketWorkbenchFormPage({
                 {saveState.saving
                   ? "Saving..."
                   : bootstrap.edit
-                    ? "Save Ticket"
-                    : "Create Ticket"}
+                    ? "Save"
+                    : "Create"}
               </Button>
             </div>
           </form>

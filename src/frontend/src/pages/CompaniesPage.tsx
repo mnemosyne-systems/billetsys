@@ -16,7 +16,8 @@ import type { CollectionResponse, CompanyRecord } from "../types/domain";
 import { Card, CardHeader } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 
-export default function CompaniesPage({ sessionState }: SessionPageProps) {
+export default function CompaniesPage(props: SessionPageProps) {
+  void props;
   const companiesState =
     useJson<CollectionResponse<CompanyRecord>>("/api/companies");
 
@@ -38,7 +39,6 @@ export default function CompaniesPage({ sessionState }: SessionPageProps) {
       <DataState
         state={companiesState}
         emptyMessage="No companies are available yet."
-        signInHref={sessionState.data?.homePath || "/login"}
       >
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {companiesState.data?.items.map((company: CompanyRecord) => (

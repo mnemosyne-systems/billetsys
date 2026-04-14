@@ -22,7 +22,8 @@ import {
   TableRow,
 } from "../components/ui/table";
 
-export default function ArticlesPage({ sessionState }: SessionPageProps) {
+export default function ArticlesPage(props: SessionPageProps) {
+  void props;
   const articlesState =
     useJson<CollectionResponse<ArticleRecord>>("/api/articles");
 
@@ -43,7 +44,6 @@ export default function ArticlesPage({ sessionState }: SessionPageProps) {
         <DataState
           state={articlesState}
           emptyMessage="No articles are available yet."
-          signInHref={sessionState.data?.homePath || "/login"}
         >
           <div className="max-w-full overflow-x-auto">
             <Table className="text-base">

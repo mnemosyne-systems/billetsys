@@ -23,7 +23,8 @@ import { Button } from "../components/ui/button";
 import { Field, FieldLabel } from "../components/ui/field";
 import { Input } from "../components/ui/input";
 
-export default function CompanyDetailPage({ sessionState }: SessionPageProps) {
+export default function CompanyDetailPage(props: SessionPageProps) {
+  void props;
   const { id } = useParams();
   const companyState = useJson<CompanyRecord>(
     id ? `/api/companies/${id}` : null,
@@ -38,11 +39,7 @@ export default function CompanyDetailPage({ sessionState }: SessionPageProps) {
 
   return (
     <section className="w-full mt-4">
-      <DataState
-        state={companyState}
-        emptyMessage="Company not found."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={companyState} emptyMessage="Company not found.">
         {company && (
           <>
             <PageHeader title={company.name || "Company"} />

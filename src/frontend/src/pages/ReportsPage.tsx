@@ -342,11 +342,7 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
     <section className="w-full mt-4">
       <PageHeader title="Reports" />
 
-      <DataState
-        state={reportsState}
-        emptyMessage="No report data available."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={reportsState} emptyMessage="No report data available.">
         {reports && (
           <div className="space-y-8 pb-20">
             <Card>

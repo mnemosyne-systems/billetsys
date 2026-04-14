@@ -83,7 +83,6 @@ export default function PasswordPage({ sessionState }: SessionPageProps) {
           data: null,
         }}
         emptyMessage=""
-        signInHref="/login"
       >
         <Card>
           <CardHeader>

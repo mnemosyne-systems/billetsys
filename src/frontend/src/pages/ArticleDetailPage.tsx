@@ -103,7 +103,8 @@ function DeleteArticleButton({
 
 export { DeleteArticleButton };
 
-export default function ArticleDetailPage({ sessionState }: SessionPageProps) {
+export default function ArticleDetailPage(props: SessionPageProps) {
+  void props;
   const { id } = useParams();
   const articleState = useJson<ArticleRecord>(
     id ? `/api/articles/${id}` : null,
@@ -112,11 +113,7 @@ export default function ArticleDetailPage({ sessionState }: SessionPageProps) {
 
   return (
     <section className="w-full mt-4">
-      <DataState
-        state={articleState}
-        emptyMessage="Article not found."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={articleState} emptyMessage="Article not found.">
         {article && (
           <>
             <PageHeader title={article.title || "Article"} />

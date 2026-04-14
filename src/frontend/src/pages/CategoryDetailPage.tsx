@@ -20,7 +20,8 @@ import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { Textarea } from "../components/ui/textarea";
 
-export default function CategoryDetailPage({ sessionState }: SessionPageProps) {
+export default function CategoryDetailPage(props: SessionPageProps) {
+  void props;
   const { id } = useParams();
   const categoryState = useJson<CategoryRecord>(
     id ? `/api/categories/${id}` : null,
@@ -42,11 +43,7 @@ export default function CategoryDetailPage({ sessionState }: SessionPageProps) {
         }
       />
 
-      <DataState
-        state={categoryState}
-        emptyMessage="Category not found."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={categoryState} emptyMessage="Category not found.">
         {category && (
           <Card>
             <CardContent className="pt-6">

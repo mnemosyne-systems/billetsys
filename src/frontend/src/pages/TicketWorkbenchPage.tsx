@@ -7,6 +7,7 @@
  */
 
 import DataState from "../components/common/DataState";
+import PageHeader from "../components/layout/PageHeader";
 import useJson from "../hooks/useJson";
 import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
@@ -18,9 +19,8 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 
-export default function TicketWorkbenchPage({
-  sessionState,
-}: SessionPageProps) {
+export default function TicketWorkbenchPage(props: SessionPageProps) {
+  void props;
   const ticketState = useJson<CollectionResponse<TicketWorkbenchListItem>>(
     "/api/ticket-workbench",
   );
@@ -28,24 +28,18 @@ export default function TicketWorkbenchPage({
 
   return (
     <section className="w-full mt-4">
-      <div className="flex flex-row items-center justify-between pb-6 px-1">
-        <h2 className="text-3xl font-bold tracking-tight">
-          {tickets?.title || "Tickets"}
-        </h2>
-        <div>
-          {tickets?.createPath && (
+      <PageHeader
+        title={tickets?.title || "Tickets"}
+        actions={
+          tickets?.createPath ? (
             <Button asChild>
               <SmartLink href={tickets.createPath}>Create</SmartLink>
             </Button>
-          )}
-        </div>
-      </div>
+          ) : null
+        }
+      />
 
-      <DataState
-        state={ticketState}
-        emptyMessage="No tickets are available."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={ticketState} emptyMessage="No tickets are available.">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {(tickets?.items || []).map((ticket: TicketWorkbenchListItem) => (
             <Card key={ticket.id} className="hover:shadow-md transition-shadow">

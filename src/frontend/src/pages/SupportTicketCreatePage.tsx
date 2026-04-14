@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AttachmentPicker from "../components/common/AttachmentPicker";
 import DataState from "../components/common/DataState";
+import PageHeader from "../components/layout/PageHeader";
 import { toast } from "sonner";
 import LexicalEditor from "../components/editor/LexicalEditor";
 import useJson from "../hooks/useJson";
@@ -196,27 +197,19 @@ export default function SupportTicketCreatePage({
   return (
     <section className="w-full mt-4">
       {bootstrap?.ticketName || title || description ? (
-        <div className="flex flex-col pb-6 px-1">
-          <h2 className="text-3xl font-bold tracking-tight">
-            {bootstrap?.ticketName || title}
-          </h2>
-          {description && (
-            <p className="text-muted-foreground mt-2">{description}</p>
-          )}
-        </div>
+        <PageHeader
+          title={bootstrap?.ticketName || title}
+          subtitle={description || undefined}
+        />
       ) : null}
 
       <DataState
         state={bootstrapState}
         emptyMessage="A company is required before creating a support ticket."
-        signInHref={sessionState.data?.homePath || "/login"}
       >
         {formState && bootstrap && (
           <form className="space-y-6 pb-20" onSubmit={submit}>
             <Card>
-              <CardHeader>
-                <CardTitle>Ticket Details</CardTitle>
-              </CardHeader>
               <CardContent className="grid gap-6">
                 <Field>
                   <FieldLabel>
@@ -401,7 +394,7 @@ export default function SupportTicketCreatePage({
 
             <div className="flex items-center justify-end space-x-3 pt-4 border-t">
               <Button type="submit" disabled={saveState.saving}>
-                {saveState.saving ? "Creating..." : "Create Request"}
+                {saveState.saving ? "Creating..." : "Create"}
               </Button>
             </div>
           </form>

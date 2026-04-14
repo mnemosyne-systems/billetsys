@@ -85,10 +85,7 @@ const EMPTY_COMPANY_FORM_STATE: CompanyFormState = {
   superuserPassword: "",
 };
 
-export default function CompanyFormPage({
-  sessionState,
-  mode,
-}: CompanyFormPageProps) {
+export default function CompanyFormPage({ mode }: CompanyFormPageProps) {
   const navigate = useNavigate();
 
   const { id } = useParams();
@@ -353,19 +350,11 @@ export default function CompanyFormPage({
 
   return (
     <section className="w-full mt-4">
-      <DataState
-        state={companyState}
-        emptyMessage="Company not found."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={companyState} emptyMessage="Company not found.">
         {formState && company && (
           <form className="space-y-6 pb-20" onSubmit={submit}>
             <PageHeader
-              title={
-                isEdit && company
-                  ? company.name || "Edit company"
-                  : "Create company"
-              }
+              title={isEdit && company ? company.name || "Edit" : "Create"}
             />
             {/* COMPANY DETAILS SECTION */}
             <Card>
@@ -851,11 +840,7 @@ export default function CompanyFormPage({
                 </AlertDialog>
               )}
               <Button type="submit" disabled={saveState.saving}>
-                {saveState.saving
-                  ? "Saving..."
-                  : isEdit
-                    ? "Save company"
-                    : "Create company"}
+                {saveState.saving ? "Saving..." : isEdit ? "Save" : "Create"}
               </Button>
             </div>
           </form>

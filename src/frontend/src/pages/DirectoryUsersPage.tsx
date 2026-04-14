@@ -37,7 +37,6 @@ interface DirectoryUsersPageProps extends SessionPageProps {
 }
 
 export default function DirectoryUsersPage({
-  sessionState,
   apiBase,
   titleFallback,
   description = "",
@@ -70,11 +69,7 @@ export default function DirectoryUsersPage({
         }
       />
 
-      <DataState
-        state={dataState}
-        emptyMessage="No users are available."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={dataState} emptyMessage="No users are available.">
         <div className="grid gap-6">
           {directory?.showCompanySelector && (
             <div className="grid gap-1.5 max-w-xs">

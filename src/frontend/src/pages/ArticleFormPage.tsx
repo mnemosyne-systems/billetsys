@@ -36,10 +36,7 @@ interface ArticleFormPageProps extends SessionPageProps {
   mode: FormMode;
 }
 
-export default function ArticleFormPage({
-  sessionState,
-  mode,
-}: ArticleFormPageProps) {
+export default function ArticleFormPage({ mode }: ArticleFormPageProps) {
   const navigate = useNavigate();
 
   const { id } = useParams();
@@ -120,18 +117,10 @@ export default function ArticleFormPage({
 
   return (
     <section className="w-full mt-4">
-      <DataState
-        state={articleState}
-        emptyMessage="Article unavailable."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={articleState} emptyMessage="Article unavailable.">
         {formState && article && article.canEdit && (
           <>
-            <PageHeader
-              title={
-                isEdit ? formState.title || "Edit article" : "Create article"
-              }
-            />
+            <PageHeader title={isEdit ? formState.title || "Edit" : "Create"} />
             <Card>
               <form onSubmit={submit}>
                 <CardContent className="grid gap-6 md:grid-cols-2 pb-6 pt-6">

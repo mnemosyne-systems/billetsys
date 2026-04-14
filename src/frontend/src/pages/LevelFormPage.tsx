@@ -91,10 +91,7 @@ interface LevelFormPageProps extends SessionPageProps {
   mode: FormMode;
 }
 
-export default function LevelFormPage({
-  sessionState,
-  mode,
-}: LevelFormPageProps) {
+export default function LevelFormPage({ mode }: LevelFormPageProps) {
   const navigate = useNavigate();
 
   const { id } = useParams();
@@ -217,17 +214,11 @@ export default function LevelFormPage({
 
   return (
     <section className="w-full mt-4">
-      <DataState
-        state={levelState}
-        emptyMessage="Level not found."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={levelState} emptyMessage="Level not found.">
         {formState && level && (
           <>
             <PageHeader
-              title={
-                isEdit && level ? level.name || "Edit level" : "Create level"
-              }
+              title={isEdit && level ? level.name || "Edit" : "Create"}
             />
             <Card>
               <form onSubmit={submit}>

@@ -17,7 +17,8 @@ import { Card, CardHeader } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 
-export default function CategoriesPage({ sessionState }: SessionPageProps) {
+export default function CategoriesPage(props: SessionPageProps) {
+  void props;
   const categoriesState =
     useJson<CollectionResponse<CategoryRecord>>("/api/categories");
 
@@ -39,7 +40,6 @@ export default function CategoriesPage({ sessionState }: SessionPageProps) {
       <DataState
         state={categoriesState}
         emptyMessage="No categories are available yet."
-        signInHref={sessionState.data?.homePath || "/login"}
       >
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {categoriesState.data?.items.map((category: CategoryRecord) => (

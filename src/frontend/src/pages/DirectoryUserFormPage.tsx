@@ -67,7 +67,6 @@ interface UserTypeOption {
 }
 
 export default function DirectoryUserFormPage({
-  sessionState,
   bootstrapBase,
   navigateFallback,
 }: DirectoryUserFormPageProps) {
@@ -262,7 +261,6 @@ export default function DirectoryUserFormPage({
       <DataState
         state={bootstrapState}
         emptyMessage="Unable to load the user form."
-        signInHref={sessionState.data?.homePath || "/login"}
       >
         {formState && bootstrap && (
           <Card>
@@ -468,8 +466,7 @@ export default function DirectoryUserFormPage({
                     ? "Saving..."
                     : isAdminCreate
                       ? "Create"
-                      : bootstrap.title ||
-                        (isEdit ? "Save user" : "Create user")}
+                      : bootstrap.title || (isEdit ? "Save" : "Create")}
                 </Button>
               </CardFooter>
             </form>

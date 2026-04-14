@@ -52,10 +52,7 @@ interface CategoryFormPageProps extends SessionPageProps {
   mode: FormMode;
 }
 
-export default function CategoryFormPage({
-  sessionState,
-  mode,
-}: CategoryFormPageProps) {
+export default function CategoryFormPage({ mode }: CategoryFormPageProps) {
   const navigate = useNavigate();
 
   const { id } = useParams();
@@ -164,19 +161,11 @@ export default function CategoryFormPage({
 
   return (
     <section className="w-full mt-4">
-      <DataState
-        state={categoryState}
-        emptyMessage="Category unavailable."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={categoryState} emptyMessage="Category unavailable.">
         {formState && (
           <>
             <PageHeader
-              title={
-                isEdit && category
-                  ? category.name || "Edit category"
-                  : "Create category"
-              }
+              title={isEdit && category ? category.name || "Edit" : "Create"}
             />
             <Card>
               <form onSubmit={submit}>

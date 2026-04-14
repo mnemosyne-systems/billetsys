@@ -23,9 +23,8 @@ import { Button } from "../components/ui/button";
 import { Field, FieldLabel } from "../components/ui/field";
 import { Input } from "../components/ui/input";
 
-export default function EntitlementDetailPage({
-  sessionState,
-}: SessionPageProps) {
+export default function EntitlementDetailPage(props: SessionPageProps) {
+  void props;
   const { id } = useParams();
   const entitlementState = useJson<EntitlementRecord>(
     id ? `/api/entitlements/${id}` : null,
@@ -35,11 +34,7 @@ export default function EntitlementDetailPage({
 
   return (
     <section className="w-full mt-4">
-      <DataState
-        state={entitlementState}
-        emptyMessage="Entitlement not found."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={entitlementState} emptyMessage="Entitlement not found.">
         {entitlement && (
           <>
             <PageHeader title={entitlement.name || "Entitlement"} />

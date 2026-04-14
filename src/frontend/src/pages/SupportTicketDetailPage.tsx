@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import DataState from "../components/common/DataState";
+import PageHeader from "../components/layout/PageHeader";
 import MarkdownContent from "../components/markdown/MarkdownContent";
 import LexicalEditor from "../components/editor/LexicalEditor";
 import {
@@ -485,27 +486,18 @@ export default function SupportTicketDetailPage({
 
   return (
     <section className="w-full px-4 md:px-8 xl:px-12 mx-auto mt-4 mb-16">
-      <DataState
-        state={ticketState}
-        emptyMessage="Ticket not found."
-        signInHref={sessionState.data?.homePath || "/login"}
-      >
+      <DataState state={ticketState} emptyMessage="Ticket not found.">
         {ticket && formState && (
           <div className="space-y-8">
+            <PageHeader
+              title={ticketHeading}
+              subtitle={
+                showSummaryField ? ticket.title || formState.title : undefined
+              }
+            />
             <Card className="border-border/80 shadow-sm">
               <CardContent className="p-6 md:p-8">
                 <form onSubmit={saveTicket} className="space-y-8">
-                  <div className="space-y-2">
-                    <h1 className="text-4xl font-bold tracking-tight">
-                      {ticketHeading}
-                    </h1>
-                    {showSummaryField ? (
-                      <p className="text-sm text-muted-foreground">
-                        {ticket.title || formState.title}
-                      </p>
-                    ) : null}
-                  </div>
-
                   <div className="grid gap-5 md:grid-cols-2">
                     <Field>
                       <FieldLabel>Title</FieldLabel>
