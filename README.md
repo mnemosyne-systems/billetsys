@@ -1,5 +1,9 @@
 # billetsys: Modern Support Ticket solution
 
+<p align="center">
+  <img src="doc/logo/logo-128.png" alt="billetsys logo" width="128" height="128">
+</p>
+
 `billetsys` is a modern support ticket solution that aims to be easy for all roles to
 navigate and get their work done quicker.
 

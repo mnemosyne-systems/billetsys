@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <title>Support ticket logo</title>
+
+  <!-- Back paper (lower-left, darkest red) -->
+  <rect x="90" y="125" width="175" height="215" rx="13" fill="#7F1D1D"/>
+
+  <!-- Mid paper -->
+  <rect x="125" y="90" width="175" height="215" rx="13" fill="#B91C1C"/>
+
+  <!-- Front paper (upper-right, brightest red) -->
+  <rect x="160" y="55" width="175" height="215" rx="13" fill="#EF4444"/>
+
+  <!-- Black lines on front paper -->
+  <line x1="180" y1="103" x2="316" y2="103" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+  <line x1="180" y1="134" x2="316" y2="134" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+  <line x1="180" y1="165" x2="316" y2="165" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+  <line x1="180" y1="196" x2="316" y2="196" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+  <line x1="180" y1="227" x2="316" y2="227" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Thumbs-up badge: white circle, black outline -->
+  <circle cx="128" cy="300" r="48" fill="white" stroke="black" stroke-width="5"/>
+
+  <!-- Thumbs-up icon (scaled from 24×24, centered on badge) -->
+  <g transform="translate(104,276) scale(2.0)">
+    <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 9 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" fill="#DC2626"/>
+  </g>
+</svg>
