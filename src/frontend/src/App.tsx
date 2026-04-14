@@ -9,7 +9,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
-import AppBreadcrumbs from "./components/layout/AppBreadcrumbs";
 import AppFooter from "./components/layout/AppFooter";
 import AuthenticatedHeader from "./components/layout/AuthenticatedHeader";
 import LoginHeader from "./components/layout/LoginHeader";
@@ -24,7 +23,6 @@ function App() {
   const isLoginRoute =
     location.pathname === "/login" && !session?.authenticated;
   const brandName = session?.installationCompanyName || "billetsys";
-  const showBreadcrumbs = location.pathname !== "/" && !isLoginRoute;
 
   useEffect(() => {
     document.title = `${brandName}: billetsys`;
@@ -51,7 +49,6 @@ function App() {
               : "flex-1 p-5"
           }
         >
-          {showBreadcrumbs && <AppBreadcrumbs />}
           <AppRoutes sessionState={sessionState} />
         </main>
         <AppFooter />

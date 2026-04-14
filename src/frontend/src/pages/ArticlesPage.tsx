@@ -6,18 +6,11 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { Link } from "react-router-dom";
 import useJson from "../hooks/useJson";
 import DataState from "../components/common/DataState";
 import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
 import type { ArticleRecord, CollectionResponse } from "../types/domain";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import {
   Table,
@@ -33,44 +26,42 @@ export default function ArticlesPage({ sessionState }: SessionPageProps) {
     useJson<CollectionResponse<ArticleRecord>>("/api/articles");
 
   return (
-    <Card className="w-full max-w-5xl mx-auto mt-4">
-      <CardHeader className="flex flex-row items-center justify-between pb-6">
-        <CardTitle className="text-2xl font-bold">Articles</CardTitle>
-        <div>
-          {articlesState.data?.canCreate && (
-            <Button asChild>
-              <SmartLink href={articlesState.data.createPath}>Create</SmartLink>
-            </Button>
-          )}
-        </div>
-      </CardHeader>
+    <div className="w-full mx-auto mt-2">
+      <div className="flex items-center justify-between pb-4">
+        <h1 className="text-3xl font-bold tracking-tight">Articles</h1>
+        {articlesState.data?.canCreate && (
+          <Button asChild>
+            <SmartLink href={articlesState.data.createPath}>Create</SmartLink>
+          </Button>
+        )}
+      </div>
 
-      <CardContent>
+      <div className="w-full">
         <DataState
           state={articlesState}
           emptyMessage="No articles are available yet."
           signInHref={sessionState.data?.homePath || "/login"}
         >
-          <div className="rounded-md border">
-            <Table>
+          <div className="max-w-full overflow-x-auto">
+            <Table className="text-base">
               <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Tags</TableHead>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="min-w-[240px]">Title</TableHead>
+                  <TableHead className="min-w-[180px]">Tags</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(articlesState.data?.items || []).map((article) => (
                   <TableRow key={article.id}>
-                    <TableCell className="font-medium">
-                      <Link
-                        className="text-primary hover:underline"
-                        to={`/articles/${article.id}`}
+                    <TableCell className="py-3 px-4 font-medium">
+                      <SmartLink
+                        className="font-semibold text-primary hover:underline"
+                        href={`/articles/${article.id}`}
                       >
                         {article.title}
-                      </Link>
+                      </SmartLink>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="py-3 px-4 text-muted-foreground">
                       {article.tags || "—"}
                     </TableCell>
                   </TableRow>
@@ -79,7 +70,7 @@ export default function ArticlesPage({ sessionState }: SessionPageProps) {
             </Table>
           </div>
         </DataState>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

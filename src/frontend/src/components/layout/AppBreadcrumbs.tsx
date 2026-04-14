@@ -66,6 +66,14 @@ export default function AppBreadcrumbs() {
   ) {
     return null;
   }
+  if (
+    rolePrefix === "user" &&
+    segments[0] === "tickets" &&
+    segments.length === 2 &&
+    ["open", "closed"].includes(segments[1])
+  ) {
+    return null;
+  }
 
   // Build the base path prefix for href generation
   const basePath = rolePrefix ? `/${rolePrefix}` : "";
