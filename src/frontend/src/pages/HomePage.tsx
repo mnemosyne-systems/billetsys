@@ -182,7 +182,7 @@ export default function HomePage({ sessionState }: SessionPageProps) {
               </div>
 
               {summaryForLabel(link.label) ? (
-                <p className="line-clamp-2 text-sm text-muted-foreground">
+                <p className="line-clamp-2 text-lg font-medium leading-snug text-muted-foreground">
                   {summaryForLabel(link.label)}
                 </p>
               ) : null}
