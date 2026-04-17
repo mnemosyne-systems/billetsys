@@ -15,6 +15,8 @@ import ai.mnemosyne_systems.model.CompanyEntitlement;
 import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
+import ai.mnemosyne_systems.model.event.EventAction;
+import ai.mnemosyne_systems.model.event.EventType;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -37,6 +39,9 @@ public class IncomingEmailService {
 
     @Inject
     TicketEmailService ticketEmailService;
+
+    @Inject
+    EventService eventService;
 
     @Transactional
     public IncomingEmailResult processIncomingEmail(String from, String subject, String body,
@@ -125,6 +130,7 @@ public class IncomingEmailService {
         ticket.companyEntitlement = entitlement;
         ticket.category = Category.findDefault();
         ticket.persist();
+        eventService.saveTicketEvent(ticket, sender);
         assignCompanyTams(ticket);
         return ticket;
     }

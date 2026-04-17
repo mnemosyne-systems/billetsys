@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -91,8 +91,16 @@ export interface TicketWorkbenchBootstrap {
   [key: string]: unknown;
 }
 
+export interface EventEntry {
+  id: number;
+  action: string;
+  dateLabel?: string;
+  user?: UserReference;
+}
+
 export interface SupportTicketDetailRecord extends TicketReference {
   categories?: NamedEntity[];
   versions?: VersionInfo[];
   messages?: MessageReference[];
+  events?: EventEntry[];
 }
