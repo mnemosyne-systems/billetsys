@@ -18,6 +18,9 @@ import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
+import ai.mnemosyne_systems.model.event.EventAction;
+import ai.mnemosyne_systems.model.event.EventType;
+import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
@@ -60,6 +63,8 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 public class SupportResource {
     @Inject
     TicketEmailService ticketEmailService;
+    @Inject
+    EventService eventService;
 
     @GET
     public Response listTickets(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
@@ -341,6 +346,7 @@ public class SupportResource {
         ticket.affectsVersion = resolveVersion(entitlement, affectsVersionId, "Affects", true);
         ticket.category = categoryId != null ? Category.findById(categoryId) : Category.findDefault();
         ticket.persist();
+        eventService.saveEvent(ticket.id, EventType.TICKET, ticket.status, ticket.company);
         assignCompanyTams(ticket);
         Message message = new Message();
         message.body = messageBody;
@@ -413,6 +419,7 @@ public class SupportResource {
         if (!sameStatus(previousStatus, ticket.status)) {
             ticketEmailService.notifyStatusChange(ticket, previousStatus, user);
         }
+        eventService.saveEvent(ticket.id, EventType.TICKET, ticket.status, ticket.company);
         return createTicketRedirect(client, "/support/tickets/" + id);
     }
 
@@ -437,6 +444,7 @@ public class SupportResource {
         if (!sameStatus(previousStatus, ticket.status)) {
             ticketEmailService.notifyStatusChange(ticket, previousStatus, user);
         }
+        eventService.saveEvent(ticket.id, EventType.TICKET, ticket.status, ticket.company);
         return createTicketRedirect(client, "/support/tickets/" + id);
     }
 
