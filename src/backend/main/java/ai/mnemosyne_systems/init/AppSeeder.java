@@ -21,6 +21,7 @@ import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Message;
+import ai.mnemosyne_systems.model.event.EventType;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -42,6 +43,7 @@ public class AppSeeder {
         seedDefaults();
         seedSupportCatalog();
         seedSampleData();
+        seedEventTypes();
     }
 
     @Transactional
@@ -426,6 +428,42 @@ public class AppSeeder {
         seedCategory("Feature", false);
         seedCategory("Bug", false);
         seedCategory("Question", true);
+    }
+
+    @Transactional
+    void seedEventTypes() {
+        // CATEGORY EVENTS
+        seedEventType("BUG", "CATEGORY");
+        seedEventType("FEATURE", "CATEGORY");
+        seedEventType("QUESTION", "CATEGORY");
+
+        // ACTION EVENTS
+        seedEventType("CREATED", "ACTION");
+        seedEventType("UPDATED", "ACTION");
+        seedEventType("DELETED", "ACTION");
+        seedEventType("OPEN", "ACTION");
+        seedEventType("CLOSED", "ACTION");
+        seedEventType("EXPIRED", "ACTION");
+        seedEventType("ASSIGNED", "ACTION");
+        seedEventType("IN PROGRESS", "ACTION");
+        seedEventType("RESOLVED", "ACTION");
+        seedEventType("RESOLVED", "ACTION");
+
+        // UNKNOW
+        seedEventType("UNKNOWN", "UNKNOWN");
+
+    }
+
+    private EventType seedEventType(String name, String type) {
+        EventType eventType;
+        eventType = EventType.find("name = ?1 AND type = ?2", name, type).firstResult();
+        if (eventType == null) {
+            eventType = new EventType();
+            eventType.name = name;
+            eventType.type = type;
+            eventType.persist();
+        }
+        return eventType;
     }
 
     private Country findCountryByCode(String code) {

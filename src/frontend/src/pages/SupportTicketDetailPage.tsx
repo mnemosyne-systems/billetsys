@@ -39,6 +39,7 @@ import type {
   SupportTicketDetailRecord,
   VersionInfo,
   ArticleReferenceEntry,
+  EventEntry,
 } from "../types/domain";
 import type { SupportTicketDetailState } from "../types/forms";
 import { Button } from "../components/ui/button";
@@ -272,6 +273,69 @@ function TicketMessageCard({
   );
 }
 
+function ActivityTimeline({ events }: { events: EventEntry[] }) {
+  if (!events || events.length === 0) {
+    return (
+      <div className="space-y-4 pt-4">
+        <h2 className="px-1 text-3xl font-bold tracking-tight">
+          Activity Timeline
+        </h2>
+        <div className="relative border-l-2 border-border/60 ml-4 pl-6 space-y-8 py-2">
+          No events yet
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-4 pt-4">
+      <h2 className="px-1 text-3xl font-bold tracking-tight">
+        Activity Timeline
+      </h2>
+      <div className="relative border-l-2 border-border/60 ml-4 pl-6 space-y-8 py-2">
+        {events.map((event) => {
+          const authorLabel =
+            event.user?.displayName ||
+            event.user?.username ||
+            event.user?.fullName ||
+            "System";
+          return (
+            <div key={event.id} className="relative">
+              <div className="absolute -left-[33px] top-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-muted-foreground/30 bg-background text-muted-foreground">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <div className="text-sm text-muted-foreground mb-1">
+                {event.dateLabel || "-"}
+              </div>
+              <div className="text-sm rounded-md border border-border/40 bg-card/50 p-3 shadow-sm inline-block">
+                <span className="font-semibold text-foreground">
+                  {authorLabel}
+                </span>{" "}
+                <span className="text-muted-foreground">triggered action:</span>{" "}
+                <span className="font-medium text-foreground lowercase">
+                  {event.action ? event.action.replaceAll("_", " ") : "unknown"}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function SupportTicketDetailPage({
   sessionState,
   apiBase = "/api/support/tickets",
@@ -337,6 +401,8 @@ export default function SupportTicketDetailPage({
   ).sort((left, right) =>
     (left.articleTitle ?? "").localeCompare(right.articleTitle ?? ""),
   );
+
+  const [showEvent, setShowEvents] = useState<boolean>(false);
 
   useEffect(() => {
     if (!ticket) {
@@ -897,6 +963,12 @@ export default function SupportTicketDetailPage({
                 </div>
               )}
             </div>
+
+            <Button type="submit" onClick={() => setShowEvents(!showEvent)}>
+              Events
+            </Button>
+            {showEvent && <ActivityTimeline events={ticket.events || []} />}
+
             {!isClosed ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-4 px-1">

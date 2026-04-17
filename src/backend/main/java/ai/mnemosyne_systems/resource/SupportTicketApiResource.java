@@ -18,6 +18,8 @@ import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.model.event.Event;
+import ai.mnemosyne_systems.service.EventService;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.CookieParam;
@@ -44,6 +46,8 @@ public class SupportTicketApiResource {
 
     @Inject
     CrossReferenceService crossReferenceService;
+    @Inject
+    EventService eventService;
 
     @GET
     @Transactional
@@ -157,6 +161,8 @@ public class SupportTicketApiResource {
         java.util.Map<Long, Ticket> ticketCache = crossReferenceService
                 .preloadReferencedTickets(messages.stream().map(m -> m.body).toList());
         List<MessageEntry> messageEntries = messages.stream().map(m -> toMessageEntry(m, ticketCache)).toList();
+        List<Event> rawEvents = eventService.getAllChangesToEntity(ticket.id);
+        List<EventEntry> eventEntries = rawEvents.stream().map(this::toEventEntry).toList();
         return new SupportTicketDetailResponse(ticket.id, ticket.name, ticket.displayTitle(), displayStatus,
                 counts.assignedCount(), counts.openCount(), ticket.company == null ? null : ticket.company.id,
                 ticket.company == null ? null : ticket.company.name,
@@ -180,7 +186,7 @@ public class SupportTicketApiResource {
                 tamUsers.stream().map(this::toUserReference).toList(), messageEntries,
                 SupportTicketViewSupport.isEntitlementExpired(ticket), "/support/tickets/" + ticket.id,
                 "/support/tickets/" + ticket.id + "/messages", "/tickets/export/" + ticket.id,
-                List.of("Open", "Assigned", "In Progress", "Resolved", "Closed"));
+                List.of("Open", "Assigned", "In Progress", "Resolved", "Closed"), eventEntries);
     }
 
     @GET
@@ -278,6 +284,12 @@ public class SupportTicketApiResource {
                 message.author == null ? null : toUserReference(message.author), message.isPublic,
                 message.attachments == null ? List.of()
                         : message.attachments.stream().map(this::toAttachmentEntry).toList());
+    }
+
+    private EventEntry toEventEntry(Event event) {
+        return new EventEntry(event.id, event.eventType == null ? null : event.eventType.name,
+                event.createdAt == null ? null : SupportTicketViewSupport.formatDate(event.createdAt),
+                event.user == null ? null : toUserReference(event.user));
     }
 
     private AttachmentEntry toAttachmentEntry(Attachment attachment) {
@@ -424,6 +436,9 @@ public class SupportTicketApiResource {
             boolean isPublic, List<AttachmentEntry> attachments) {
     }
 
+    public record EventEntry(Long id, String action, String dateLabel, UserReference user) {
+    }
+
     public record AttachmentEntry(Long id, String name, String mimeType, String sizeLabel, String downloadPath) {
     }
 
@@ -433,6 +448,6 @@ public class SupportTicketApiResource {
             Long affectsVersionId, Long resolvedVersionId, List<VersionOption> versions,
             List<CategoryOption> categories, List<UserReference> supportUsers, List<UserReference> tamUsers,
             List<MessageEntry> messages, boolean ticketEntitlementExpired, String actionPath, String messageActionPath,
-            String exportPath, List<String> statusOptions) {
+            String exportPath, List<String> statusOptions, List<EventEntry> events) {
     }
 }

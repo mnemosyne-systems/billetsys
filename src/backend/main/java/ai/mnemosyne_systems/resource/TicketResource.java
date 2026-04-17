@@ -15,6 +15,7 @@ import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
+import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.PdfService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.util.AuthHelper;
@@ -79,6 +80,9 @@ public class TicketResource {
 
     @Inject
     PdfService pdfService;
+
+    @Inject
+    EventService eventService;
 
     @GET
     public Response list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
@@ -192,6 +196,7 @@ public class TicketResource {
         ticket.affectsVersion = defaultAffectsVersion(entitlement);
         ticket.category = category;
         ticket.persist();
+        eventService.saveTicketEvent(ticket, user);
         return ReactRedirectSupport.redirect(client, "/tickets");
     }
 
@@ -237,9 +242,11 @@ public class TicketResource {
         ticket.category = categoryId != null ? Category.findById(categoryId) : null;
         ticket.externalIssueLink = externalIssueLink != null && !externalIssueLink.isBlank() ? externalIssueLink.trim()
                 : null;
+
         if (!sameStatus(previousStatus, ticket.status)) {
             ticketEmailService.notifyStatusChange(ticket, previousStatus, user);
         }
+        eventService.saveTicketEvent(ticket, user);
         return ReactRedirectSupport.redirect(client, "/tickets");
     }
 
@@ -248,11 +255,12 @@ public class TicketResource {
     @Transactional
     public Response delete(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
             @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
-        requireSupport(auth);
+        User user = requireSupport(auth);
         Ticket ticket = Ticket.findById(id);
         if (ticket == null) {
             throw new NotFoundException();
         }
+        eventService.saveTicketEvent(ticket, user);
         ticket.delete();
         return ReactRedirectSupport.redirect(client, "/tickets");
     }
