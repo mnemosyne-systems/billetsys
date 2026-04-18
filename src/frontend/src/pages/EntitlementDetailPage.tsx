@@ -22,6 +22,14 @@ import { Card, CardContent, CardFooter } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Field, FieldLabel } from "../components/ui/field";
 import { Input } from "../components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
 
 export default function EntitlementDetailPage(props: SessionPageProps) {
   void props;
@@ -94,36 +102,33 @@ export default function EntitlementDetailPage(props: SessionPageProps) {
                   <div className="bg-muted/30 p-4 rounded-lg border border-border">
                     <h3 className="font-semibold text-sm mb-3">Versions</h3>
                     {(entitlement.versions || []).length > 0 ? (
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-border text-muted-foreground">
-                            <th className="text-left font-medium pb-2">
-                              Version
-                            </th>
-                            <th className="text-left font-medium pb-2">Date</th>
-                          </tr>
-                        </thead>
-                        <tbody>
+                      <Table className="text-sm">
+                        <TableHeader>
+                          <TableRow className="bg-muted/50 hover:bg-muted/50">
+                            <TableHead>Version</TableHead>
+                            <TableHead>Date</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
                           {(entitlement.versions || []).map(
                             (version: VersionInfo) => (
-                              <tr
+                              <TableRow
                                 key={
                                   version.id ||
                                   `${version.name}-${version.date}`
                                 }
-                                className="border-b last:border-0 border-border"
                               >
-                                <td className="py-2 font-medium">
+                                <TableCell className="font-medium">
                                   {version.name || "\u2014"}
-                                </td>
-                                <td className="py-2 text-muted-foreground">
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
                                   {version.date || "\u2014"}
-                                </td>
-                              </tr>
+                                </TableCell>
+                              </TableRow>
                             ),
                           )}
-                        </tbody>
-                      </table>
+                        </TableBody>
+                      </Table>
                     ) : (
                       <p className="text-sm text-muted-foreground">
                         No versions.
