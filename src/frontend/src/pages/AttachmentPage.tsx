@@ -14,6 +14,7 @@ import type { SessionPageProps } from "../types/app";
 import type { AttachmentDetail } from "../types/domain";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
+import PageHeader from "../components/layout/PageHeader";
 
 export default function AttachmentPage(props: SessionPageProps) {
   void props;
@@ -27,9 +28,7 @@ export default function AttachmentPage(props: SessionPageProps) {
     : attachment?.name || "Attachment";
   return (
     <section className="w-full mt-4">
-      <div className="pb-6 px-1 border-b mb-6">
-        <h2 className="text-3xl font-bold tracking-tight">{attachmentTitle}</h2>
-      </div>
+      <PageHeader title={attachmentTitle} titleClassName="text-3xl font-bold" />
 
       <DataState state={attachmentState} emptyMessage="Attachment not found.">
         {attachment && (
