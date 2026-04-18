@@ -39,6 +39,7 @@ import {
 } from "../components/ui/alert-dialog";
 import { Field, FieldLabel } from "../components/ui/field";
 import { Input } from "../components/ui/input";
+import PageHeader from "../components/layout/PageHeader";
 
 interface EntitlementVersionForm {
   id: string;
@@ -253,11 +254,9 @@ export default function EntitlementFormPage({
 
   return (
     <section className="w-full mt-4">
-      <div className="flex items-center justify-between pb-6 px-1">
-        <h2 className="text-3xl font-bold tracking-tight">
-          {isEdit && entitlement ? entitlement.name || "Edit" : "Create"}
-        </h2>
-      </div>
+      <PageHeader
+        title={isEdit && entitlement ? entitlement.name || "Edit" : "Create"}
+      />
 
       <DataState state={entitlementState} emptyMessage="Entitlement not found.">
         {formState && entitlement && (

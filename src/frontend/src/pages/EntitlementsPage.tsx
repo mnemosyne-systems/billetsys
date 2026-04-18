@@ -15,6 +15,7 @@ import type { CollectionResponse, EntitlementRecord } from "../types/domain";
 import { Card, CardHeader } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import PageHeader from "../components/layout/PageHeader";
 
 type SupportLevel = NonNullable<EntitlementRecord["supportLevels"]>[number];
 
@@ -39,14 +40,14 @@ export default function EntitlementsPage(props: SessionPageProps) {
 
   return (
     <section className="w-full mt-4">
-      <div className="flex flex-row items-center justify-between pb-6 px-1">
-        <h2 className="text-3xl font-bold tracking-tight">Entitlements</h2>
-        <div>
+      <PageHeader
+        title="Entitlements"
+        actions={
           <Button asChild>
             <SmartLink href="/entitlements/new">Create</SmartLink>
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       <DataState
         state={entitlementsState}
