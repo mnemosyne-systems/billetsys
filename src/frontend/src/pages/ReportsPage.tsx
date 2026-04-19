@@ -564,7 +564,7 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
                 onClick={exportReport}
                 disabled={!chartScriptState.loaded}
               >
-                Export PDF
+                Export
               </Button>
             </div>
           </div>
