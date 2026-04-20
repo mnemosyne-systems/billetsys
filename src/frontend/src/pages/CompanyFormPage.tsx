@@ -17,10 +17,7 @@ import PageHeader from "../components/layout/PageHeader";
 import { resolvePostRedirectPath } from "../utils/routing";
 import { postForm } from "../utils/api";
 import { isNetworkRequestError, submitBrowserForm } from "../utils/forms";
-import {
-  SelectableUserPicker,
-  SelectableUserSummary,
-} from "../components/users/UserComponents";
+import { SelectableUserPicker } from "../components/users/UserComponents";
 import type { FormMode, SessionPageProps } from "../types/app";
 import type { CompanyFormBootstrap } from "../types/domain";
 import type { CompanyEntitlementEntry, CompanyFormState } from "../types/forms";
@@ -70,6 +67,7 @@ const EMPTY_COMPANY_FORM_STATE: CompanyFormState = {
   phoneNumber: "",
   countryId: "",
   timezoneId: "",
+  selectedSuperuserIds: [],
   selectedUserIds: [],
   selectedTamIds: [],
   entitlements: [],
@@ -122,6 +120,8 @@ export default function CompanyFormPage({ mode }: CompanyFormPageProps) {
           : company.defaultTimezoneId
             ? String(company.defaultTimezoneId)
             : "",
+        selectedSuperuserIds:
+          company.selectedSuperusers?.map((user) => String(user.id)) || [],
         selectedUserIds: company.selectedUserIds || [],
         selectedTamIds: company.selectedTamIds || [],
         entitlements:
@@ -166,6 +166,9 @@ export default function CompanyFormPage({ mode }: CompanyFormPageProps) {
         !formState?.superuserCountryId ||
         String(timezone.countryId) === formState.superuserCountryId,
     ) || [];
+  const superuserOptions = company?.superuserOptions?.length
+    ? company.superuserOptions
+    : company?.selectedSuperusers || [];
 
   const updateFormState = <K extends keyof CompanyFormState>(
     field: K,
@@ -177,17 +180,38 @@ export default function CompanyFormPage({ mode }: CompanyFormPageProps) {
   };
 
   const toggleSelection = (
-    field: "selectedUserIds" | "selectedTamIds",
+    field: "selectedSuperuserIds" | "selectedUserIds" | "selectedTamIds",
     idToToggle: string | number,
   ) => {
     setFormState((current) =>
       current
-        ? {
-            ...current,
-            [field]: current[field].includes(idToToggle)
+        ? (() => {
+            const alreadySelected = current[field].includes(idToToggle);
+            const nextSelectedIds = alreadySelected
               ? current[field].filter((existing) => existing !== idToToggle)
-              : [...current[field], idToToggle],
-          }
+              : [...current[field], idToToggle];
+
+            if (field !== "selectedSuperuserIds") {
+              return {
+                ...current,
+                [field]: nextSelectedIds,
+              };
+            }
+
+            const nextPrimarySuperuserId = alreadySelected
+              ? String(idToToggle) === current.superuserId
+                ? nextSelectedIds[0]
+                  ? String(nextSelectedIds[0])
+                  : ""
+                : current.superuserId
+              : current.superuserId || String(idToToggle);
+
+            return {
+              ...current,
+              selectedSuperuserIds: nextSelectedIds,
+              superuserId: nextPrimarySuperuserId,
+            };
+          })()
         : current,
     );
   };
@@ -256,10 +280,12 @@ export default function CompanyFormPage({ mode }: CompanyFormPageProps) {
       ["phoneNumber", formState.phoneNumber],
       ["countryId", formState.countryId],
       ["timezoneId", formState.timezoneId],
-      ...formState.selectedUserIds.map((userId): [string, string] => [
-        "userIds",
-        String(userId),
-      ]),
+      ...Array.from(
+        new Set([
+          ...formState.selectedSuperuserIds.map(String),
+          ...formState.selectedUserIds.map(String),
+        ]),
+      ).map((userId): [string, string] => ["userIds", userId]),
       ...formState.selectedTamIds.map((userId): [string, string] => [
         "tamIds",
         String(userId),
@@ -276,7 +302,13 @@ export default function CompanyFormPage({ mode }: CompanyFormPageProps) {
     try {
       setSaveState({ saving: true, error: "" });
       if (isEdit) {
-        entries.push(["superuserId", formState.superuserId]);
+        entries.push([
+          "superuserId",
+          formState.superuserId ||
+            (formState.selectedSuperuserIds[0]
+              ? String(formState.selectedSuperuserIds[0])
+              : ""),
+        ]);
       } else {
         entries.push(
           ["superuserUsername", formState.superuserUsername],
@@ -356,177 +388,168 @@ export default function CompanyFormPage({ mode }: CompanyFormPageProps) {
             <PageHeader
               title={isEdit && company ? company.name || "Edit" : "Create"}
             />
-            {/* COMPANY DETAILS SECTION */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Company Details</CardTitle>
-                {!isEdit && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Required fields are marked{" "}
-                    <span className="text-destructive">*</span>.
-                  </p>
-                )}
-              </CardHeader>
-              <CardContent className="grid gap-6 md:grid-cols-2">
-                <Field>
-                  <FieldLabel>
-                    Name{" "}
-                    {!isEdit && <span className="text-destructive">*</span>}
-                  </FieldLabel>
-                  <Input
-                    value={formState.name}
-                    onChange={(event) =>
-                      updateFormState("name", event.target.value)
-                    }
-                    required
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel>Phone number</FieldLabel>
-                  <PhoneInput
-                    defaultCountry="US"
-                    value={formState.phoneNumber}
-                    onChange={(value) =>
-                      updateFormState("phoneNumber", value || "")
-                    }
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel>Address 1</FieldLabel>
-                  <Input
-                    value={formState.address1}
-                    onChange={(event) =>
-                      updateFormState("address1", event.target.value)
-                    }
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel>Address 2</FieldLabel>
-                  <Input
-                    value={formState.address2}
-                    onChange={(event) =>
-                      updateFormState("address2", event.target.value)
-                    }
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel>City</FieldLabel>
-                  <Input
-                    value={formState.city}
-                    onChange={(event) =>
-                      updateFormState("city", event.target.value)
-                    }
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel>State</FieldLabel>
-                  <Input
-                    value={formState.state}
-                    onChange={(event) =>
-                      updateFormState("state", event.target.value)
-                    }
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel>Zip</FieldLabel>
-                  <Input
-                    value={formState.zip}
-                    onChange={(event) =>
-                      updateFormState("zip", event.target.value)
-                    }
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel>Country</FieldLabel>
-                  <CountryDropdown
-                    defaultValue={
-                      countries.all.find(
-                        (c) =>
-                          c.name ===
-                          (company.countries || []).find(
-                            (cc) => String(cc.id) === formState.countryId,
-                          )?.name,
-                      )?.alpha2 || ""
-                    }
-                    onChange={(country) => {
-                      const matched = (company.countries || []).find(
-                        (c) => c.name === country.name,
-                      );
-                      const nextCountryId = matched ? String(matched.id) : "";
-                      const timezoneStillValid = (company.timezones || []).some(
-                        (timezone) =>
-                          String(timezone.id) === formState.timezoneId &&
-                          String(timezone.countryId) === nextCountryId,
-                      );
-                      setFormState((current) =>
-                        current
-                          ? {
-                              ...current,
-                              countryId: nextCountryId,
-                              timezoneId: timezoneStillValid
-                                ? current.timezoneId
-                                : "",
-                            }
-                          : current,
-                      );
-                    }}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel>Time zone</FieldLabel>
-                  <Select
-                    value={formState.timezoneId || undefined}
-                    onValueChange={(value) =>
-                      updateFormState("timezoneId", value)
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a time zone" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableTimezones.map((timezone) => (
-                        <SelectItem
-                          key={timezone.id}
-                          value={String(timezone.id)}
-                        >
-                          {timezone.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
+            {!isEdit && (
+              <p className="text-sm text-muted-foreground">
+                Required fields are marked{" "}
+                <span className="text-destructive">*</span>.
+              </p>
+            )}
+            <div className="grid gap-6 md:grid-cols-2">
+              <Field>
+                <FieldLabel>
+                  Name {!isEdit && <span className="text-destructive">*</span>}
+                </FieldLabel>
+                <Input
+                  value={formState.name}
+                  onChange={(event) =>
+                    updateFormState("name", event.target.value)
+                  }
+                  required
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Phone number</FieldLabel>
+                <PhoneInput
+                  defaultCountry="US"
+                  value={formState.phoneNumber}
+                  onChange={(value) =>
+                    updateFormState("phoneNumber", value || "")
+                  }
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Address 1</FieldLabel>
+                <Input
+                  value={formState.address1}
+                  onChange={(event) =>
+                    updateFormState("address1", event.target.value)
+                  }
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Address 2</FieldLabel>
+                <Input
+                  value={formState.address2}
+                  onChange={(event) =>
+                    updateFormState("address2", event.target.value)
+                  }
+                />
+              </Field>
+              <Field>
+                <FieldLabel>City</FieldLabel>
+                <Input
+                  value={formState.city}
+                  onChange={(event) =>
+                    updateFormState("city", event.target.value)
+                  }
+                />
+              </Field>
+              <Field>
+                <FieldLabel>State</FieldLabel>
+                <Input
+                  value={formState.state}
+                  onChange={(event) =>
+                    updateFormState("state", event.target.value)
+                  }
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Zip</FieldLabel>
+                <Input
+                  value={formState.zip}
+                  onChange={(event) =>
+                    updateFormState("zip", event.target.value)
+                  }
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Country</FieldLabel>
+                <CountryDropdown
+                  defaultValue={
+                    countries.all.find(
+                      (c) =>
+                        c.name ===
+                        (company.countries || []).find(
+                          (cc) => String(cc.id) === formState.countryId,
+                        )?.name,
+                    )?.alpha2 || ""
+                  }
+                  onChange={(country) => {
+                    const matched = (company.countries || []).find(
+                      (c) => c.name === country.name,
+                    );
+                    const nextCountryId = matched ? String(matched.id) : "";
+                    const timezoneStillValid = (company.timezones || []).some(
+                      (timezone) =>
+                        String(timezone.id) === formState.timezoneId &&
+                        String(timezone.countryId) === nextCountryId,
+                    );
+                    setFormState((current) =>
+                      current
+                        ? {
+                            ...current,
+                            countryId: nextCountryId,
+                            timezoneId: timezoneStillValid
+                              ? current.timezoneId
+                              : "",
+                          }
+                        : current,
+                    );
+                  }}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Time zone</FieldLabel>
+                <Select
+                  value={formState.timezoneId || undefined}
+                  onValueChange={(value) =>
+                    updateFormState("timezoneId", value)
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a time zone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTimezones.map((timezone) => (
+                      <SelectItem key={timezone.id} value={String(timezone.id)}>
+                        {timezone.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
 
+              <div
+                className={`md:col-span-2 mt-2 pt-4 border-t ${isEdit ? "grid gap-6 md:grid-cols-3" : "space-y-4"}`}
+              >
                 {isEdit && (
-                  <div className="md:col-span-2 pt-2">
-                    <FieldLabel>Superuser</FieldLabel>
-                    <div className="mt-2">
-                      <SelectableUserSummary
-                        users={company.selectedSuperusers}
-                      />
-                    </div>
-                  </div>
+                  <SelectableUserPicker
+                    title="Superuser"
+                    users={superuserOptions}
+                    selectedIds={formState.selectedSuperuserIds}
+                    onToggle={(userId) =>
+                      toggleSelection("selectedSuperuserIds", userId)
+                    }
+                  />
                 )}
-
-                <div className="md:col-span-2 mt-2 space-y-4 pt-4 border-t">
-                  <SelectableUserPicker
-                    title="Users"
-                    users={company.userOptions || []}
-                    selectedIds={formState.selectedUserIds}
-                    onToggle={(userId) =>
-                      toggleSelection("selectedUserIds", userId)
-                    }
-                  />
-                  <SelectableUserPicker
-                    title="TAMs"
-                    users={company.tamOptions || []}
-                    selectedIds={formState.selectedTamIds}
-                    onToggle={(userId) =>
-                      toggleSelection("selectedTamIds", userId)
-                    }
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                <SelectableUserPicker
+                  title={isEdit ? "User" : "Users"}
+                  users={company.userOptions || []}
+                  selectedIds={formState.selectedUserIds}
+                  onToggle={(userId) =>
+                    toggleSelection("selectedUserIds", userId)
+                  }
+                />
+                <SelectableUserPicker
+                  title={isEdit ? "TAM" : "TAMs"}
+                  users={company.tamOptions || []}
+                  selectedIds={formState.selectedTamIds}
+                  onToggle={(userId) =>
+                    toggleSelection("selectedTamIds", userId)
+                  }
+                />
+              </div>
+            </div>
 
             {/* SUPERUSER SECTION */}
             {!isEdit && (
@@ -680,131 +703,263 @@ export default function CompanyFormPage({ mode }: CompanyFormPageProps) {
               </Card>
             )}
 
-            {/* ENTITLEMENTS SECTION */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Entitlements</CardTitle>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addEntitlement}
-                >
-                  Add Entitlement
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {formState.entitlements.map((entry, index) => (
-                  <div
-                    key={`${entry.entitlementId || "new"}-${entry.levelId || "level"}-${index}`}
-                    className="p-4 border rounded-lg bg-card text-card-foreground shadow-sm flex flex-col md:flex-row md:items-end gap-4"
+            {isEdit ? (
+              <div className="space-y-4">
+                <div className="flex flex-row items-center justify-between">
+                  <h2 className="text-base font-semibold">Entitlements</h2>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addEntitlement}
                   >
-                    <div className="grid gap-4 md:grid-cols-4 flex-grow">
-                      <Field>
-                        <FieldLabel>Entitlement</FieldLabel>
-                        <Select
-                          value={entry.entitlementId || undefined}
-                          onValueChange={(value) =>
-                            updateEntitlement(index, "entitlementId", value)
-                          }
-                          required
+                    Add
+                  </Button>
+                </div>
+                <div className="space-y-4">
+                  {formState.entitlements.map((entry, index) => (
+                    <div
+                      key={`${entry.entitlementId || "new"}-${entry.levelId || "level"}-${index}`}
+                      className="p-4 border rounded-lg bg-card text-card-foreground shadow-sm flex flex-col md:flex-row md:items-end gap-4"
+                    >
+                      <div className="grid gap-4 md:grid-cols-4 flex-grow">
+                        <Field>
+                          <FieldLabel>Entitlement</FieldLabel>
+                          <Select
+                            value={entry.entitlementId || undefined}
+                            onValueChange={(value) =>
+                              updateEntitlement(index, "entitlementId", value)
+                            }
+                            required
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select entitlement" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(company.entitlements || []).map((option) => (
+                                <SelectItem
+                                  key={option.id}
+                                  value={String(option.id)}
+                                >
+                                  {option.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                        <Field>
+                          <FieldLabel>Level</FieldLabel>
+                          <Select
+                            value={entry.levelId || undefined}
+                            onValueChange={(value) =>
+                              updateEntitlement(index, "levelId", value)
+                            }
+                            required
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select level" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(company.levels || []).map((option) => (
+                                <SelectItem
+                                  key={option.id}
+                                  value={String(option.id)}
+                                >
+                                  {option.name} ({option.level})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                        <Field>
+                          <FieldLabel>Date</FieldLabel>
+                          <Input
+                            type="date"
+                            value={entry.date}
+                            onChange={(event) =>
+                              updateEntitlement(
+                                index,
+                                "date",
+                                event.target.value,
+                              )
+                            }
+                            required
+                          />
+                        </Field>
+                        <Field>
+                          <FieldLabel>Duration</FieldLabel>
+                          <Select
+                            value={entry.duration || undefined}
+                            onValueChange={(value) =>
+                              updateEntitlement(index, "duration", value)
+                            }
+                            required
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select duration" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(company.durations || []).map((option) => (
+                                <SelectItem
+                                  key={option.value}
+                                  value={String(option.value)}
+                                >
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                      </div>
+                      <div className="flex-shrink-0 mt-4 md:mt-0">
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={() => removeEntitlement(index)}
                         >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select entitlement" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(company.entitlements || []).map((option) => (
-                              <SelectItem
-                                key={option.id}
-                                value={String(option.id)}
-                              >
-                                {option.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </Field>
-                      <Field>
-                        <FieldLabel>Level</FieldLabel>
-                        <Select
-                          value={entry.levelId || undefined}
-                          onValueChange={(value) =>
-                            updateEntitlement(index, "levelId", value)
-                          }
-                          required
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select level" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(company.levels || []).map((option) => (
-                              <SelectItem
-                                key={option.id}
-                                value={String(option.id)}
-                              >
-                                {option.name} ({option.level})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </Field>
-                      <Field>
-                        <FieldLabel>Date</FieldLabel>
-                        <Input
-                          type="date"
-                          value={entry.date}
-                          onChange={(event) =>
-                            updateEntitlement(index, "date", event.target.value)
-                          }
-                          required
-                        />
-                      </Field>
-                      <Field>
-                        <FieldLabel>Duration</FieldLabel>
-                        <Select
-                          value={entry.duration || undefined}
-                          onValueChange={(value) =>
-                            updateEntitlement(index, "duration", value)
-                          }
-                          required
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select duration" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(company.durations || []).map((option) => (
-                              <SelectItem
-                                key={option.value}
-                                value={String(option.value)}
-                              >
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </Field>
+                          Remove
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex-shrink-0 mt-4 md:mt-0">
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        onClick={() => removeEntitlement(index)}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  ))}
 
-                {formState.entitlements.length === 0 && (
-                  <p className="text-sm text-muted-foreground italic text-center py-4">
-                    No entitlements added yet.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+                  {formState.entitlements.length === 0 && (
+                    <p className="text-sm text-muted-foreground italic text-center py-4">
+                      No entitlements added yet.
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Entitlements</CardTitle>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addEntitlement}
+                  >
+                    Add Entitlement
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {formState.entitlements.map((entry, index) => (
+                    <div
+                      key={`${entry.entitlementId || "new"}-${entry.levelId || "level"}-${index}`}
+                      className="p-4 border rounded-lg bg-card text-card-foreground shadow-sm flex flex-col md:flex-row md:items-end gap-4"
+                    >
+                      <div className="grid gap-4 md:grid-cols-4 flex-grow">
+                        <Field>
+                          <FieldLabel>Entitlement</FieldLabel>
+                          <Select
+                            value={entry.entitlementId || undefined}
+                            onValueChange={(value) =>
+                              updateEntitlement(index, "entitlementId", value)
+                            }
+                            required
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select entitlement" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(company.entitlements || []).map((option) => (
+                                <SelectItem
+                                  key={option.id}
+                                  value={String(option.id)}
+                                >
+                                  {option.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                        <Field>
+                          <FieldLabel>Level</FieldLabel>
+                          <Select
+                            value={entry.levelId || undefined}
+                            onValueChange={(value) =>
+                              updateEntitlement(index, "levelId", value)
+                            }
+                            required
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select level" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(company.levels || []).map((option) => (
+                                <SelectItem
+                                  key={option.id}
+                                  value={String(option.id)}
+                                >
+                                  {option.name} ({option.level})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                        <Field>
+                          <FieldLabel>Date</FieldLabel>
+                          <Input
+                            type="date"
+                            value={entry.date}
+                            onChange={(event) =>
+                              updateEntitlement(
+                                index,
+                                "date",
+                                event.target.value,
+                              )
+                            }
+                            required
+                          />
+                        </Field>
+                        <Field>
+                          <FieldLabel>Duration</FieldLabel>
+                          <Select
+                            value={entry.duration || undefined}
+                            onValueChange={(value) =>
+                              updateEntitlement(index, "duration", value)
+                            }
+                            required
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select duration" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(company.durations || []).map((option) => (
+                                <SelectItem
+                                  key={option.value}
+                                  value={String(option.value)}
+                                >
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                      </div>
+                      <div className="flex-shrink-0 mt-4 md:mt-0">
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={() => removeEntitlement(index)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {formState.entitlements.length === 0 && (
+                    <p className="text-sm text-muted-foreground italic text-center py-4">
+                      No entitlements added yet.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             <div className="flex items-center justify-end space-x-3 pt-4 border-t">
               {isEdit && (
@@ -816,7 +971,7 @@ export default function CompanyFormPage({ mode }: CompanyFormPageProps) {
                       disabled={saveState.saving}
                       className="mr-auto"
                     >
-                      Delete company
+                      Delete
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>

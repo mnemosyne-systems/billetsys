@@ -31,6 +31,7 @@ interface SelectableUsersProps {
   users: UserReference[];
   selectedIds: Id[];
   onToggle: (userId: Id) => void;
+  selectionMode?: "multiple" | "single";
 }
 
 export function UserHoverLink({
@@ -187,6 +188,7 @@ export function SelectableUserPicker({
   users,
   selectedIds,
   onToggle,
+  selectionMode = "multiple",
 }: SelectableUsersProps) {
   return (
     <div className="space-y-4 rounded-lg border bg-card text-card-foreground shadow-sm p-6 overflow-hidden">
@@ -204,7 +206,7 @@ export function SelectableUserPicker({
             >
               <div className="flex items-center justify-center">
                 <input
-                  type="checkbox"
+                  type={selectionMode === "single" ? "radio" : "checkbox"}
                   className="h-4 w-4 rounded-sm border-primary text-primary focus:ring-primary shadow-sm"
                   checked={selectedIds.includes(user.id)}
                   onChange={() => onToggle(user.id)}

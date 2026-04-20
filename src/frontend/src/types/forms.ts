@@ -23,6 +23,7 @@ export interface CompanyFormState {
   phoneNumber: string;
   countryId: string;
   timezoneId: string;
+  selectedSuperuserIds: Array<string | number>;
   selectedUserIds: Array<string | number>;
   selectedTamIds: Array<string | number>;
   entitlements: CompanyEntitlementEntry[];

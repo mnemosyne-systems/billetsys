@@ -72,16 +72,7 @@ public class CompanyApiResource {
                 selectedUserOptions.stream().map(UserOption::id).toList());
         LinkedHashSet<Long> selectedTamIds = new LinkedHashSet<>(
                 selectedTamOptions.stream().map(UserOption::id).toList());
-        LinkedHashSet<Long> superuserOptionIds = new LinkedHashSet<>();
-        List<UserOption> superuserOptions = new ArrayList<>();
-        for (User user : companyUsers) {
-            if (user != null && superuserOptionIds.add(user.id)) {
-                superuserOptions.add(toUserOption(user));
-            }
-        }
-        if (company.superuser != null && company.superuser.id != null && superuserOptionIds.add(company.superuser.id)) {
-            superuserOptions.add(toUserOption(company.superuser));
-        }
+        List<UserOption> superuserOptions = optionUsers(User.TYPE_SUPERUSER);
         CompanyBootstrapResponse bootstrap = bootstrap(auth);
         return new CompanyDetailResponse(company.id, company.name, company.address1, company.address2, company.city,
                 company.state, company.zip, company.phoneNumber, company.country == null ? null : company.country.id,

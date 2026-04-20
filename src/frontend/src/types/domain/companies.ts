@@ -68,6 +68,7 @@ export interface CompanyFormBootstrap extends NamedEntity {
   selectedTamIds?: Array<string | number>;
   superuserId?: string | number;
   selectedSuperusers?: UserReference[];
+  superuserOptions?: UserReference[];
   userOptions?: UserReference[];
   tamOptions?: UserReference[];
   countries?: CountryOption[];
