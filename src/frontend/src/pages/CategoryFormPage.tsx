@@ -19,7 +19,6 @@ import { postForm, postMultipart } from "../utils/api";
 import { resolvePostRedirectPath } from "../utils/routing";
 import type { FormMode, SessionPageProps } from "../types/app";
 import type { CategoryRecord } from "../types/domain";
-import { Card, CardContent, CardFooter } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import {
   AlertDialog,
@@ -167,9 +166,19 @@ export default function CategoryFormPage({ mode }: CategoryFormPageProps) {
             <PageHeader
               title={isEdit && category ? category.name || "Edit" : "Create"}
             />
-            <Card>
+            <div
+              className={
+                isEdit ? "space-y-4" : "rounded-xl border bg-card shadow-sm"
+              }
+            >
               <form onSubmit={submit}>
-                <CardContent className="grid gap-6 md:grid-cols-2 pt-6 pb-6">
+                <div
+                  className={
+                    isEdit
+                      ? "grid gap-6 md:grid-cols-2"
+                      : "grid gap-6 md:grid-cols-2 px-6 pt-6 pb-6"
+                  }
+                >
                   <Field>
                     <FieldLabel>Name</FieldLabel>
                     <Input
@@ -208,9 +217,13 @@ export default function CategoryFormPage({ mode }: CategoryFormPageProps) {
                       rows={10}
                     />
                   </Field>
-                </CardContent>
-                <CardFooter
-                  className={`flex items-center pt-6 border-t mt-4 bg-muted/20 ${isEdit ? "justify-between" : "justify-end"}`}
+                </div>
+                <div
+                  className={
+                    isEdit
+                      ? "flex items-center justify-between gap-3 pt-4"
+                      : "mt-4 flex items-center justify-end border-t bg-muted/20 px-6 pt-6"
+                  }
                 >
                   <div>
                     {isEdit && (
@@ -252,9 +265,9 @@ export default function CategoryFormPage({ mode }: CategoryFormPageProps) {
                         ? "Save"
                         : "Create"}
                   </Button>
-                </CardFooter>
+                </div>
               </form>
-            </Card>
+            </div>
           </>
         )}
       </DataState>
