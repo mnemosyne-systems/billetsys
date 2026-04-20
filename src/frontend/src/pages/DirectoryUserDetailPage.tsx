@@ -102,16 +102,15 @@ export default function DirectoryUserDetailPage({
             companyHref={detail.companyPath}
             actions={
               <>
-                {detail.editPath && (
-                  <Button asChild>
-                    <SmartLink href={detail.editPath}>Edit</SmartLink>
-                  </Button>
-                )}
                 {detail.deletePath && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button type="button" variant="destructive">
-                        Delete user
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        className="mr-auto"
+                      >
+                        Delete
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -133,6 +132,11 @@ export default function DirectoryUserDetailPage({
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                )}
+                {detail.editPath && (
+                  <Button asChild>
+                    <SmartLink href={detail.editPath}>Edit</SmartLink>
+                  </Button>
                 )}
               </>
             }

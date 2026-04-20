@@ -30,7 +30,6 @@ import type {
   TimezoneOption,
 } from "../types/domain";
 import type { DirectoryUserFormState } from "../utils/forms";
-import { Card, CardContent, CardFooter } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import {
   AlertDialog,
@@ -217,13 +216,21 @@ export default function DirectoryUserFormPage({
     setSaveState({ saving: false, error: "" });
   };
 
+  const pageTitle = isEdit
+    ? formState?.name?.trim() ||
+      formState?.fullName?.trim() ||
+      bootstrap?.user?.name ||
+      bootstrap?.user?.fullName ||
+      "User"
+    : bootstrap?.title || (isEdit ? "Edit user" : "New user");
+
   return (
     <section className="w-full mt-4">
       {!isAdminCreate && (
         <PageHeader
-          title={bootstrap?.title || (isEdit ? "Edit user" : "New user")}
+          title={pageTitle}
           actions={
-            isEdit && bootstrap?.submitPath?.startsWith("/user/") ? (
+            !isEdit && bootstrap?.submitPath?.startsWith("/user/") ? (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -263,9 +270,15 @@ export default function DirectoryUserFormPage({
         emptyMessage="Unable to load the user form."
       >
         {formState && bootstrap && (
-          <Card>
+          <div>
             <form onSubmit={submit}>
-              <CardContent className="grid gap-6 sm:grid-cols-2 pt-6 pb-6">
+              <div
+                className={
+                  isEdit
+                    ? "grid gap-6 sm:grid-cols-2"
+                    : "grid gap-6 sm:grid-cols-2 rounded-xl border bg-card px-6 py-6 shadow-sm"
+                }
+              >
                 <Field>
                   <FieldLabel>
                     Username <span className="text-destructive">*</span>
@@ -451,10 +464,48 @@ export default function DirectoryUserFormPage({
                     </FieldDescription>
                   )}
                 </Field>
-              </CardContent>
+              </div>
 
-              <CardFooter className="flex items-center space-x-3 justify-end border-t bg-muted/20 px-6 py-4">
-                {!isAdminCreate && (
+              <div
+                className={
+                  isEdit
+                    ? "flex items-center gap-3 pt-4"
+                    : "flex items-center space-x-3 justify-end border-t bg-muted/20 px-6 py-4"
+                }
+              >
+                {isEdit && bootstrap.submitPath?.startsWith("/user/") && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        disabled={saveState.saving}
+                        className="mr-auto"
+                      >
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently
+                          delete this user.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={deleteUser}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+                {!isAdminCreate && !isEdit && (
                   <Button variant="outline" asChild>
                     <SmartLink href={bootstrap?.cancelPath || navigateFallback}>
                       Cancel
@@ -466,11 +517,13 @@ export default function DirectoryUserFormPage({
                     ? "Saving..."
                     : isAdminCreate
                       ? "Create"
-                      : bootstrap.title || (isEdit ? "Save" : "Create")}
+                      : isEdit
+                        ? "Save"
+                        : "Create"}
                 </Button>
-              </CardFooter>
+              </div>
             </form>
-          </Card>
+          </div>
         )}
       </DataState>
     </section>

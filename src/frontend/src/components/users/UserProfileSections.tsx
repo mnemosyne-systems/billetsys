@@ -9,7 +9,6 @@
 import type { ReactNode } from "react";
 import { formatPhone, profileInitial } from "../../utils/formatting";
 import { SmartLink } from "../../utils/routing";
-import { Card, CardContent } from "../ui/card";
 import { Field, FieldLabel } from "../ui/field";
 import { Input } from "../ui/input";
 
@@ -80,81 +79,75 @@ export function UserDetailCard({
 
   return (
     <div className="w-full space-y-6">
-      <Card>
-        <CardContent className="grid gap-6 md:grid-cols-2 p-6">
-          <Field>
-            <FieldLabel>Username</FieldLabel>
-            <Input value={user.username || "—"} readOnly />
-          </Field>
-          <Field>
-            <FieldLabel>Full name</FieldLabel>
-            <Input value={user.fullName || "—"} readOnly />
-          </Field>
-          <Field>
-            <FieldLabel>Type</FieldLabel>
-            <Input value={user.typeLabel || user.type || "User"} readOnly />
-          </Field>
-          <Field>
-            <FieldLabel>Email</FieldLabel>
-            <Input value={user.email || "—"} readOnly />
-          </Field>
-          <Field>
-            <FieldLabel>Social</FieldLabel>
-            <Input value={user.social || "—"} readOnly />
-          </Field>
-          <Field>
-            <FieldLabel>Phone</FieldLabel>
-            <Input
-              value={formatPhone(user.phoneNumber, user.phoneExtension)}
-              readOnly
-            />
-          </Field>
-          <Field>
-            <FieldLabel>Country</FieldLabel>
-            <Input value={user.countryName || "—"} readOnly />
-          </Field>
-          <Field>
-            <FieldLabel>Time zone</FieldLabel>
-            <Input value={user.timezoneName || "—"} readOnly />
-          </Field>
+      <div className="grid gap-6 md:grid-cols-2">
+        <Field>
+          <FieldLabel>Username</FieldLabel>
+          <Input value={user.username || "—"} readOnly />
+        </Field>
+        <Field>
+          <FieldLabel>Full name</FieldLabel>
+          <Input value={user.fullName || "—"} readOnly />
+        </Field>
+        <Field>
+          <FieldLabel>Type</FieldLabel>
+          <Input value={user.typeLabel || user.type || "User"} readOnly />
+        </Field>
+        <Field>
+          <FieldLabel>Email</FieldLabel>
+          <Input value={user.email || "—"} readOnly />
+        </Field>
+        <Field>
+          <FieldLabel>Social</FieldLabel>
+          <Input value={user.social || "—"} readOnly />
+        </Field>
+        <Field>
+          <FieldLabel>Phone</FieldLabel>
+          <Input
+            value={formatPhone(user.phoneNumber, user.phoneExtension)}
+            readOnly
+          />
+        </Field>
+        <Field>
+          <FieldLabel>Country</FieldLabel>
+          <Input value={user.countryName || "—"} readOnly />
+        </Field>
+        <Field>
+          <FieldLabel>Time zone</FieldLabel>
+          <Input value={user.timezoneName || "—"} readOnly />
+        </Field>
 
-          <div className="md:col-span-2 pt-4 border-t mt-2 grid gap-6 md:grid-cols-2">
-            <div>
-              <FieldLabel className="mb-2 block">{companyLabel}</FieldLabel>
-              {companyHref ? (
-                <SmartLink
-                  className="text-primary hover:underline font-medium flex items-center h-10"
-                  href={companyHref}
-                >
-                  {user.companyName || "Open company"}
-                </SmartLink>
-              ) : (
-                <div className="flex h-10 items-center">
-                  <span className="text-sm font-medium">
-                    {hasCompany ? user.companyName : "—"}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <FieldLabel className="mb-2 block">Logo</FieldLabel>
-              <UserLogoPreview
-                logoBase64={user.logoBase64}
-                fullName={user.fullName}
-                username={user.username}
-                email={user.email}
-              />
-            </div>
+        <div className="md:col-span-2 pt-4 border-t mt-2 grid gap-6 md:grid-cols-2">
+          <div>
+            <FieldLabel className="mb-2 block">{companyLabel}</FieldLabel>
+            {companyHref ? (
+              <SmartLink
+                className="text-primary hover:underline font-medium flex items-center h-10"
+                href={companyHref}
+              >
+                {user.companyName || "Open company"}
+              </SmartLink>
+            ) : (
+              <div className="flex h-10 items-center">
+                <span className="text-sm font-medium">
+                  {hasCompany ? user.companyName : "—"}
+                </span>
+              </div>
+            )}
           </div>
-        </CardContent>
-      </Card>
 
-      {actions ? (
-        <div className="flex items-center justify-end space-x-3 pt-4">
-          {actions}
+          <div>
+            <FieldLabel className="mb-2 block">Logo</FieldLabel>
+            <UserLogoPreview
+              logoBase64={user.logoBase64}
+              fullName={user.fullName}
+              username={user.username}
+              email={user.email}
+            />
+          </div>
         </div>
-      ) : null}
+      </div>
+
+      {actions ? <div className="flex items-center pt-4">{actions}</div> : null}
     </div>
   );
 }
