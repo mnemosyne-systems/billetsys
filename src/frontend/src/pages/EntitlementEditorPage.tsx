@@ -261,7 +261,9 @@ export default function EntitlementEditorPage({
           <form className="space-y-6 pb-20" onSubmit={submit}>
             <PageHeader
               title={
-                isEdit && entitlement ? entitlement.name || "Edit" : "Create"
+                isEdit && entitlement
+                  ? entitlement.name || "Edit"
+                  : "New entitlement"
               }
             />
             <div className="space-y-6">

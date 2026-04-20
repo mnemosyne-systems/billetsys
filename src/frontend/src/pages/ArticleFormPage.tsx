@@ -119,7 +119,9 @@ export default function ArticleFormPage({ mode }: ArticleFormPageProps) {
       <DataState state={articleState} emptyMessage="Article unavailable.">
         {formState && article && article.canEdit && (
           <>
-            <PageHeader title={isEdit ? formState.title || "Edit" : "Create"} />
+            <PageHeader
+              title={isEdit ? formState.title || "Edit" : "New article"}
+            />
             <div className="w-full">
               <form onSubmit={submit}>
                 <div className="grid gap-6 md:grid-cols-2 pb-6 pt-2">

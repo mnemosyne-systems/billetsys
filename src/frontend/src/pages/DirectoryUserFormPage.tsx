@@ -90,7 +90,8 @@ export default function DirectoryUserFormPage({
   const bootstrapState = useJson<DirectoryUserBootstrap>(
     `${bootstrapBase}${toQueryString({
       userId: isEdit ? id : undefined,
-      companyId: formState?.companyId || requestedCompanyId,
+      companyId:
+        formState?.companyId || (isAdminCreate ? "" : requestedCompanyId),
       countryId: selectedCountryId,
     })}`,
   );
@@ -115,7 +116,12 @@ export default function DirectoryUserFormPage({
         !current ||
         String(current.id || "") !== String(bootstrap.user?.id || "")
       ) {
-        return createDirectoryUserFormState(bootstrap);
+        return {
+          ...createDirectoryUserFormState(bootstrap),
+          companyId: isAdminCreate
+            ? ""
+            : createDirectoryUserFormState(bootstrap).companyId,
+        };
       }
       const timezones = bootstrap.timezones || [];
       const hasTimezone = timezones.some(
@@ -125,9 +131,11 @@ export default function DirectoryUserFormPage({
         ...current,
         companyId:
           current.companyId ||
-          (bootstrap.selectedCompanyId
-            ? String(bootstrap.selectedCompanyId)
-            : ""),
+          (isAdminCreate
+            ? ""
+            : bootstrap.selectedCompanyId
+              ? String(bootstrap.selectedCompanyId)
+              : ""),
         timezoneId: hasTimezone
           ? current.timezoneId
           : timezones[0]?.id
@@ -140,7 +148,7 @@ export default function DirectoryUserFormPage({
           "",
       };
     });
-  }, [bootstrap]);
+  }, [bootstrap, isAdminCreate]);
 
   const updateFormState = <K extends keyof DirectoryUserFormState>(
     field: K,

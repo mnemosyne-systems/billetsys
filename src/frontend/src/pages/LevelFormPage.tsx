@@ -217,21 +217,11 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
         {formState && level && (
           <>
             <PageHeader
-              title={isEdit && level ? level.name || "Edit" : "Create"}
+              title={isEdit && level ? level.name || "Edit" : "New level"}
             />
-            <div
-              className={
-                isEdit ? "space-y-4" : "rounded-xl border bg-card shadow-sm"
-              }
-            >
+            <div className="space-y-4">
               <form onSubmit={submit}>
-                <div
-                  className={
-                    isEdit
-                      ? "grid gap-6 md:grid-cols-2"
-                      : "grid gap-6 md:grid-cols-2 px-6 pt-6 pb-6"
-                  }
-                >
+                <div className="grid gap-6 md:grid-cols-2">
                   <Field>
                     <FieldLabel className="text-[var(--color-header-bg)]">
                       Name
@@ -468,7 +458,7 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                   className={
                     isEdit
                       ? "flex items-center justify-between gap-3 pt-4"
-                      : "mt-4 flex items-center justify-end border-t bg-muted/20 px-6 pt-6"
+                      : "mt-4 flex items-center justify-end"
                   }
                 >
                   <div>

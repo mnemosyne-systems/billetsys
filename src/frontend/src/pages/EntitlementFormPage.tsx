@@ -255,7 +255,9 @@ export default function EntitlementFormPage({
   return (
     <section className="w-full mt-4">
       <PageHeader
-        title={isEdit && entitlement ? entitlement.name || "Edit" : "Create"}
+        title={
+          isEdit && entitlement ? entitlement.name || "Edit" : "New entitlement"
+        }
       />
 
       <DataState state={entitlementState} emptyMessage="Entitlement not found.">

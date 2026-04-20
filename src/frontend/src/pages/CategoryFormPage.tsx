@@ -164,21 +164,13 @@ export default function CategoryFormPage({ mode }: CategoryFormPageProps) {
         {formState && (
           <>
             <PageHeader
-              title={isEdit && category ? category.name || "Edit" : "Create"}
-            />
-            <div
-              className={
-                isEdit ? "space-y-4" : "rounded-xl border bg-card shadow-sm"
+              title={
+                isEdit && category ? category.name || "Edit" : "New category"
               }
-            >
+            />
+            <div className="space-y-4">
               <form onSubmit={submit}>
-                <div
-                  className={
-                    isEdit
-                      ? "grid gap-6 md:grid-cols-2"
-                      : "grid gap-6 md:grid-cols-2 px-6 pt-6 pb-6"
-                  }
-                >
+                <div className="grid gap-6 md:grid-cols-2">
                   <Field>
                     <FieldLabel>Name</FieldLabel>
                     <Input
@@ -222,7 +214,7 @@ export default function CategoryFormPage({ mode }: CategoryFormPageProps) {
                   className={
                     isEdit
                       ? "flex items-center justify-between gap-3 pt-4"
-                      : "mt-4 flex items-center justify-end border-t bg-muted/20 px-6 pt-6"
+                      : "mt-4 flex items-center justify-end"
                   }
                 >
                   <div>
