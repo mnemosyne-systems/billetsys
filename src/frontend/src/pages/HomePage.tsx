@@ -97,39 +97,39 @@ export default function HomePage({ sessionState }: SessionPageProps) {
     switch (label.toLowerCase()) {
       case "owner":
         return (
-          <Shield className="h-6 w-6 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+          <Shield className="h-6 w-6 shrink-0 text-[var(--color-header-bg)] transition-colors group-hover:text-[var(--color-primary-dark)]" />
         );
       case "companies":
         return (
-          <Building2 className="h-6 w-6 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+          <Building2 className="h-6 w-6 shrink-0 text-sky-600 transition-colors group-hover:text-sky-700" />
         );
       case "users":
         return (
-          <Users className="h-6 w-6 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+          <Users className="h-6 w-6 shrink-0 text-emerald-600 transition-colors group-hover:text-emerald-700" />
         );
       case "entitlements":
         return (
-          <Key className="h-6 w-6 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+          <Key className="h-6 w-6 shrink-0 text-amber-600 transition-colors group-hover:text-amber-700" />
         );
       case "levels":
         return (
-          <Layers className="h-6 w-6 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+          <Layers className="h-6 w-6 shrink-0 text-violet-600 transition-colors group-hover:text-violet-700" />
         );
       case "categories":
         return (
-          <Tags className="h-6 w-6 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+          <Tags className="h-6 w-6 shrink-0 text-rose-600 transition-colors group-hover:text-rose-700" />
         );
       case "articles":
         return (
-          <BookOpen className="h-6 w-6 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+          <BookOpen className="h-6 w-6 shrink-0 text-indigo-600 transition-colors group-hover:text-indigo-700" />
         );
       case "reports":
         return (
-          <BarChart3 className="h-6 w-6 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+          <BarChart3 className="h-6 w-6 shrink-0 text-orange-600 transition-colors group-hover:text-orange-700" />
         );
       default:
         return (
-          <Settings className="h-6 w-6 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+          <Settings className="h-6 w-6 shrink-0 text-slate-600 transition-colors group-hover:text-slate-700" />
         );
     }
   };

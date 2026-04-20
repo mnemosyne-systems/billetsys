@@ -128,11 +128,11 @@ const CountryDropdownComponent = (
             {slim === false ? (
               placeholder || setSelectedCountry.name
             ) : (
-              <Globe size={20} />
+              <Globe size={20} className="text-sky-600" />
             )}
           </span>
         )}
-        <ChevronDown size={16} />
+        <ChevronDown size={16} className="text-[var(--color-header-bg)]" />
       </PopoverTrigger>
       <PopoverContent
         collisionPadding={10}
@@ -167,7 +167,7 @@ const CountryDropdownComponent = (
                     </div>
                     <CheckIcon
                       className={cn(
-                        "ml-auto h-4 w-4 shrink-0",
+                        "ml-auto h-4 w-4 shrink-0 text-emerald-600",
                         option.name === selectedCountry?.name
                           ? "opacity-100"
                           : "opacity-0",

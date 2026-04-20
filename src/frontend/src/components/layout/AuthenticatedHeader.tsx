@@ -349,7 +349,7 @@ export default function AuthenticatedHeader({
                               submitTicketSearch(normalizedTicketSearch)
                             }
                           >
-                            <SearchIcon className="size-4 opacity-60" />
+                            <SearchIcon className="size-4 text-[var(--color-header-bg)] opacity-80" />
                             <span className="truncate">
                               Search all tickets for {normalizedTicketSearch}
                             </span>
@@ -365,7 +365,7 @@ export default function AuthenticatedHeader({
                               className="data-selected:bg-neutral-200 data-selected:text-neutral-950"
                               onSelect={clearTicketSearch}
                             >
-                              <XIcon className="size-4 opacity-60" />
+                              <XIcon className="size-4 text-destructive opacity-80" />
                               <div className="flex min-w-0 flex-col">
                                 <span className="truncate font-medium">
                                   Clear current search
@@ -387,7 +387,7 @@ export default function AuthenticatedHeader({
                               className="data-selected:bg-neutral-200 data-selected:text-neutral-950"
                               onSelect={() => applyTicketSuggestion(suggestion)}
                             >
-                              <SearchIcon className="size-4 opacity-60" />
+                              <SearchIcon className="size-4 text-[var(--color-header-bg)] opacity-80" />
                               <div className="flex min-w-0 flex-col">
                                 <span className="truncate font-medium">
                                   {suggestion.name}
