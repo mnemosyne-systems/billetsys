@@ -293,7 +293,7 @@ export default function EntitlementEditorPage({
 
               <div className="space-y-3">
                 <div className="text-sm font-medium text-[var(--color-header-bg)]">
-                  Support levels
+                  Levels
                 </div>
                 <Table className="w-full table-fixed">
                   <TableHeader>
@@ -302,7 +302,7 @@ export default function EntitlementEditorPage({
                         Use
                       </TableHead>
                       <TableHead className="w-[40%] text-[var(--color-header-bg)]">
-                        Support level
+                        Level
                       </TableHead>
                       <TableHead className="w-[60%] text-[var(--color-header-bg)]">
                         Hours
@@ -335,7 +335,7 @@ export default function EntitlementEditorPage({
                 </Table>
                 {supportLevels.length === 0 && (
                   <p className="py-4 text-center text-sm italic text-muted-foreground">
-                    No support levels available.
+                    No levels available.
                   </p>
                 )}
               </div>

@@ -90,7 +90,7 @@ export default function EntitlementsListPage(props: SessionPageProps) {
                     {(!entitlement.supportLevels ||
                       entitlement.supportLevels.length === 0) && (
                       <span className="text-sm text-muted-foreground">
-                        No support levels
+                        No levels
                       </span>
                     )}
                   </div>

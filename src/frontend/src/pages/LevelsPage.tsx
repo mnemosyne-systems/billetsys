@@ -24,7 +24,7 @@ export default function LevelsPage(props: SessionPageProps) {
   return (
     <section className="w-full mt-4">
       <PageHeader
-        title="Support levels"
+        title="Levels"
         actions={
           <Button asChild>
             <SmartLink href="/levels/new">Create</SmartLink>
@@ -34,7 +34,7 @@ export default function LevelsPage(props: SessionPageProps) {
 
       <DataState
         state={levelsState}
-        emptyMessage="No support levels are available yet."
+        emptyMessage="No levels are available yet."
       >
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {levelsState.data?.items.map((level: LevelRecord) => (

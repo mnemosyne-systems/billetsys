@@ -67,7 +67,7 @@ export default function EntitlementDetailPage(props: SessionPageProps) {
               <div className="grid gap-6 md:grid-cols-2">
                 <div>
                   <div className="mb-3 text-sm font-medium text-[var(--color-header-bg)]">
-                    Support levels
+                    Levels
                   </div>
                   <div>
                     {supportLevels.map((level) => (
@@ -86,7 +86,7 @@ export default function EntitlementDetailPage(props: SessionPageProps) {
                     ))}
                     {supportLevels.length === 0 && (
                       <p className="text-sm text-muted-foreground">
-                        No support levels.
+                        No levels.
                       </p>
                     )}
                   </div>

@@ -25,7 +25,6 @@ import type {
   LevelRecord,
   TimezoneOption,
 } from "../types/domain";
-import { Card, CardContent, CardFooter } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import {
   AlertDialog,
@@ -220,11 +219,23 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
             <PageHeader
               title={isEdit && level ? level.name || "Edit" : "Create"}
             />
-            <Card>
+            <div
+              className={
+                isEdit ? "space-y-4" : "rounded-xl border bg-card shadow-sm"
+              }
+            >
               <form onSubmit={submit}>
-                <CardContent className="grid gap-6 md:grid-cols-2 pt-6 pb-6">
+                <div
+                  className={
+                    isEdit
+                      ? "grid gap-6 md:grid-cols-2"
+                      : "grid gap-6 md:grid-cols-2 px-6 pt-6 pb-6"
+                  }
+                >
                   <Field>
-                    <FieldLabel>Name</FieldLabel>
+                    <FieldLabel className="text-[var(--color-header-bg)]">
+                      Name
+                    </FieldLabel>
                     <Input
                       value={formState.name}
                       onChange={(event) =>
@@ -234,7 +245,9 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                     />
                   </Field>
                   <Field>
-                    <FieldLabel>Level</FieldLabel>
+                    <FieldLabel className="text-[var(--color-header-bg)]">
+                      Level
+                    </FieldLabel>
                     <Input
                       type="number"
                       min="0"
@@ -246,7 +259,9 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                     />
                   </Field>
                   <Field>
-                    <FieldLabel>Color</FieldLabel>
+                    <FieldLabel className="text-[var(--color-header-bg)]">
+                      Color
+                    </FieldLabel>
                     <Select
                       value={formState.color || undefined}
                       onValueChange={(value) => updateFormState("color", value)}
@@ -269,7 +284,9 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                     </Select>
                   </Field>
                   <Field>
-                    <FieldLabel>Country</FieldLabel>
+                    <FieldLabel className="text-[var(--color-header-bg)]">
+                      Country
+                    </FieldLabel>
                     <CountryDropdown
                       defaultValue={
                         countries.all.find(
@@ -305,7 +322,9 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                     />
                   </Field>
                   <Field>
-                    <FieldLabel>From day</FieldLabel>
+                    <FieldLabel className="text-[var(--color-header-bg)]">
+                      From day
+                    </FieldLabel>
                     <Select
                       value={formState.fromDay || undefined}
                       onValueChange={(value) =>
@@ -328,7 +347,9 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                     </Select>
                   </Field>
                   <Field>
-                    <FieldLabel>To day</FieldLabel>
+                    <FieldLabel className="text-[var(--color-header-bg)]">
+                      To day
+                    </FieldLabel>
                     <Select
                       value={formState.toDay || undefined}
                       onValueChange={(value) => updateFormState("toDay", value)}
@@ -349,7 +370,9 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                     </Select>
                   </Field>
                   <Field>
-                    <FieldLabel>Time zone</FieldLabel>
+                    <FieldLabel className="text-[var(--color-header-bg)]">
+                      Time zone
+                    </FieldLabel>
                     <Select
                       value={formState.timezoneId || undefined}
                       onValueChange={(value) =>
@@ -373,7 +396,9 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                   </Field>
                   <div className="hidden md:block" aria-hidden="true" />
                   <Field>
-                    <FieldLabel>From time</FieldLabel>
+                    <FieldLabel className="text-[var(--color-header-bg)]">
+                      From time
+                    </FieldLabel>
                     <Select
                       value={formState.fromTime || undefined}
                       onValueChange={(value) =>
@@ -398,7 +423,9 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                     </Select>
                   </Field>
                   <Field>
-                    <FieldLabel>To time</FieldLabel>
+                    <FieldLabel className="text-[var(--color-header-bg)]">
+                      To time
+                    </FieldLabel>
                     <Select
                       value={formState.toTime || undefined}
                       onValueChange={(value) =>
@@ -423,7 +450,9 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                     </Select>
                   </Field>
                   <Field className="md:col-span-2">
-                    <FieldLabel>Description</FieldLabel>
+                    <FieldLabel className="text-[var(--color-header-bg)]">
+                      Description
+                    </FieldLabel>
                     <LexicalEditor
                       value={formState.description}
                       onChange={(value) =>
@@ -433,10 +462,14 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                       required
                     />
                   </Field>
-                </CardContent>
+                </div>
 
-                <CardFooter
-                  className={`flex items-center pt-6 border-t mt-4 bg-muted/20 ${isEdit ? "justify-between" : "justify-end"}`}
+                <div
+                  className={
+                    isEdit
+                      ? "flex items-center justify-between gap-3 pt-4"
+                      : "mt-4 flex items-center justify-end border-t bg-muted/20 px-6 pt-6"
+                  }
                 >
                   <div>
                     {isEdit && (
@@ -478,9 +511,9 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                         ? "Save"
                         : "Create"}
                   </Button>
-                </CardFooter>
+                </div>
               </form>
-            </Card>
+            </div>
           </>
         )}
       </DataState>

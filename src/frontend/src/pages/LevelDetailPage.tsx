@@ -34,15 +34,21 @@ export default function LevelDetailPage(props: SessionPageProps) {
           <div className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
               <Field>
-                <FieldLabel className="text-primary">Name</FieldLabel>
+                <FieldLabel className="text-[var(--color-header-bg)]">
+                  Name
+                </FieldLabel>
                 <Input value={level.name || "—"} readOnly />
               </Field>
               <Field>
-                <FieldLabel className="text-primary">Business level</FieldLabel>
+                <FieldLabel className="text-[var(--color-header-bg)]">
+                  Level
+                </FieldLabel>
                 <Input value={level.level ?? "—"} readOnly />
               </Field>
               <Field>
-                <FieldLabel className="text-primary">Color</FieldLabel>
+                <FieldLabel className="text-[var(--color-header-bg)]">
+                  Color
+                </FieldLabel>
                 <div className="h-10 px-3 py-2 border rounded-md bg-muted/50 flex items-center">
                   <LevelColorFieldValue
                     color={level.color}
@@ -51,24 +57,34 @@ export default function LevelDetailPage(props: SessionPageProps) {
                 </div>
               </Field>
               <Field>
-                <FieldLabel className="text-primary">Country</FieldLabel>
+                <FieldLabel className="text-[var(--color-header-bg)]">
+                  Country
+                </FieldLabel>
                 <Input value={level.countryName || "—"} readOnly />
               </Field>
               <Field>
-                <FieldLabel className="text-primary">From</FieldLabel>
+                <FieldLabel className="text-[var(--color-header-bg)]">
+                  From
+                </FieldLabel>
                 <Input value={level.fromLabel || "—"} readOnly />
               </Field>
               <Field>
-                <FieldLabel className="text-primary">To</FieldLabel>
+                <FieldLabel className="text-[var(--color-header-bg)]">
+                  To
+                </FieldLabel>
                 <Input value={level.toLabel || "—"} readOnly />
               </Field>
               <Field>
-                <FieldLabel className="text-primary">Time zone</FieldLabel>
+                <FieldLabel className="text-[var(--color-header-bg)]">
+                  Time zone
+                </FieldLabel>
                 <Input value={level.timezoneName || "—"} readOnly />
               </Field>
               <div className="hidden md:block" aria-hidden="true" />
               <Field className="md:col-span-2">
-                <FieldLabel className="text-primary">Description</FieldLabel>
+                <FieldLabel className="text-[var(--color-header-bg)]">
+                  Description
+                </FieldLabel>
                 <Textarea
                   value={level.description || "—"}
                   readOnly

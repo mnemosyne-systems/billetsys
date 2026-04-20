@@ -300,7 +300,7 @@ export default function EntitlementFormPage({
             {/* SUPPORT LEVELS SECTION */}
             <Card>
               <CardHeader>
-                <CardTitle>Support levels</CardTitle>
+                <CardTitle>Levels</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-3 md:grid-cols-2">
@@ -328,7 +328,7 @@ export default function EntitlementFormPage({
                 </div>
                 {supportLevels.length === 0 && (
                   <p className="text-sm text-muted-foreground italic text-center py-4">
-                    No support levels available.
+                    No levels available.
                   </p>
                 )}
               </CardContent>
