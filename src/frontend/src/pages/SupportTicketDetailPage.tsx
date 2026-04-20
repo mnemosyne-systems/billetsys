@@ -160,7 +160,7 @@ function AttachmentPreview({
     >
       <AttachmentSummary attachment={attachment} />
 
-      <div className="pointer-events-none absolute right-0 top-full z-30 hidden w-80 max-w-[calc(100vw-4rem)] pt-2 group-hover:block group-focus-within:block md:w-96">
+      <div className="pointer-events-auto absolute left-10 top-full z-30 hidden w-80 max-w-[calc(100vw-4rem)] pt-2 group-hover:block group-focus-within:block md:w-96">
         {previewState.loading ? (
           <div className="rounded-md border bg-background p-4 text-sm text-muted-foreground shadow-lg">
             Loading preview...
@@ -212,7 +212,7 @@ function TicketMessageCard({
     author?.displayName || author?.username || author?.name || "Unknown";
 
   return (
-    <article className="overflow-hidden rounded-md border border-border/80 bg-card shadow-sm">
+    <article className="overflow-visible rounded-md border border-border/80 bg-card shadow-sm">
       <div className="flex items-center justify-between gap-4 bg-[var(--color-header-bg)] px-4 py-3 text-sm font-semibold text-white">
         <span>{message.dateLabel || "-"}</span>
         <span className="text-right">
