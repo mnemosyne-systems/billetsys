@@ -14,6 +14,7 @@ import type { CollectionResponse, MessageReference } from "../types/domain";
 import { Card, CardHeader } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import PageHeader from "../components/layout/PageHeader";
 
 export default function MessagesPage(props: SessionPageProps) {
   void props;
@@ -23,18 +24,16 @@ export default function MessagesPage(props: SessionPageProps) {
 
   return (
     <section className="w-full mt-4">
-      <div className="flex flex-row items-center justify-between pb-6 px-1">
-        <h2 className="text-3xl font-bold tracking-tight">
-          {messages?.title || "Messages"}
-        </h2>
-        <div>
-          {messages?.createPath && (
+      <PageHeader
+        title={messages?.title || "Messages"}
+        actions={
+          messages?.createPath ? (
             <Button asChild>
               <SmartLink href={messages.createPath}>New message</SmartLink>
             </Button>
-          )}
-        </div>
-      </div>
+          ) : undefined
+        }
+      />
 
       <DataState state={messageState} emptyMessage="No messages are available.">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">

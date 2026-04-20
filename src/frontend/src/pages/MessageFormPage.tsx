@@ -48,6 +48,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Textarea } from "../components/ui/textarea";
+import PageHeader from "../components/layout/PageHeader";
 
 interface MessageFormState {
   body: string;
@@ -154,11 +155,9 @@ export default function MessageFormPage(props: SessionPageProps) {
 
   return (
     <section className="w-full mt-4">
-      <div className="flex items-center justify-between pb-6 px-1">
-        <h2 className="text-3xl font-bold tracking-tight">
-          {bootstrap && bootstrap.edit ? "Edit" : "Create"}
-        </h2>
-      </div>
+      <PageHeader
+        title={bootstrap ? (bootstrap.edit ? "Edit" : "New message") : ""}
+      />
 
       <DataState
         state={bootstrapState}
