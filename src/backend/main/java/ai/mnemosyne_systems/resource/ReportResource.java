@@ -140,10 +140,7 @@ public class ReportResource {
         List<Company> superuserCompanies = Company.list(
                 "select distinct c from Company c join c.users u where u = ?1 and exists (select t from Ticket t where t.company = c) order by c.name",
                 user);
-        Company selectedCompany = null;
-        if (companyId != null) {
-            selectedCompany = superuserCompanies.stream().filter(c -> c.id.equals(companyId)).findFirst().orElse(null);
-        }
+        Company selectedCompany = superuserCompanies.isEmpty() ? null : superuserCompanies.get(0);
         String safePeriod = period == null || period.isBlank() ? "all" : period.toLowerCase();
         List<Company> dataFilter = selectedCompany != null ? List.of(selectedCompany) : superuserCompanies;
         ReportData data = buildReportData(dataFilter, safePeriod);

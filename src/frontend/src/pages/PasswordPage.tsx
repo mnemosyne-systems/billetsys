@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import DataState from "../components/common/DataState";
 import PageHeader from "../components/layout/PageHeader";
 import type { SessionPageProps } from "../types/app";
-import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Field, FieldLabel } from "../components/ui/field";
 import { Input } from "../components/ui/input";
@@ -81,60 +80,56 @@ export default function PasswordPage({ sessionState }: SessionPageProps) {
         emptyMessage=""
       >
         <PageHeader title="Change password" />
-        <Card>
-          <CardContent>
-            <form className="space-y-6" onSubmit={submit}>
-              <Field>
-                <FieldLabel>Old password</FieldLabel>
-                <Input
-                  type="password"
-                  value={formState.oldPassword}
-                  onChange={(event) =>
-                    setFormState((current) => ({
-                      ...current,
-                      oldPassword: event.target.value,
-                    }))
-                  }
-                  required
-                />
-              </Field>
-              <Field>
-                <FieldLabel>New password</FieldLabel>
-                <Input
-                  type="password"
-                  value={formState.newPassword}
-                  onChange={(event) =>
-                    setFormState((current) => ({
-                      ...current,
-                      newPassword: event.target.value,
-                    }))
-                  }
-                  required
-                />
-              </Field>
-              <Field>
-                <FieldLabel>Confirm password</FieldLabel>
-                <Input
-                  type="password"
-                  value={formState.confirmPassword}
-                  onChange={(event) =>
-                    setFormState((current) => ({
-                      ...current,
-                      confirmPassword: event.target.value,
-                    }))
-                  }
-                  required
-                />
-              </Field>
+        <form className="space-y-6" onSubmit={submit}>
+          <Field>
+            <FieldLabel>Old password</FieldLabel>
+            <Input
+              type="password"
+              value={formState.oldPassword}
+              onChange={(event) =>
+                setFormState((current) => ({
+                  ...current,
+                  oldPassword: event.target.value,
+                }))
+              }
+              required
+            />
+          </Field>
+          <Field>
+            <FieldLabel>New password</FieldLabel>
+            <Input
+              type="password"
+              value={formState.newPassword}
+              onChange={(event) =>
+                setFormState((current) => ({
+                  ...current,
+                  newPassword: event.target.value,
+                }))
+              }
+              required
+            />
+          </Field>
+          <Field>
+            <FieldLabel>Confirm password</FieldLabel>
+            <Input
+              type="password"
+              value={formState.confirmPassword}
+              onChange={(event) =>
+                setFormState((current) => ({
+                  ...current,
+                  confirmPassword: event.target.value,
+                }))
+              }
+              required
+            />
+          </Field>
 
-              <div className="pt-2 flex justify-end">
-                <Button type="submit" disabled={saveState.saving}>
-                  {saveState.saving ? "Saving..." : "Update"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+          <div className="pt-2 flex justify-end">
+            <Button type="submit" disabled={saveState.saving}>
+              {saveState.saving ? "Saving..." : "Update"}
+            </Button>
+          </div>
+        </form>
       </DataState>
     </section>
   );

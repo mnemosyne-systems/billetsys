@@ -63,11 +63,10 @@ public class ReportApiResource {
             List<Company> companies = Company.list(
                     "select distinct c from Company c join c.users u where u = ?1 and exists (select t from Ticket t where t.company = c) order by c.name",
                     user);
-            Company selectedCompany = companyId == null ? null
-                    : companies.stream().filter(company -> company.id.equals(companyId)).findFirst().orElse(null);
+            Company selectedCompany = companies.isEmpty() ? null : companies.get(0);
             ReportData data = buildReportData(selectedCompany != null ? List.of(selectedCompany) : companies,
                     safePeriod);
-            return toResponse("superuser", companies, selectedCompany, true, false, "/reports/superuser/export",
+            return toResponse("superuser", companies, selectedCompany, false, false, "/reports/superuser/export",
                     safePeriod, data);
         }
         throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());

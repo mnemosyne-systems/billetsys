@@ -109,6 +109,9 @@ class SuperuserAccessTest extends AccessTestSupport {
 
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie).get("/reports/superuser")
                 .then().statusCode(303).header("Location", Matchers.endsWith("/reports"));
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/reports").then().statusCode(200)
+                .body("role", Matchers.equalTo("superuser")).body("showCompanyFilter", Matchers.equalTo(false))
+                .body("selectedCompanyId", Matchers.notNullValue()).body("companyName", Matchers.not("All"));
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/rss/superuser").then().statusCode(200)
                 .contentType(Matchers.containsString("application/rss+xml"))
