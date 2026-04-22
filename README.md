@@ -18,6 +18,7 @@ navigate and get their work done quicker.
 
 * [Java 25](https://openjdk.org/)
 * [Maven](https://maven.apache.org/)
+* [Node.js and npm](https://nodejs.org/)
 * [Quarkus](https://quarkus.io/)
 * [PostgreSQL](https://www.postgresql.org)
 * [make](https://www.gnu.org/software/make/)

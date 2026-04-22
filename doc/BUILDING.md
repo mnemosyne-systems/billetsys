@@ -6,11 +6,19 @@ This document describes how to build the project, run it locally, and generate t
 
 - Java 25
 - Maven
+- Node.js and npm
 - PostgreSQL
 - Pandoc
 - Eisvogel Pandoc template (for PDF manual generation)
 
 ## Build the project
+
+Install frontend dependencies before running frontend checks manually:
+
+```bash
+cd src/frontend
+npm ci
+```
 
 ```bash
 mvn package
@@ -83,6 +91,9 @@ Generated files:
 - `target/billetsys-en.pdf**
 
 ## Makefile
+
+The `format` target installs frontend npm dependencies when they are missing or when
+`src/frontend/package.json` or `src/frontend/package-lock.json` changes.
 
 The targets are
 

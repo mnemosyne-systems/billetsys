@@ -11,9 +11,13 @@
 all: clean format run
 
 frontend:
-	@cd src/frontend && npm ci
+	@if [ ! -f src/frontend/node_modules/.package-lock.json ] || \
+		[ src/frontend/package.json -nt src/frontend/node_modules/.package-lock.json ] || \
+		[ src/frontend/package-lock.json -nt src/frontend/node_modules/.package-lock.json ]; then \
+		npm --prefix src/frontend ci; \
+	fi
 
-format:
+format: frontend
 	@npm run frontend:fix -q
 	@npm run frontend:check -q
 
