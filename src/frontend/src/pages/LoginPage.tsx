@@ -13,12 +13,7 @@ import {
   pickInstallationBranding,
   readCachedInstallationBranding,
 } from "../utils/installationBranding";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "../components/ui/card";
+import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Field, FieldLabel } from "../components/ui/field";
 import { Input } from "../components/ui/input";
@@ -71,17 +66,12 @@ export default function LoginPage({ sessionState }: SessionPageProps) {
       </div>
 
       <div className="w-full md:w-7/12 p-8 lg:p-10">
-        <CardHeader className="p-0 mb-6 text-left">
-          <CardTitle className="text-2xl font-bold tracking-tight">
-            Log in to your account
-          </CardTitle>
-        </CardHeader>
         <CardContent className="p-0">
           <form className="space-y-5" method="post" action="/login">
             <div className="space-y-4">
               <Field className="space-y-2">
                 <FieldLabel className="text-sm font-medium leading-none text-foreground">
-                  User name
+                  Username
                 </FieldLabel>
                 <Input
                   name="username"
