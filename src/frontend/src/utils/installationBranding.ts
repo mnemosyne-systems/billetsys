@@ -18,7 +18,7 @@ export function readCachedInstallationBranding(): InstallationBranding {
     return {};
   }
   try {
-    const cached = window.sessionStorage.getItem(BRANDING_STORAGE_KEY);
+    const cached = window.localStorage.getItem(BRANDING_STORAGE_KEY);
     if (!cached) {
       return {};
     }
@@ -36,10 +36,7 @@ export function writeCachedInstallationBranding(
     return;
   }
   try {
-    window.sessionStorage.setItem(
-      BRANDING_STORAGE_KEY,
-      JSON.stringify(branding),
-    );
+    window.localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify(branding));
   } catch {
     // Ignore storage failures and fall back to runtime session data.
   }
@@ -48,14 +45,24 @@ export function writeCachedInstallationBranding(
 export function pickInstallationBranding(
   session?: Session | null,
 ): InstallationBranding {
-  return {
-    installationCompanyName: session?.installationCompanyName,
-    installationLogoBase64: session?.installationLogoBase64,
-    installationBackgroundBase64: session?.installationBackgroundBase64,
-    installationHeaderFooterColor: session?.installationHeaderFooterColor,
-    installationHeadersColor: session?.installationHeadersColor,
-    installationButtonsColor: session?.installationButtonsColor,
-  };
+  if (!session) {
+    return {};
+  }
+  const result: InstallationBranding = {};
+  if (session.installationCompanyName !== undefined)
+    result.installationCompanyName = session.installationCompanyName;
+  if (session.installationLogoBase64 !== undefined)
+    result.installationLogoBase64 = session.installationLogoBase64;
+  if (session.installationBackgroundBase64 !== undefined)
+    result.installationBackgroundBase64 = session.installationBackgroundBase64;
+  if (session.installationHeaderFooterColor !== undefined)
+    result.installationHeaderFooterColor =
+      session.installationHeaderFooterColor;
+  if (session.installationHeadersColor !== undefined)
+    result.installationHeadersColor = session.installationHeadersColor;
+  if (session.installationButtonsColor !== undefined)
+    result.installationButtonsColor = session.installationButtonsColor;
+  return result;
 }
 
 export function ownerInstallationBranding(

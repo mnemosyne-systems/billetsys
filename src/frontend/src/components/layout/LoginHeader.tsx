@@ -26,13 +26,13 @@ export default function LoginHeader() {
         type="button"
         onClick={toggleDarkMode}
         aria-pressed="false"
-        className="group relative inline-flex h-8 w-16 items-center rounded-full border border-border bg-card p-1 text-card-foreground transition-opacity hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        className="group relative inline-flex h-8 w-16 items-center rounded-full border border-[var(--color-buttons-bg)] bg-[var(--color-buttons-bg)] p-1 text-[var(--color-buttons-text)] transition-opacity hover:bg-[var(--color-buttons-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-buttons-bg)] focus-visible:ring-offset-2"
         aria-label="Toggle dark mode"
         title="Toggle dark mode"
       >
         <SunIcon className="absolute left-2 size-3.5 opacity-90" />
         <MoonIcon className="absolute right-2 size-3.5 opacity-90" />
-        <span className="pointer-events-none inline-block h-6 w-6 translate-x-0 rounded-full bg-primary shadow-sm transition-transform duration-200 ease-out group-aria-[pressed=true]:translate-x-8" />
+        <span className="pointer-events-none inline-block h-6 w-6 translate-x-0 rounded-full bg-[var(--color-buttons-text)] shadow-sm transition-transform duration-200 ease-out group-aria-[pressed=true]:translate-x-8" />
       </button>
       <span className="font-semibold tabular-nums text-foreground">
         {now.toLocaleTimeString([], {
