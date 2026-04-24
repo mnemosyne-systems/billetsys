@@ -15,6 +15,9 @@ import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
+import ai.mnemosyne_systems.model.event.EventAction;
+import ai.mnemosyne_systems.model.event.EventType;
+import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.PdfService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.util.AuthHelper;
@@ -79,6 +82,9 @@ public class TicketResource {
 
     @Inject
     PdfService pdfService;
+
+    @Inject
+    EventService eventService;
 
     @GET
     public Response list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
@@ -192,6 +198,7 @@ public class TicketResource {
         ticket.affectsVersion = defaultAffectsVersion(entitlement);
         ticket.category = category;
         ticket.persist();
+        eventService.saveEvent(ticket.id, EventType.TICKET, ticket.status, ticket.company);
         return ReactRedirectSupport.redirect(client, "/tickets");
     }
 
@@ -237,9 +244,11 @@ public class TicketResource {
         ticket.category = categoryId != null ? Category.findById(categoryId) : null;
         ticket.externalIssueLink = externalIssueLink != null && !externalIssueLink.isBlank() ? externalIssueLink.trim()
                 : null;
+
         if (!sameStatus(previousStatus, ticket.status)) {
             ticketEmailService.notifyStatusChange(ticket, previousStatus, user);
         }
+        eventService.saveEvent(ticket.id, EventType.TICKET, ticket.status, ticket.company);
         return ReactRedirectSupport.redirect(client, "/tickets");
     }
 
@@ -253,6 +262,7 @@ public class TicketResource {
         if (ticket == null) {
             throw new NotFoundException();
         }
+        eventService.saveEvent(ticket.id, EventType.TICKET, "Deleted", ticket.company);
         ticket.delete();
         return ReactRedirectSupport.redirect(client, "/tickets");
     }
