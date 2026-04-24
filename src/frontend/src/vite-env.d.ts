@@ -9,10 +9,24 @@
 /// <reference types="vite/client" />
 
 declare module "*.css";
+declare module "@cap.js/widget";
 
 declare global {
   interface Window {
     Chart?: unknown;
+  }
+}
+
+declare module "react" {
+  namespace JSX {
+    interface IntrinsicElements {
+      "cap-widget": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        "data-cap-api-endpoint"?: string;
+      };
+    }
   }
 }
 

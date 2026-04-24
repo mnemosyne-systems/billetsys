@@ -40,3 +40,12 @@ db-create:
 	@createdb -E UTF8 -O ticketdb ticketdb
 
 full: db-drop db-create clean frontend format test docs run
+
+platform:
+	@if command -v podman-compose >/dev/null 2>&1; then \
+		podman-compose up -d; \
+	elif command -v docker-compose >/dev/null 2>&1; then \
+		docker-compose up -d; \
+	else \
+		docker compose up -d; \
+	fi

@@ -9,3 +9,4 @@ src/frontend/dist/
 src/backend/main/resources/META-INF/resources/app/
 .m2/
 tmp/
+.env

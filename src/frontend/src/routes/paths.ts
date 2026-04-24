@@ -37,4 +37,6 @@ export const PATHS = {
   superuserTicketsClosed: "/superuser/tickets/closed",
   superuserTicketsSearch: "/superuser/tickets/search",
   superuserTicketsNew: "/superuser/tickets/new",
+  forgotPassword: "/forgot-password",
+  resetPassword: "/reset-password",
 };

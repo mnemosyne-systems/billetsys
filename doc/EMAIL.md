@@ -19,27 +19,7 @@ ticket.mail.incoming.enabled=${MAIL_INCOMING_ENABLED:true}
 
 ### SMTP configuration (real email delivery)
 
-Disable mock mode and configure SMTP transport:
-
-```properties
-quarkus.mailer.mock=false
-quarkus.mailer.host=smtp.example.com
-quarkus.mailer.port=587
-quarkus.mailer.username=${MAIL_USERNAME}
-quarkus.mailer.password=${MAIL_PASSWORD}
-quarkus.mailer.start-tls=REQUIRED
-quarkus.mailer.auth-methods=PLAIN LOGIN
-quarkus.mailer.from=${MAIL_FROM:no-reply@example.com}
-```
-
-Notes:
-- Use port `587` with STARTTLS (`start-tls=REQUIRED`) for most providers.
-- Use port `465` only when your provider requires implicit TLS (SMTPS).
-- Keep credentials in environment variables/secrets, not in committed files.
-- If SMTP uses self-signed/internal certs, configure the TLS truststore in Quarkus JVM options.
-- Keep `%test.quarkus.mailer.mock=true` so test suite does not require external SMTP.
-
-The settings above are based on Quarkus mailer reference behavior.
+To configure real SMTP transport for outbound notifications (including password reset emails), refer to the **Administration and Configuration** section of the **Password Reset** manual chapter (`doc/manual/en/25-password-reset.md`).
 
 ### Mailbox polling configuration
 

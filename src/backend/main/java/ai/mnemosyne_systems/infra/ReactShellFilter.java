@@ -39,7 +39,8 @@ public class ReactShellFilter implements Filter {
             Pattern.compile("^/user/(support-users|tam-users|superuser-users|user-profiles|companies)/[^/]+$"),
             Pattern.compile("^/superuser/tickets(?:$|/open$|/closed$|/new$|/[^/]+$)"),
             Pattern.compile("^/superuser/users(?:$|/new$)"),
-            Pattern.compile("^/superuser/(support-users|superuser-users|user-profiles|companies)/[^/]+$"));
+            Pattern.compile("^/superuser/(support-users|superuser-users|user-profiles|companies)/[^/]+$"),
+            Pattern.compile("^/forgot-password$"), Pattern.compile("^/reset-password$"));
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)

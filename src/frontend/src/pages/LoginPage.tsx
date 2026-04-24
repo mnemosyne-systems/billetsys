@@ -7,7 +7,7 @@
  */
 
 import { useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import type { SessionPageProps } from "../types/app";
 import {
   pickInstallationBranding,
@@ -85,12 +85,12 @@ export default function LoginPage({ sessionState }: SessionPageProps) {
                   <FieldLabel className="text-sm font-medium leading-none text-foreground">
                     Password
                   </FieldLabel>
-                  <a
-                    href="/login/forgot"
+                  <Link
+                    to="/forgot-password"
                     className="text-sm font-medium text-primary hover:underline"
                   >
                     Forgot your password?
-                  </a>
+                  </Link>
                 </div>
                 <div className="relative">
                   <Input
