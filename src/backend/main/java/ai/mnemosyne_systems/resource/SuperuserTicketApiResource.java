@@ -8,6 +8,7 @@ import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
+import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.util.AuthHelper;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -31,6 +32,9 @@ import java.util.Set;
 @Path("/api/superuser/tickets")
 @Produces(MediaType.APPLICATION_JSON)
 public class SuperuserTicketApiResource {
+
+    @Inject
+    CrossReferenceService crossReferenceService;
 
     @Inject
     SuperuserResource superuserResource;
@@ -67,12 +71,16 @@ public class SuperuserTicketApiResource {
     @Path("/suggest")
     @Transactional
     public SupportTicketApiResource.TicketSuggestionResponse suggest(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q) {
+            @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q,
+            @QueryParam("exclude") Long exclude) {
         User user = requireSuperuser(auth);
         SuperuserResource.SupportTicketData data = superuserResource.buildTicketDataForUser(user);
         List<Ticket> tickets = TicketSearchSupport.combineTickets(data.assignedTickets, data.openTickets,
                 data.closedTickets);
-        return new SupportTicketApiResource.TicketSuggestionResponse(TicketSearchSupport.suggestTickets(tickets, q, 8)
+        if (exclude != null) {
+            tickets = tickets.stream().filter(t -> t.id != null && !t.id.equals(exclude)).toList();
+        }
+        return new SupportTicketApiResource.TicketSuggestionResponse(TicketSearchSupport.suggestTickets(tickets, q, 6)
                 .stream().map(ticket -> new SupportTicketApiResource.TicketSuggestion(ticket.id, ticket.name,
                         ticket.displayTitle(), "/superuser/tickets/" + ticket.id))
                 .toList());
@@ -138,6 +146,8 @@ public class SuperuserTicketApiResource {
                 : User.find(
                         "select distinct u from Company c join c.users u where c = ?1 and lower(u.type) = ?2 order by u.email",
                         ticket.company, User.TYPE_SUPERUSER).list();
+        java.util.Map<Long, Ticket> ticketCache = crossReferenceService
+                .preloadReferencedTickets(messages.stream().map(m -> m.body).toList());
         return new UserTicketApiResource.RoleTicketDetailResponse(ticket.id, ticket.name, ticket.displayTitle(),
                 ticket.status == null || ticket.status.isBlank() ? "Open" : ticket.status,
                 data.assignedTickets == null ? 0 : data.assignedTickets.size(),
@@ -158,10 +168,23 @@ public class SuperuserTicketApiResource {
                 Category.<Category> list("order by name").stream().map(this::toCategoryOption).toList(),
                 supportUsers.stream().map(this::toUserReference).toList(), "Superusers",
                 secondaryUsers.stream().map(this::toUserReference).toList(),
-                messages.stream().map(this::toMessageEntry).toList(), superuserResource.isEntitlementExpired(ticket),
-                "/superuser/tickets/" + ticket.id, "/superuser/tickets/" + ticket.id + "/messages",
-                "/tickets/export/" + ticket.id, List.of("Open", "Assigned", "In Progress", "Resolved", "Closed"), false,
-                false, false, true, true);
+                messages.stream().map(m -> toMessageEntry(m, ticketCache)).toList(),
+                superuserResource.isEntitlementExpired(ticket), "/superuser/tickets/" + ticket.id,
+                "/superuser/tickets/" + ticket.id + "/messages", "/tickets/export/" + ticket.id,
+                List.of("Open", "Assigned", "In Progress", "Resolved", "Closed"), false, false, false, true, true);
+    }
+
+    @GET
+    @Path("/{id}/references")
+    @Transactional
+    public CrossReferenceService.CrossReferencesResponse references(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @PathParam("id") Long id) {
+        requireSuperuser(auth);
+        Ticket ticket = Ticket.findById(id);
+        if (ticket == null) {
+            throw new NotFoundException();
+        }
+        return crossReferenceService.getReferences(ticket, null, "/superuser/tickets/");
     }
 
     private SupportTicketApiResource.SupportTicketSummary toSummary(Ticket ticket,
@@ -197,9 +220,12 @@ public class SuperuserTicketApiResource {
                 user.timezone == null ? null : user.timezone.name, user.logoBase64, userPath(user));
     }
 
-    private SupportTicketApiResource.MessageEntry toMessageEntry(Message message) {
-        return new SupportTicketApiResource.MessageEntry(message.id, message.body,
-                message.date == null ? null : superuserResource.formatDate(message.date),
+    private SupportTicketApiResource.MessageEntry toMessageEntry(Message message,
+            java.util.Map<Long, Ticket> ticketCache) {
+        String transformedBody = crossReferenceService.transformBody(message.body, "/superuser/tickets/", ticketCache);
+        return new SupportTicketApiResource.MessageEntry(message.id, transformedBody,
+                message.date == null ? null : SupportTicketViewSupport.formatDate(message.date),
+                message.date == null ? null : message.date.toString(),
                 message.author == null ? null : toUserReference(message.author), message.attachments == null ? List.of()
                         : message.attachments.stream().map(this::toAttachmentEntry).toList());
     }

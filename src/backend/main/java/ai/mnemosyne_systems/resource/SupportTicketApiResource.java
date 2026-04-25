@@ -8,7 +8,9 @@ import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
+import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.util.AuthHelper;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.DefaultValue;
@@ -31,6 +33,9 @@ import java.util.Set;
 @Path("/api/support/tickets")
 @Produces(MediaType.APPLICATION_JSON)
 public class SupportTicketApiResource {
+
+    @Inject
+    CrossReferenceService crossReferenceService;
 
     @GET
     @Transactional
@@ -64,14 +69,18 @@ public class SupportTicketApiResource {
     @Path("/suggest")
     @Transactional
     public TicketSuggestionResponse suggest(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q) {
+            @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q,
+            @QueryParam("exclude") Long exclude) {
         User user = requireSupport(auth);
         SupportTicketViewSupport.SupportTicketData data = SupportTicketViewSupport.buildTicketData(user);
         String normalizedView = normalizeView(view);
         List<Ticket> tickets = TicketSearchSupport.combineTickets(data.assignedTickets(), data.openTickets(),
                 data.closedTickets());
+        if (exclude != null) {
+            tickets = tickets.stream().filter(t -> t.id != null && !t.id.equals(exclude)).toList();
+        }
         return new TicketSuggestionResponse(
-                TicketSearchSupport.suggestTickets(tickets, q, 8).stream().map(ticket -> new TicketSuggestion(ticket.id,
+                TicketSearchSupport.suggestTickets(tickets, q, 6).stream().map(ticket -> new TicketSuggestion(ticket.id,
                         ticket.name, ticket.displayTitle(), "/support/tickets/" + ticket.id)).toList());
     }
 
@@ -129,7 +138,9 @@ public class SupportTicketApiResource {
                 ticket.company, User.TYPE_TAM).list();
         mergeTicketTams(ticket, tamUsers);
         List<Message> messages = SupportTicketViewSupport.loadMessages(ticket);
-        List<MessageEntry> messageEntries = messages.stream().map(this::toMessageEntry).toList();
+        java.util.Map<Long, Ticket> ticketCache = crossReferenceService
+                .preloadReferencedTickets(messages.stream().map(m -> m.body).toList());
+        List<MessageEntry> messageEntries = messages.stream().map(m -> toMessageEntry(m, ticketCache)).toList();
         return new SupportTicketDetailResponse(ticket.id, ticket.name, ticket.displayTitle(), displayStatus,
                 counts.assignedCount(), counts.openCount(), ticket.company == null ? null : ticket.company.id,
                 ticket.company == null ? null : ticket.company.name,
@@ -154,6 +165,19 @@ public class SupportTicketApiResource {
                 SupportTicketViewSupport.isEntitlementExpired(ticket), "/support/tickets/" + ticket.id,
                 "/support/tickets/" + ticket.id + "/messages", "/tickets/export/" + ticket.id,
                 List.of("Open", "Assigned", "In Progress", "Resolved", "Closed"));
+    }
+
+    @GET
+    @Path("/{id}/references")
+    @Transactional
+    public CrossReferenceService.CrossReferencesResponse references(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @PathParam("id") Long id) {
+        requireSupport(auth);
+        Ticket ticket = Ticket.findById(id);
+        if (ticket == null) {
+            throw new NotFoundException();
+        }
+        return crossReferenceService.getReferences(ticket, null, "/support/tickets/");
     }
 
     private String normalizeView(String view) {
@@ -197,9 +221,11 @@ public class SupportTicketApiResource {
                 user.logoBase64, userPath(user));
     }
 
-    private MessageEntry toMessageEntry(Message message) {
-        return new MessageEntry(message.id, message.body,
+    private MessageEntry toMessageEntry(Message message, java.util.Map<Long, Ticket> ticketCache) {
+        String transformedBody = crossReferenceService.transformBody(message.body, "/support/tickets/", ticketCache);
+        return new MessageEntry(message.id, transformedBody,
                 message.date == null ? null : SupportTicketViewSupport.formatDate(message.date),
+                message.date == null ? null : message.date.toString(),
                 message.author == null ? null : toUserReference(message.author), message.attachments == null ? List.of()
                         : message.attachments.stream().map(this::toAttachmentEntry).toList());
     }
@@ -343,7 +369,7 @@ public class SupportTicketApiResource {
             String type, String countryName, String timezoneName, String logoBase64, String detailPath) {
     }
 
-    public record MessageEntry(Long id, String body, String dateLabel, UserReference author,
+    public record MessageEntry(Long id, String body, String dateLabel, String date, UserReference author,
             List<AttachmentEntry> attachments) {
     }
 

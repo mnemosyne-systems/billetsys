@@ -36,6 +36,12 @@ Messages can include attachments when files are needed to explain or document an
 
 By keeping attachments inside the message flow, billetsys ensures that evidence and discussion stay connected.
 
+## Ticket mentions
+
+Messages support ticket cross-references using the `#` mention syntax. Typing `#` followed by a ticket identifier in the message editor opens a suggestion list. Selecting a ticket inserts a mention that links to the referenced ticket.
+
+Mentions create a cross-reference record. Referenced tickets appear in a dedicated Related section, and inline mentions in messages show a hover preview.
+
 ## Communication flow
 
 The message thread supports a continuous support conversation:
