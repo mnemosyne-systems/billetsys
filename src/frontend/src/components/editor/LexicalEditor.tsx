@@ -58,6 +58,12 @@ import { EmojiNode } from "./emoji-node";
 import { LayoutContainerNode } from "./layout-container-node";
 import { LayoutItemNode } from "./layout-item-node";
 import { MentionNode } from "./mention-node";
+import {
+  TicketMentionNode,
+  $isTicketMentionNode,
+  $createTicketMentionNode,
+} from "./ticket-mention-node";
+import { TicketMentionsPlugin } from "./ticket-mentions-plugin";
 import { SpecialTextNode } from "./special-text-node";
 import { ActionsPlugin } from "./actions-plugin";
 import { ClearEditorActionPlugin } from "./clear-editor-plugin";
@@ -163,6 +169,7 @@ interface LexicalEditorProps {
   rows?: number;
   name?: string;
   required?: boolean;
+  ticketSuggestApiBase?: string;
 }
 
 const SUPERSCRIPT: TextMatchTransformer = {
@@ -203,12 +210,30 @@ const SUBSCRIPT: TextMatchTransformer = {
   type: "text-match",
 };
 
+const TICKET_MENTION: TextMatchTransformer = {
+  dependencies: [TicketMentionNode],
+  export: (node) => {
+    if (!$isTicketMentionNode(node)) return null;
+    return `#[${node.getTicketId()}]`;
+  },
+  importRegExp: /#\[(\d+)\]/,
+  regExp: /#\[(\d+)\]$/,
+  replace: (textNode, match) => {
+    const ticketId = Number(match[1]);
+    const node = $createTicketMentionNode(ticketId, String(ticketId), "");
+    textNode.replace(node);
+  },
+  trigger: "]",
+  type: "text-match",
+};
+
 const ALL_TRANSFORMERS = [
   TABLE,
   HR,
   IMAGE,
   EMOJI,
   TWEET,
+  TICKET_MENTION,
   CHECK_LIST,
   ...ELEMENT_TRANSFORMERS,
   ...MULTILINE_ELEMENT_TRANSFORMERS,
@@ -277,6 +302,7 @@ export default function LexicalEditor({
   inputRef,
   name,
   required,
+  ticketSuggestApiBase,
 }: LexicalEditorProps) {
   const [floatingAnchorElem, setFloatingAnchorElem] =
     useState<HTMLDivElement | null>(null);
@@ -321,6 +347,7 @@ export default function LexicalEditor({
           OverflowNode,
           EmojiNode,
           MentionNode,
+          TicketMentionNode,
           AutocompleteNode,
           SpecialTextNode,
           CodeNode,
@@ -399,6 +426,9 @@ export default function LexicalEditor({
               <EmojiPickerPlugin />
               <AutoEmbedPlugin />
               <MentionsPlugin />
+              {ticketSuggestApiBase && (
+                <TicketMentionsPlugin apiBase={ticketSuggestApiBase} />
+              )}
               <AutoCompletePlugin />
               <ContextMenuPlugin />
               <SpecialTextPlugin />

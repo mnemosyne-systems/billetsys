@@ -42,6 +42,7 @@ import {
 
 interface SupportTicketCreatePageProps extends SessionPageProps {
   apiBase?: string;
+  ticketSuggestApiBase?: string;
   backPath?: string;
   submitFallbackPath?: string;
   title?: string;
@@ -54,6 +55,7 @@ interface SupportTicketCreatePageProps extends SessionPageProps {
 export default function SupportTicketCreatePage({
   sessionState,
   apiBase = "/api/support/tickets/bootstrap",
+  ticketSuggestApiBase = "/api/support/tickets",
   submitFallbackPath = "/support/tickets",
   title = "",
   description = "",
@@ -380,6 +382,7 @@ export default function SupportTicketCreatePage({
                         inputRef={messageInputRef}
                         rows={10}
                         required
+                        ticketSuggestApiBase={ticketSuggestApiBase}
                       />
                     </Field>
                   </CardContent>
@@ -555,6 +558,7 @@ export default function SupportTicketCreatePage({
                       inputRef={messageInputRef}
                       rows={10}
                       required
+                      ticketSuggestApiBase={ticketSuggestApiBase}
                     />
                   </Field>
                 </>

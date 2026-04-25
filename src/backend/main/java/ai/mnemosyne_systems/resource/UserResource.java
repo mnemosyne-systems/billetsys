@@ -18,6 +18,7 @@ import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
+import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
@@ -54,6 +55,9 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 @Produces(MediaType.TEXT_HTML)
 @Blocking
 public class UserResource {
+    @Inject
+    CrossReferenceService crossReferenceService;
+
     @Inject
     TicketEmailService ticketEmailService;
 
@@ -371,6 +375,11 @@ public class UserResource {
         List<Attachment> attachments = AttachmentHelper.readAttachments(input, "attachments");
         AttachmentHelper.attachToMessage(message, attachments);
         message.persistAndFlush();
+        SupportTicketData data = buildTicketDataForUser(user);
+        java.util.Set<Long> accessibleIds = TicketSearchSupport
+                .combineTickets(data.assignedTickets, data.openTickets, data.closedTickets).stream().map(t -> t.id)
+                .collect(java.util.stream.Collectors.toSet());
+        crossReferenceService.extractAndSaveReferences(message, accessibleIds);
         AttachmentHelper.resolveInlineAttachmentUrls(message, attachments);
         ticketEmailService.notifyMessageChange(ticket, message, user);
         return Response.seeOther(URI.create("/user/tickets/" + id + "?replyAdded=1")).build();

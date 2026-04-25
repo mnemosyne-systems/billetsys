@@ -8,6 +8,7 @@ import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
+import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.util.AuthHelper;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -31,6 +32,9 @@ import java.util.Set;
 @Path("/api/user/tickets")
 @Produces(MediaType.APPLICATION_JSON)
 public class UserTicketApiResource {
+
+    @Inject
+    CrossReferenceService crossReferenceService;
 
     @Inject
     UserResource userResource;
@@ -72,7 +76,7 @@ public class UserTicketApiResource {
         UserResource.SupportTicketData data = userResource.buildTicketDataForUser(user);
         List<Ticket> tickets = TicketSearchSupport.combineTickets(data.assignedTickets, data.openTickets,
                 data.closedTickets);
-        return new SupportTicketApiResource.TicketSuggestionResponse(TicketSearchSupport.suggestTickets(tickets, q, 8)
+        return new SupportTicketApiResource.TicketSuggestionResponse(TicketSearchSupport.suggestTickets(tickets, q, 6)
                 .stream().map(ticket -> new SupportTicketApiResource.TicketSuggestion(ticket.id, ticket.name,
                         ticket.displayTitle(), "/user/tickets/" + ticket.id))
                 .toList());
@@ -142,6 +146,8 @@ public class UserTicketApiResource {
                 .find("select u from Ticket t join t.tamUsers u where t = ?1 order by u.email", ticket).list();
         mergeMissingUsers(secondaryUsers, ticketTams);
         boolean tamView = User.TYPE_TAM.equalsIgnoreCase(user.type);
+        java.util.Map<Long, Ticket> ticketCache = crossReferenceService
+                .preloadReferencedTickets(messages.stream().map(m -> m.body).toList());
         return new RoleTicketDetailResponse(ticket.id, ticket.name, ticket.displayTitle(),
                 ticket.status == null || ticket.status.isBlank() ? "Open" : ticket.status,
                 data.assignedTickets == null ? 0 : data.assignedTickets.size(),
@@ -162,10 +168,27 @@ public class UserTicketApiResource {
                 Category.<Category> list("order by name").stream().map(this::toCategoryOption).toList(),
                 supportUsers.stream().map(this::toUserReference).toList(), "TAM",
                 secondaryUsers.stream().map(this::toUserReference).toList(),
-                messages.stream().map(this::toMessageEntry).toList(), userResource.isEntitlementExpired(ticket),
-                "/user/tickets/" + ticket.id, "/user/tickets/" + ticket.id + "/messages",
-                "/tickets/export/" + ticket.id, List.of("Open", "Assigned", "In Progress", "Resolved", "Closed"), false,
-                false, false, true, tamView);
+                messages.stream().map(m -> toMessageEntry(m, ticketCache)).toList(),
+                userResource.isEntitlementExpired(ticket), "/user/tickets/" + ticket.id,
+                "/user/tickets/" + ticket.id + "/messages", "/tickets/export/" + ticket.id,
+                List.of("Open", "Assigned", "In Progress", "Resolved", "Closed"), false, false, false, true, tamView);
+    }
+
+    @GET
+    @Path("/{id}/references")
+    @Transactional
+    public CrossReferenceService.CrossReferencesResponse references(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @PathParam("id") Long id) {
+        User user = requireUser(auth);
+        Ticket ticket = userResource.findTicketForUser(user, id);
+        if (ticket == null) {
+            throw new NotFoundException();
+        }
+        UserResource.SupportTicketData data = userResource.buildTicketDataForUser(user);
+        Set<Long> accessibleIds = TicketSearchSupport
+                .combineTickets(data.assignedTickets, data.openTickets, data.closedTickets).stream().map(t -> t.id)
+                .collect(java.util.stream.Collectors.toSet());
+        return crossReferenceService.getReferences(ticket, accessibleIds, "/user/tickets/");
     }
 
     private SupportTicketApiResource.SupportTicketSummary toSummary(Ticket ticket, UserResource.SupportTicketData data,
@@ -202,9 +225,12 @@ public class UserTicketApiResource {
                 user.timezone == null ? null : user.timezone.name, user.logoBase64, userPath(user));
     }
 
-    private SupportTicketApiResource.MessageEntry toMessageEntry(Message message) {
-        return new SupportTicketApiResource.MessageEntry(message.id, message.body,
-                message.date == null ? null : userResource.formatDate(message.date),
+    private SupportTicketApiResource.MessageEntry toMessageEntry(Message message,
+            java.util.Map<Long, Ticket> ticketCache) {
+        String transformedBody = crossReferenceService.transformBody(message.body, "/user/tickets/", ticketCache);
+        return new SupportTicketApiResource.MessageEntry(message.id, transformedBody,
+                message.date == null ? null : SupportTicketViewSupport.formatDate(message.date),
+                message.date == null ? null : message.date.toString(),
                 message.author == null ? null : toUserReference(message.author), message.attachments == null ? List.of()
                         : message.attachments.stream().map(this::toAttachmentEntry).toList());
     }

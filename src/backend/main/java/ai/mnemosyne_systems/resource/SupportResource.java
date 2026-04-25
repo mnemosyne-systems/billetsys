@@ -18,6 +18,7 @@ import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
+import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
@@ -58,6 +59,9 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 @Produces(MediaType.TEXT_HTML)
 @Blocking
 public class SupportResource {
+    @Inject
+    CrossReferenceService crossReferenceService;
+
     @Inject
     TicketEmailService ticketEmailService;
 
@@ -279,6 +283,7 @@ public class SupportResource {
         List<Attachment> attachments = AttachmentHelper.readAttachments(input, "attachments");
         AttachmentHelper.attachToMessage(message, attachments);
         message.persistAndFlush();
+        crossReferenceService.extractAndSaveReferences(message, null);
         AttachmentHelper.resolveInlineAttachmentUrls(message, attachments);
         if (ticket.supportUsers.stream().noneMatch(existing -> existing.id != null && existing.id.equals(user.id))) {
             ticket.supportUsers.add(user);

@@ -31,6 +31,8 @@ import type { SessionPageProps } from "../types/app";
 import type {
   AttachmentDetail,
   AttachmentReference,
+  CrossReferenceEntry,
+  CrossReferencesResponse,
   MessageReference,
   NamedEntity,
   SupportTicketDetailRecord,
@@ -202,9 +204,11 @@ function AttachmentPreview({
 function TicketMessageCard({
   message,
   enableAttachmentPreviews,
+  crossReferences,
 }: {
   message: MessageReference;
   enableAttachmentPreviews: boolean;
+  crossReferences?: CrossReferenceEntry[];
 }) {
   const author = message.author;
   const authorLabel =
@@ -230,7 +234,9 @@ function TicketMessageCard({
 
       <div className="space-y-4 px-4 py-4">
         <div className="prose prose-sm max-w-none text-foreground dark:prose-invert [&>p:first-child]:mt-0 [&>p:last-child]:mb-0">
-          <MarkdownContent>{message.body || ""}</MarkdownContent>
+          <MarkdownContent crossReferences={crossReferences}>
+            {message.body || ""}
+          </MarkdownContent>
         </div>
       </div>
 
@@ -272,6 +278,9 @@ export default function SupportTicketDetailPage({
     id ? `${apiBase}/${id}${toQueryString({ refresh: refreshNonce })}` : null,
   );
   const ticket = ticketState.data;
+  const refsState = useJson<CrossReferencesResponse>(
+    id ? `${apiBase}/${id}/references` : null,
+  );
   const [formState, setFormState] = useState<SupportTicketDetailState | null>(
     null,
   );
@@ -730,6 +739,42 @@ export default function SupportTicketDetailPage({
                     </Select>
                   )}
                 </Field>
+                {(() => {
+                  const allRefs = [
+                    ...(refsState.data?.references ?? []),
+                    ...(refsState.data?.referencedBy ?? []),
+                  ];
+                  const unique = Array.from(
+                    new Map(allRefs.map((r) => [r.ticketId, r])).values(),
+                  ).sort((a, b) => a.ticketName.localeCompare(b.ticketName));
+                  if (unique.length === 0) return null;
+                  return (
+                    <Field>
+                      <FieldLabel>Related</FieldLabel>
+                      <div className="border rounded-md overflow-hidden">
+                        <Table>
+                          <TableBody>
+                            {unique.map((ref) => (
+                              <TableRow key={ref.ticketId}>
+                                <TableCell className="text-sm border-r">
+                                  <a
+                                    href={ref.detailPath}
+                                    className="text-primary underline"
+                                  >
+                                    #{ref.ticketName}
+                                  </a>
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground truncate max-w-0 w-full">
+                                  {ref.ticketTitle}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </Field>
+                  );
+                })()}
                 <Field>
                   <FieldLabel>Support</FieldLabel>
                   <UserReferenceInlineList users={ticket.supportUsers} />
@@ -771,17 +816,22 @@ export default function SupportTicketDetailPage({
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {(ticket.messages || []).map((message: MessageReference) => (
-                    <TicketMessageCard
-                      key={message.id}
-                      message={message}
-                      enableAttachmentPreviews={enableAttachmentPreviews}
-                    />
-                  ))}
+                  {[...(ticket.messages || [])]
+                    .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
+                    .map((message) => (
+                      <TicketMessageCard
+                        key={`msg-${message.id}`}
+                        message={message}
+                        enableAttachmentPreviews={enableAttachmentPreviews}
+                        crossReferences={[
+                          ...(refsState.data?.references ?? []),
+                          ...(refsState.data?.referencedBy ?? []),
+                        ]}
+                      />
+                    ))}
                 </div>
               )}
             </div>
-
             {!isClosed ? (
               <div className="space-y-4">
                 <h2 className="px-1 text-3xl font-bold tracking-tight">
@@ -795,6 +845,7 @@ export default function SupportTicketDetailPage({
                     name="body"
                     rows={6}
                     required
+                    ticketSuggestApiBase={apiBase}
                   />
 
                   <div className="space-y-3">

@@ -85,6 +85,8 @@ The ticket detail page is where the full case comes together. It combines the cu
 
 This page is the main working area for understanding a case in context.
 
+Cross-references from other tickets that mention this ticket are shown in a dedicated Related section in the ticket header.
+
 ## External tracking
 
 Tickets can also include an external issue reference. This makes it easier to connect billetsys with development or defect tracking workflows outside the ticket system itself.

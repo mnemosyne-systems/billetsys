@@ -96,3 +96,20 @@ export interface SupportTicketDetailRecord extends TicketReference {
   versions?: VersionInfo[];
   messages?: MessageReference[];
 }
+
+export interface CrossReferenceEntry {
+  ticketId: Id;
+  ticketName: string;
+  ticketTitle: string;
+  detailPath: string;
+  createdAt: string;
+  status: string;
+  categoryName: string | null;
+  companyName: string | null;
+  levelName: string | null;
+}
+
+export interface CrossReferencesResponse {
+  references: CrossReferenceEntry[];
+  referencedBy: CrossReferenceEntry[];
+}

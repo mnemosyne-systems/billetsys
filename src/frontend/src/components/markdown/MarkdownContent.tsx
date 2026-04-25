@@ -8,6 +8,7 @@
 
 import {
   Fragment,
+  useMemo,
   useRef,
   useState,
   type ComponentPropsWithoutRef,
@@ -19,10 +20,13 @@ import rehypeHighlight from "rehype-highlight";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import type { CrossReferenceEntry } from "@/types/domain/tickets";
+import { TicketHoverPreview } from "@/components/tickets/TicketHoverPreview";
 
 interface MarkdownContentProps {
   children?: ReactNode;
   className?: string;
+  crossReferences?: CrossReferenceEntry[];
 }
 
 type MarkdownBlock =
@@ -82,18 +86,60 @@ function MarkdownCodeBlock({
   );
 }
 
+function buildLinkComponent(
+  crossReferences?: CrossReferenceEntry[],
+): Components["a"] {
+  function MarkdownLink({
+    className,
+    href,
+    children,
+    ...props
+  }: ComponentPropsWithoutRef<"a">) {
+    if (crossReferences && href) {
+      const match = href.match(/\/(?:support|superuser|user)\/tickets\/(\d+)$/);
+      if (match) {
+        const ticketId = Number(match[1]);
+        const ref = crossReferences.find((r) => r.ticketId === ticketId);
+        if (ref) {
+          return (
+            <TicketHoverPreview
+              ticketName={ref.ticketName}
+              ticketTitle={ref.ticketTitle}
+              status={ref.status}
+              companyName={ref.companyName}
+              levelName={ref.levelName}
+              detailPath={ref.detailPath}
+              className={cn(
+                "text-red-500 underline underline-offset-2 hover:text-red-600",
+                className,
+              )}
+            >
+              {children}
+            </TicketHoverPreview>
+          );
+        }
+      }
+    }
+    return (
+      <a
+        className={cn(
+          "font-medium text-[var(--color-header-bg)] underline underline-offset-2 hover:text-primary",
+          className,
+        )}
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        {...props}
+      >
+        {children}
+      </a>
+    );
+  }
+  return MarkdownLink;
+}
+
 const markdownComponents: Components = {
-  a: ({ className, ...props }: ComponentPropsWithoutRef<"a">) => (
-    <a
-      className={cn(
-        "font-medium text-[var(--color-header-bg)] underline underline-offset-2 hover:text-primary",
-        className,
-      )}
-      target="_blank"
-      rel="noreferrer"
-      {...props}
-    />
-  ),
+  a: buildLinkComponent(),
   blockquote: ({
     className,
     ...props
@@ -253,10 +299,10 @@ function parseMarkdownBlocks(content: string): MarkdownBlock[] {
   return blocks;
 }
 
-function renderMarkdown(content: string) {
+function renderMarkdown(content: string, components?: Components) {
   return (
     <ReactMarkdown
-      components={markdownComponents}
+      components={components ?? markdownComponents}
       rehypePlugins={[rehypeHighlight]}
     >
       {content}
@@ -278,6 +324,7 @@ function renderTableCell(content: string) {
 export default function MarkdownContent({
   children,
   className,
+  crossReferences,
 }: MarkdownContentProps) {
   let content = typeof children === "string" ? children : "";
 
@@ -292,13 +339,18 @@ export default function MarkdownContent({
 
   const blocks = parseMarkdownBlocks(content);
 
+  const components = useMemo(() => {
+    if (!crossReferences || crossReferences.length === 0) return undefined;
+    return { ...markdownComponents, a: buildLinkComponent(crossReferences) };
+  }, [crossReferences]);
+
   return (
     <div className={cn("max-w-none text-sm text-foreground", className)}>
       {blocks.map((block, blockIndex) => {
         if (block.type === "markdown") {
           return (
             <Fragment key={`markdown-${blockIndex}`}>
-              {renderMarkdown(block.content)}
+              {renderMarkdown(block.content, components)}
             </Fragment>
           );
         }
