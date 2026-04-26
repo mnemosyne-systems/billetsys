@@ -154,6 +154,7 @@ export function getTicketRoutes(sessionState: SessionState): AppRoute[] {
         <SupportTicketCreatePage
           sessionState={sessionState}
           apiBase="/api/user/tickets/bootstrap"
+          ticketSuggestApiBase="/api/user/tickets"
           backPath={PATHS.userTickets}
           submitFallbackPath={PATHS.userTickets}
           title="New ticket"
@@ -240,6 +241,7 @@ export function getTicketRoutes(sessionState: SessionState): AppRoute[] {
         <SupportTicketCreatePage
           sessionState={sessionState}
           apiBase="/api/superuser/tickets/bootstrap"
+          ticketSuggestApiBase="/api/superuser/tickets"
           backPath={PATHS.superuserTickets}
           submitFallbackPath={PATHS.superuserTickets}
           navigateTo={PATHS.superuserTickets}

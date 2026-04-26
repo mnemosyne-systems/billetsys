@@ -89,6 +89,15 @@ erDiagram
         BIGINT article_id FK
     }
 
+    CROSS_REFERENCE {
+        BIGINT id PK
+        BIGINT message_id FK
+        BIGINT source_ticket_id FK
+        STRING target_type
+        BIGINT target_id
+        DATETIME created_at
+    }
+
     ARTICLE {
         BIGINT id PK
         STRING title
@@ -172,4 +181,6 @@ erDiagram
     LEVEL ||--o{ ENTITLEMENT_LEVEL : maps
     COMPANY_ENTITLEMENT ||--o{ TICKET : applies
     CATEGORY ||--o{ TICKET : categorizes
+    MESSAGE ||--o{ CROSS_REFERENCE : generates
+    TICKET ||--o{ CROSS_REFERENCE : sources
 ```

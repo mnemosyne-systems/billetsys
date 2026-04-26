@@ -19,6 +19,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -68,6 +69,24 @@ public class PdfService {
             PdfPTable ticketTable = getPdfPTable(ticket);
             document.add(ticketTable);
             document.add(Chunk.NEWLINE);
+            // Related tickets
+            List<Ticket> relatedTickets = getRelatedTickets(ticket);
+            if (!relatedTickets.isEmpty()) {
+                Paragraph relatedSubTitle = new Paragraph("Related:", normalFont);
+                relatedSubTitle.setAlignment(Paragraph.ALIGN_LEFT);
+                relatedSubTitle.setSpacingAfter(20);
+                document.add(relatedSubTitle);
+                PdfPTable relatedTable = new PdfPTable(2);
+                relatedTable.setWidthPercentage(100);
+                relatedTable.addCell(createCell("Ticket", red, Color.WHITE));
+                relatedTable.addCell(createCell("Title", red, Color.WHITE));
+                for (Ticket related : relatedTickets) {
+                    relatedTable.addCell(new Phrase("#" + related.name, normalFont));
+                    relatedTable.addCell(new Phrase(related.displayTitle(), normalFont));
+                }
+                document.add(relatedTable);
+                document.add(Chunk.NEWLINE);
+            }
             // users subtitle
             Paragraph usersSubTitle = new Paragraph("Users:", normalFont);
             usersSubTitle.setAlignment(Paragraph.ALIGN_LEFT);
@@ -320,6 +339,30 @@ public class PdfService {
         ticketTable.addCell(createCell("Resolved", red, Color.WHITE));
         ticketTable.addCell(ticket.resolvedVersion == null ? "-" : ticket.resolvedVersion.name);
         return ticketTable;
+    }
+
+    private List<Ticket> getRelatedTickets(Ticket ticket) {
+        List<CrossReference> forward = CrossReference.list("sourceTicket = ?1 and targetType = 'ticket'", ticket);
+        List<CrossReference> backward = CrossReference.list(
+                "select cr from CrossReference cr join fetch cr.sourceTicket where cr.targetType = 'ticket' and cr.targetId = ?1",
+                ticket.id);
+        Map<Long, Ticket> unique = new LinkedHashMap<>();
+        List<Long> forwardIds = new ArrayList<>();
+        for (CrossReference ref : forward) {
+            forwardIds.add(ref.targetId);
+        }
+        if (!forwardIds.isEmpty()) {
+            List<Ticket> loaded = Ticket.list("id in ?1", forwardIds);
+            for (Ticket t : loaded) {
+                unique.put(t.id, t);
+            }
+        }
+        for (CrossReference ref : backward) {
+            unique.putIfAbsent(ref.sourceTicket.id, ref.sourceTicket);
+        }
+        List<Ticket> result = new ArrayList<>(unique.values());
+        result.sort(Comparator.comparing(t -> t.name));
+        return result;
     }
 
     private PdfPTable generateUsersTable(List<User> tams, List<User> supports) {

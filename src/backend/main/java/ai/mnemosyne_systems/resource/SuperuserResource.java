@@ -18,6 +18,7 @@ import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
+import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
@@ -60,6 +61,9 @@ public class SuperuserResource {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMMM d yyyy, h.mma",
             Locale.ENGLISH);
+
+    @Inject
+    CrossReferenceService crossReferenceService;
 
     @Inject
     TicketEmailService ticketEmailService;
@@ -218,6 +222,7 @@ public class SuperuserResource {
         List<Attachment> attachments = AttachmentHelper.readAttachments(input, "attachments");
         AttachmentHelper.attachToMessage(message, attachments);
         message.persistAndFlush();
+        crossReferenceService.extractAndSaveReferences(message, null);
         AttachmentHelper.resolveInlineAttachmentUrls(message, attachments);
         ticketEmailService.notifyMessageChange(ticket, message, user);
         return createTicketRedirect(client, "/superuser/tickets/" + ticket.id);
@@ -309,6 +314,7 @@ public class SuperuserResource {
         List<Attachment> attachments = AttachmentHelper.readAttachments(input, "attachments");
         AttachmentHelper.attachToMessage(message, attachments);
         message.persistAndFlush();
+        crossReferenceService.extractAndSaveReferences(message, null);
         AttachmentHelper.resolveInlineAttachmentUrls(message, attachments);
         ticketEmailService.notifyMessageChange(ticket, message, user);
         return Response.seeOther(URI.create("/superuser/tickets/" + id + "?replyAdded=1")).build();
