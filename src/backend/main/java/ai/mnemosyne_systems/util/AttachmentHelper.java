@@ -12,7 +12,9 @@ import ai.mnemosyne_systems.model.Attachment;
 import ai.mnemosyne_systems.model.Message;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.MultivaluedMap;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -55,6 +57,27 @@ public final class AttachmentHelper {
         } catch (NumberFormatException ex) {
             throw new BadRequestException("Invalid form data");
         }
+    }
+
+    public static UploadedFile readFile(MultipartFormDataInput input, String name) {
+        return readFile(input, name, -1);
+    }
+
+    public static UploadedFile readFile(MultipartFormDataInput input, String name, int maxBytes) {
+        if (input == null || name == null) {
+            return null;
+        }
+        List<InputPart> parts = collectParts(input, name);
+        if (parts.isEmpty()) {
+            return null;
+        }
+        InputPart part = parts.get(0);
+        String fileName = extractFileName(part.getHeaders());
+        byte[] data = maxBytes > 0 ? readBytes(part, maxBytes) : readBytes(part);
+        if ((fileName == null || fileName.isBlank()) && data.length == 0) {
+            return null;
+        }
+        return new UploadedFile(fileName, data);
     }
 
     public static List<Attachment> readAttachments(MultipartFormDataInput input, String name) {
@@ -177,6 +200,28 @@ public final class AttachmentHelper {
         }
     }
 
+    private static byte[] readBytes(InputPart part, int maxBytes) {
+        try (InputStream input = part.getBody(InputStream.class, null);
+                ByteArrayOutputStream output = new ByteArrayOutputStream(Math.min(maxBytes, 8192))) {
+            if (input == null) {
+                return new byte[0];
+            }
+            byte[] buffer = new byte[8192];
+            int total = 0;
+            int read;
+            while ((read = input.read(buffer)) != -1) {
+                total += read;
+                if (total > maxBytes) {
+                    throw new BadRequestException("Uploaded file is too large");
+                }
+                output.write(buffer, 0, read);
+            }
+            return output.toByteArray();
+        } catch (IOException ex) {
+            throw new BadRequestException("Invalid file data");
+        }
+    }
+
     private static String extractFileName(MultivaluedMap<String, String> headers) {
         if (headers == null) {
             return null;
@@ -268,5 +313,8 @@ public final class AttachmentHelper {
             return "image/gif";
         }
         return null;
+    }
+
+    public record UploadedFile(String fileName, byte[] data) {
     }
 }

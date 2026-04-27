@@ -11,6 +11,7 @@ import useJson from "../hooks/useJson";
 import { SmartLink, normalizeClientPath } from "../utils/routing";
 import { orderedNavigation } from "../utils/navigation";
 import type { SessionPageProps } from "../types/app";
+import { PATHS } from "../routes/paths";
 import type {
   CollectionResponse,
   DirectoryUsersResponse,
@@ -30,6 +31,7 @@ import {
   BarChart3,
   Shield,
   Settings,
+  FileUp,
 } from "lucide-react";
 
 export default function HomePage({ sessionState }: SessionPageProps) {
@@ -189,6 +191,39 @@ export default function HomePage({ sessionState }: SessionPageProps) {
             </div>
           </SmartLink>
         ))}
+      </div>
+
+      <div className="mt-8 space-y-4 px-2">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">
+            Migration
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Import external tickets.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <SmartLink
+            href={PATHS.workbenchTicketsImport}
+            className="group flex h-36 flex-col rounded-sm border bg-card p-5 shadow-sm transition-all hover:border-foreground/30"
+          >
+            <div className="relative z-10 flex h-full flex-col justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-sky-50 text-sky-700 ring-1 ring-sky-100 transition-colors group-hover:bg-sky-100">
+                  <FileUp className="h-5 w-5" />
+                </span>
+                <h3 className="min-w-0 flex-1 text-[15px] font-medium tracking-tight text-foreground/90 transition-colors group-hover:text-foreground">
+                  Import tickets
+                </h3>
+              </div>
+
+              <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
+                Import tickets from CSV.
+              </p>
+            </div>
+          </SmartLink>
+        </div>
       </div>
     </div>
   );
