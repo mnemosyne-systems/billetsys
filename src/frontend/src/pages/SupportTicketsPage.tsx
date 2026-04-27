@@ -9,7 +9,7 @@
 import DataState from "../components/common/DataState";
 import PageHeader from "../components/layout/PageHeader";
 import useJson from "../hooks/useJson";
-import { isWhiteColorValue, toQueryString } from "../utils/formatting";
+import { shouldUseLightTextOnColor, toQueryString } from "../utils/formatting";
 import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
 import type { CollectionResponse, TicketListItem } from "../types/domain";
@@ -72,15 +72,17 @@ export default function SupportTicketsPage({
       <PageHeader
         title={pageTitle}
         actions={
-          showCreateButton ? (
-            <Button asChild>
-              <SmartLink
-                href={ticketsState.data?.createPath || createFallbackPath}
-              >
-                Create
-              </SmartLink>
-            </Button>
-          ) : null
+          <div className="flex flex-wrap gap-2">
+            {showCreateButton ? (
+              <Button asChild>
+                <SmartLink
+                  href={ticketsState.data?.createPath || createFallbackPath}
+                >
+                  Create
+                </SmartLink>
+              </Button>
+            ) : null}
+          </div>
         }
       />
 
@@ -114,8 +116,17 @@ export default function SupportTicketsPage({
               <TableBody>
                 {(ticketsState.data?.items || []).map(
                   (ticket: TicketListItem) => {
-                    const useLightText =
-                      ticket.slaColor && !isWhiteColorValue(ticket.slaColor);
+                    const useLightText = shouldUseLightTextOnColor(
+                      ticket.slaColor,
+                    );
+                    const linkClass = useLightText
+                      ? "text-white"
+                      : ticket.slaColor
+                        ? "text-[#111827]"
+                        : "text-primary";
+                    const secondaryClass = ticket.slaColor
+                      ? ""
+                      : "text-muted-foreground";
                     return (
                       <TableRow
                         key={ticket.id}
@@ -128,7 +139,7 @@ export default function SupportTicketsPage({
                           ticket.slaColor
                             ? {
                                 backgroundColor: ticket.slaColor,
-                                color: useLightText ? "#ffffff" : undefined,
+                                color: useLightText ? "#ffffff" : "#111827",
                               }
                             : undefined
                         }
@@ -136,7 +147,7 @@ export default function SupportTicketsPage({
                         <TableCell className="font-medium py-3 px-4">
                           <div className="flex items-center gap-1.5 whitespace-nowrap">
                             <SmartLink
-                              className={`font-semibold hover:underline ${useLightText ? "text-white" : "text-primary"}`}
+                              className={`font-semibold hover:underline ${linkClass}`}
                               href={ticket.detailPath}
                             >
                               {ticket.name}
@@ -148,83 +159,71 @@ export default function SupportTicketsPage({
                             )}
                           </div>
                         </TableCell>
-                        <TableCell
-                          className={`py-3 px-4 ${useLightText ? "" : "text-muted-foreground"}`}
-                        >
+                        <TableCell className={`py-3 px-4 ${secondaryClass}`}>
                           {ticket.title || "-"}
                         </TableCell>
                         <TableCell
-                          className={`whitespace-nowrap py-3 px-4 ${useLightText ? "" : "text-muted-foreground"}`}
+                          className={`whitespace-nowrap py-3 px-4 ${secondaryClass}`}
                         >
                           {ticket.messageDateLabel || "-"}
                         </TableCell>
                         <TableCell
-                          className={`whitespace-nowrap py-3 px-4 ${useLightText ? "" : "text-muted-foreground"}`}
+                          className={`whitespace-nowrap py-3 px-4 ${secondaryClass}`}
                         >
                           {ticket.status || "-"}
                         </TableCell>
                         <TableCell
-                          className={`whitespace-nowrap py-3 px-4 ${useLightText ? "" : "text-muted-foreground"}`}
+                          className={`whitespace-nowrap py-3 px-4 ${secondaryClass}`}
                         >
                           {ticket.categoryName || "-"}
                         </TableCell>
                         <TableCell className="whitespace-nowrap py-3 px-4">
                           {ticket.supportUser ? (
                             <a
-                              className={`hover:underline ${useLightText ? "text-white" : "text-primary"}`}
+                              className={`hover:underline ${linkClass}`}
                               href={ticket.supportUser.detailPath}
                             >
                               {ticket.supportUser.displayName ||
                                 ticket.supportUser.username}
                             </a>
                           ) : (
-                            <span
-                              className={
-                                useLightText ? "" : "text-muted-foreground"
-                              }
-                            >
-                              —
-                            </span>
+                            <span className={secondaryClass}>—</span>
                           )}
                         </TableCell>
                         <TableCell className="whitespace-nowrap py-3 px-4">
                           {ticket.companyPath ? (
                             <a
-                              className={`hover:underline ${useLightText ? "text-white" : "text-primary"}`}
+                              className={`hover:underline ${linkClass}`}
                               href={ticket.companyPath}
                             >
                               {ticket.companyName}
                             </a>
                           ) : (
-                            <span
-                              className={
-                                useLightText ? "" : "text-muted-foreground"
-                              }
-                            >
+                            <span className={secondaryClass}>
                               {ticket.companyName || "—"}
                             </span>
                           )}
                         </TableCell>
                         <TableCell
-                          className={`whitespace-nowrap py-3 px-4 ${useLightText ? "" : "text-muted-foreground"}`}
+                          className={`whitespace-nowrap py-3 px-4 ${secondaryClass}`}
                         >
                           {ticket.entitlementName || "-"}
                         </TableCell>
                         {showLevelColumn && (
                           <TableCell
-                            className={`whitespace-nowrap py-3 px-4 ${useLightText ? "" : "text-muted-foreground"}`}
+                            className={`whitespace-nowrap py-3 px-4 ${secondaryClass}`}
                           >
                             {ticket.levelName || "-"}
                           </TableCell>
                         )}
                         <TableCell
-                          className={`whitespace-nowrap py-3 px-4 ${useLightText ? "" : "text-muted-foreground"}`}
+                          className={`whitespace-nowrap py-3 px-4 ${secondaryClass}`}
                         >
                           {ticket.affectsVersionName || "-"}
                         </TableCell>
                         {currentView === "closed" && (
                           <TableCell
-                            className={`whitespace-nowrap py-3 px-4 ${useLightText ? "" : "text-muted-foreground"}`}
+                            className={`whitespace-nowrap py-3 px-4 ${secondaryClass}`}
                           >
                             {ticket.resolvedVersionName || "-"}
                           </TableCell>

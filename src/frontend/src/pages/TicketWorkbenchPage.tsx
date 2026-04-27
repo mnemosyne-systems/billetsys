@@ -19,8 +19,10 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 
-export default function TicketWorkbenchPage(props: SessionPageProps) {
-  void props;
+export default function TicketWorkbenchPage({
+  sessionState,
+}: SessionPageProps) {
+  void sessionState;
   const ticketState = useJson<CollectionResponse<TicketWorkbenchListItem>>(
     "/api/ticket-workbench",
   );
@@ -31,11 +33,13 @@ export default function TicketWorkbenchPage(props: SessionPageProps) {
       <PageHeader
         title={tickets?.title || "Tickets"}
         actions={
-          tickets?.createPath ? (
-            <Button asChild>
-              <SmartLink href={tickets.createPath}>Create</SmartLink>
-            </Button>
-          ) : null
+          <div className="flex flex-wrap gap-2">
+            {tickets?.createPath ? (
+              <Button asChild>
+                <SmartLink href={tickets.createPath}>Create</SmartLink>
+              </Button>
+            ) : null}
+          </div>
         }
       />
 

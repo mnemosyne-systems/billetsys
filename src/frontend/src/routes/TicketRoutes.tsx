@@ -20,6 +20,7 @@ const SupportTicketsPage = lazy(() => import("../pages/SupportTicketsPage"));
 const TicketWorkbenchFormPage = lazy(
   () => import("../pages/TicketWorkbenchFormPage"),
 );
+const TicketImportPage = lazy(() => import("../pages/TicketImportPage"));
 const TicketWorkbenchPage = lazy(() => import("../pages/TicketWorkbenchPage"));
 
 export function getTicketRoutes(sessionState: SessionState): AppRoute[] {
@@ -33,6 +34,12 @@ export function getTicketRoutes(sessionState: SessionState): AppRoute[] {
       path: PATHS.workbenchTicketsNew,
       element: <TicketWorkbenchFormPage sessionState={sessionState} />,
       requiresAuth: true,
+    },
+    {
+      path: PATHS.workbenchTicketsImport,
+      element: <TicketImportPage />,
+      requiresAuth: true,
+      allowedRoles: ["admin", "support"],
     },
     {
       path: `${PATHS.workbenchTickets}/:id/edit`,
