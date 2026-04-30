@@ -19,7 +19,7 @@ import { CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Field, FieldLabel } from "../components/ui/field";
 import { Input } from "../components/ui/input";
-import { ArrowLeftIcon, CheckCircleIcon } from "lucide-react";
+import { CheckCircleIcon } from "lucide-react";
 import "@cap.js/widget";
 
 interface CapWidgetElement extends HTMLElement {
