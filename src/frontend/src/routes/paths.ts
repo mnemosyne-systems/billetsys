@@ -22,6 +22,7 @@ export const PATHS = {
   levelsNew: "/levels/new",
   workbenchTickets: "/tickets",
   workbenchTicketsNew: "/tickets/new",
+  workbenchTicketsImport: "/tickets/import",
   supportTickets: "/support/tickets",
   supportTicketsOpen: "/support/tickets/open",
   supportTicketsClosed: "/support/tickets/closed",
