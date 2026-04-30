@@ -263,8 +263,6 @@ export default function ResetPasswordPage({ sessionState }: SessionPageProps) {
                 to="/login"
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
               >
-                <ArrowLeftIcon className="h-3.5 w-3.5" />
-                Back to Login
               </Link>
             </div>
           </form>
