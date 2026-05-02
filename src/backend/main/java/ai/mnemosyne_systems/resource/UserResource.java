@@ -18,6 +18,9 @@ import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
+import ai.mnemosyne_systems.model.event.EventAction;
+import ai.mnemosyne_systems.model.event.EventType;
+import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
@@ -56,6 +59,9 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 public class UserResource {
     @Inject
     TicketEmailService ticketEmailService;
+
+    @Inject
+    EventService eventService;
 
     @GET
     @Path("user")
@@ -240,6 +246,7 @@ public class UserResource {
         ticket.affectsVersion = resolveKnownVersion(affectsVersionId, "Affects");
         ticket.category = categoryId != null ? Category.findById(categoryId) : Category.findDefault();
         ticket.persist();
+        eventService.saveTicketEvent(ticket, user);
         Message message = new Message();
         message.body = messageBody.trim();
         message.date = java.time.LocalDateTime.now();
@@ -407,6 +414,7 @@ public class UserResource {
         if (User.TYPE_TAM.equalsIgnoreCase(user.type)) {
             ticket.resolvedVersion = resolveOptionalVersionForTicket(ticket, resolvedVersionId, "Resolved");
         }
+        eventService.saveTicketEvent(ticket, user);
         return ReactRedirectSupport.redirect(client, "/user/tickets/" + id);
     }
 

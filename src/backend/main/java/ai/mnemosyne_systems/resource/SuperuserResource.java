@@ -18,6 +18,9 @@ import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
+import ai.mnemosyne_systems.model.event.EventAction;
+import ai.mnemosyne_systems.model.event.EventType;
+import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
@@ -63,6 +66,9 @@ public class SuperuserResource {
 
     @Inject
     TicketEmailService ticketEmailService;
+
+    @Inject
+    EventService eventService;
 
     @GET
     @Path("superuser")
@@ -210,6 +216,7 @@ public class SuperuserResource {
         ticket.affectsVersion = resolveKnownVersion(affectsVersionId, "Affects");
         ticket.category = categoryId != null ? Category.findById(categoryId) : Category.findDefault();
         ticket.persist();
+        eventService.saveTicketEvent(ticket, ticket.requester);
         Message message = new Message();
         message.body = messageBody.trim();
         message.date = LocalDateTime.now();
@@ -343,6 +350,7 @@ public class SuperuserResource {
         ticket.title = normalizedTitle;
         ticket.affectsVersion = resolveVersionForTicket(ticket, affectsVersionId, "Affects");
         ticket.resolvedVersion = resolveOptionalVersionForTicket(ticket, resolvedVersionId, "Resolved");
+        eventService.saveTicketEvent(ticket, user);
         return ReactRedirectSupport.redirect(client, "/superuser/tickets/" + id);
     }
 
