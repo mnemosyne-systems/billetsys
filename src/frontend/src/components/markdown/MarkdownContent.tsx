@@ -29,6 +29,9 @@ interface MarkdownContentProps {
   crossReferences?: CrossReferenceEntry[];
 }
 
+const markdownLinkClassName =
+  "font-medium text-[var(--color-header-bg)] underline underline-offset-2 hover:text-primary";
+
 type MarkdownBlock =
   | {
       content: string;
@@ -109,10 +112,7 @@ function buildLinkComponent(
               companyName={ref.companyName}
               levelName={ref.levelName}
               detailPath={ref.detailPath}
-              className={cn(
-                "text-red-500 underline underline-offset-2 hover:text-red-600",
-                className,
-              )}
+              className={cn(markdownLinkClassName, className)}
             >
               {children}
             </TicketHoverPreview>
@@ -121,11 +121,11 @@ function buildLinkComponent(
       }
     }
     return (
-      <a
-        className={cn(
-          "font-medium text-[var(--color-header-bg)] underline underline-offset-2 hover:text-primary",
-          className,
-        )}
+        <a
+          className={cn(
+            markdownLinkClassName,
+            className,
+          )}
         href={href}
         target="_blank"
         rel="noreferrer"

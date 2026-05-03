@@ -279,7 +279,7 @@ export default function SupportTicketDetailPage({
   );
   const ticket = ticketState.data;
   const refsState = useJson<CrossReferencesResponse>(
-    id ? `${apiBase}/${id}/references` : null,
+    id ? `${apiBase}/${id}/references${toQueryString({ refresh: refreshNonce })}` : null,
   );
   const [formState, setFormState] = useState<SupportTicketDetailState | null>(
     null,
@@ -305,6 +305,14 @@ export default function SupportTicketDetailPage({
   const showSummaryField =
     Boolean(ticket?.title || formState?.title) &&
     (ticket?.title || formState?.title) !== ticket?.name;
+  const crossReferences = [
+    ...(refsState.data?.references ?? []),
+    ...(refsState.data?.referencedBy ?? []),
+  ];
+  const relatedTickets = Array.from(
+    new Map(crossReferences.map((reference) => [reference.ticketId, reference]))
+      .values(),
+  ).sort((left, right) => left.ticketName.localeCompare(right.ticketName));
 
   useEffect(() => {
     if (!ticket) {
@@ -740,22 +748,15 @@ export default function SupportTicketDetailPage({
                   )}
                 </Field>
                 {(() => {
-                  const allRefs = [
-                    ...(refsState.data?.references ?? []),
-                    ...(refsState.data?.referencedBy ?? []),
-                  ];
-                  const unique = Array.from(
-                    new Map(allRefs.map((r) => [r.ticketId, r])).values(),
-                  ).sort((a, b) => a.ticketName.localeCompare(b.ticketName));
                   return (
                     <>
-                      {unique.length > 0 ? (
+                      {relatedTickets.length > 0 ? (
                         <Field>
                           <FieldLabel>Related</FieldLabel>
                           <div className="border rounded-md overflow-hidden">
                             <Table>
                               <TableBody>
-                                {unique.map((ref) => (
+                                {relatedTickets.map((ref) => (
                                   <TableRow key={ref.ticketId}>
                                     <TableCell className="text-sm border-r">
                                       <a
@@ -834,10 +835,7 @@ export default function SupportTicketDetailPage({
                         key={`msg-${message.id}`}
                         message={message}
                         enableAttachmentPreviews={enableAttachmentPreviews}
-                        crossReferences={[
-                          ...(refsState.data?.references ?? []),
-                          ...(refsState.data?.referencedBy ?? []),
-                        ]}
+                        crossReferences={crossReferences}
                       />
                     ))}
                 </div>
