@@ -121,11 +121,8 @@ function buildLinkComponent(
       }
     }
     return (
-        <a
-          className={cn(
-            markdownLinkClassName,
-            className,
-          )}
+      <a
+        className={cn(markdownLinkClassName, className)}
         href={href}
         target="_blank"
         rel="noreferrer"

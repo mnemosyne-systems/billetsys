@@ -279,7 +279,9 @@ export default function SupportTicketDetailPage({
   );
   const ticket = ticketState.data;
   const refsState = useJson<CrossReferencesResponse>(
-    id ? `${apiBase}/${id}/references${toQueryString({ refresh: refreshNonce })}` : null,
+    id
+      ? `${apiBase}/${id}/references${toQueryString({ refresh: refreshNonce })}`
+      : null,
   );
   const [formState, setFormState] = useState<SupportTicketDetailState | null>(
     null,
@@ -310,8 +312,9 @@ export default function SupportTicketDetailPage({
     ...(refsState.data?.referencedBy ?? []),
   ];
   const relatedTickets = Array.from(
-    new Map(crossReferences.map((reference) => [reference.ticketId, reference]))
-      .values(),
+    new Map(
+      crossReferences.map((reference) => [reference.ticketId, reference]),
+    ).values(),
   ).sort((left, right) => left.ticketName.localeCompare(right.ticketName));
 
   useEffect(() => {
