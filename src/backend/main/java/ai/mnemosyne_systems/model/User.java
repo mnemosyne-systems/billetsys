@@ -71,6 +71,9 @@ public class User extends PanacheEntityBase {
     @Column(name = "logo_base64", columnDefinition = "text")
     public String logoBase64;
 
+    @Column(name = "email_format")
+    public String emailFormat;
+
     public static boolean usernameExists(String username) {
         if (username == null || username.isBlank()) {
             return false;

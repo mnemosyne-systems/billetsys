@@ -76,6 +76,13 @@ abstract class AccessTestSupport {
     }
 
     @Transactional
+    void setUserEmailFormat(String email, String emailFormat) {
+        User user = User.find("email", email).firstResult();
+        Assertions.assertNotNull(user);
+        user.emailFormat = emailFormat;
+    }
+
+    @Transactional
     void ensureCompanyIfMissing(String name) {
         if (ai.mnemosyne_systems.model.Company.find("name", name).firstResult() != null) {
             return;

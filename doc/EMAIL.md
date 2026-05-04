@@ -60,6 +60,13 @@ Emails are sent on:
 
 If a message has attachments, the same attachments are included in outgoing emails.
 
+Outgoing email format is controlled per user through the profile preference:
+- `HTML + Plain text` sends multipart email with both bodies.
+- `HTML only` sends only the HTML body.
+- `Plain text only` sends only the text body.
+
+Password reset emails use the same per-user preference.
+
 ## Incoming email
 
 Incoming messages are accepted at:

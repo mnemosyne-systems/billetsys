@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -66,6 +66,7 @@ export interface ProfileRecord extends UserReference {
   companies: NamedEntity[];
   canSelectCompany?: boolean;
   currentCompanyId?: Id;
+  emailFormat?: string;
 }
 
 export interface DirectoryUserRecord extends UserReference {

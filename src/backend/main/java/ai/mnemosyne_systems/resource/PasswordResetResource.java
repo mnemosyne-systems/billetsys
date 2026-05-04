@@ -169,10 +169,21 @@ public class PasswordResetResource {
 
     private void sendResetEmail(User user, String resetLink) {
         String subject = subjectTemplate.render();
-        String text = bodyTextTemplate.data("username", user.name).data("resetLink", resetLink).render();
-        String html = bodyHtmlTemplate.data("username", user.name).data("resetLink", resetLink).render();
-        Mail mail = Mail.withHtml(user.email, subject, html).setFrom(fromAddress).setText(text);
-        mailer.send(mail);
+        String format = user.emailFormat;
+        if ("text".equalsIgnoreCase(format)) {
+            String text = bodyTextTemplate.data("username", user.name).data("resetLink", resetLink).render();
+            Mail mail = Mail.withText(user.email, subject, text).setFrom(fromAddress);
+            mailer.send(mail);
+        } else if ("html".equalsIgnoreCase(format)) {
+            String html = bodyHtmlTemplate.data("username", user.name).data("resetLink", resetLink).render();
+            Mail mail = Mail.withHtml(user.email, subject, html).setFrom(fromAddress);
+            mailer.send(mail);
+        } else {
+            String text = bodyTextTemplate.data("username", user.name).data("resetLink", resetLink).render();
+            String html = bodyHtmlTemplate.data("username", user.name).data("resetLink", resetLink).render();
+            Mail mail = Mail.withHtml(user.email, subject, html).setFrom(fromAddress).setText(text);
+            mailer.send(mail);
+        }
     }
 
     private void purgeExpired() {

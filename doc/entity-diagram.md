@@ -55,6 +55,7 @@ erDiagram
         STRING name
         STRING full_name
         STRING email
+        STRING email_format
         STRING social
         STRING phone_number
         STRING phone_extension

@@ -17,12 +17,25 @@ The profile feature is where a user can manage the personal details that shape d
 * Name
 * Full name
 * Email address
+* Preferred email format for outbound notifications
 * Social or contact details
 * Phone information
 * Country and timezone
 * Password-related account maintenance
 
 This helps billetsys function not only as a workflow tool, but also as a practical communication environment.
+
+## Notification preferences
+
+Profile management also includes a user-level email format preference.
+
+Users can choose whether outbound emails should be sent as:
+
+* HTML and plain text
+* HTML only
+* Plain text only
+
+This preference affects application-generated mail such as ticket notifications and password reset messages. It allows billetsys to support both richer email presentation and simpler text-focused delivery for users who prefer it.
 
 ## Role-aware experience
 

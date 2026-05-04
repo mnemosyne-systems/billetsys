@@ -59,99 +59,104 @@ public class TicketEmailService {
         if (ticket == null || ticket.id == null) {
             return;
         }
-        List<String> recipients = recipients(ticket, message);
-        if (recipients.isEmpty()) {
+        List<User> recipientUsers = recipientUsers(ticket, message);
+        if (recipientUsers.isEmpty()) {
             return;
         }
         String actorName = actor == null ? "System" : actor.name;
         String currentStatus = computeEffectiveStatus(ticket, ticket.status);
         String subject = subjectTemplate.data("ticket", ticket).data("eventType", eventType).render();
-        String text = bodyTextTemplate.data("ticket", ticket).data("message", message).data("eventType", eventType)
+        String text = renderText(ticket, message, eventType, previousStatus, currentStatus, actorName);
+        String html = renderHtml(ticket, message, eventType, previousStatus, currentStatus, actorName);
+        for (User recipient : recipientUsers) {
+            Mail mail = createMail(recipient, subject, text, html);
+            addAttachments(mail, message);
+            mailer.send(mail);
+        }
+    }
+
+    private List<User> recipientUsers(Ticket ticket, Message message) {
+        Set<Long> seen = new LinkedHashSet<>();
+        List<User> result = new ArrayList<>();
+        MessageAudienceSupport.Audience audience = messageAudience(message);
+        addUser(seen, result, ticket.requester, audience);
+        if (ticket.tamUsers != null) {
+            for (User user : ticket.tamUsers) {
+                addUser(seen, result, user, audience);
+            }
+        }
+        if (ticket.supportUsers != null) {
+            for (User user : ticket.supportUsers) {
+                addUser(seen, result, user, audience);
+            }
+        }
+        if (audience == MessageAudienceSupport.Audience.USER_SUPERUSER && ticket.company != null
+                && ticket.company.users != null) {
+            for (User user : ticket.company.users) {
+                addUser(seen, result, user, audience);
+            }
+        }
+        return result;
+    }
+
+    private void addUser(Set<Long> seen, List<User> result, User user, MessageAudienceSupport.Audience audience) {
+        if (user == null || user.id == null || user.email == null || user.email.isBlank()) {
+            return;
+        }
+        if (audience != null && !MessageAudienceSupport.belongsToAudience(user, audience)) {
+            return;
+        }
+        if (seen.add(user.id)) {
+            result.add(user);
+        }
+    }
+
+    private MessageAudienceSupport.Audience messageAudience(Message message) {
+        if (message == null || message.isPublic) {
+            return null;
+        }
+        return MessageAudienceSupport.audienceFor(message.author);
+    }
+
+    private String renderText(Ticket ticket, Message message, String eventType, String previousStatus,
+            String currentStatus, String actorName) {
+        return bodyTextTemplate.data("ticket", ticket).data("message", message).data("eventType", eventType)
                 .data("previousStatus", previousStatus).data("currentStatus", currentStatus)
                 .data("actorName", actorName).render();
-        String html = bodyHtmlTemplate.data("ticket", ticket).data("message", message).data("eventType", eventType)
+    }
+
+    private String renderHtml(Ticket ticket, Message message, String eventType, String previousStatus,
+            String currentStatus, String actorName) {
+        return bodyHtmlTemplate.data("ticket", ticket).data("message", message).data("eventType", eventType)
                 .data("previousStatus", previousStatus).data("currentStatus", currentStatus)
                 .data("actorName", actorName)
                 .data("messageHtml",
                         message == null ? new RawString("") : new RawString(markdownService.renderHtml(message.body)))
                 .render();
-        Mail mail = Mail.withText(recipients.get(0), subject, text).setFrom(fromAddress).setHtml(html);
-        for (int i = 1; i < recipients.size(); i++) {
-            mail.addTo(recipients.get(i));
-        }
-        if (message != null && message.attachments != null) {
-            for (Attachment attachment : message.attachments) {
-                if (attachment != null && attachment.name != null && attachment.data != null) {
-                    mail.addAttachment(attachment.name, attachment.data,
-                            attachment.mimeType == null || attachment.mimeType.isBlank() ? "application/octet-stream"
-                                    : attachment.mimeType);
-                }
-            }
-        }
-        mailer.send(mail);
     }
 
-    private List<String> recipients(Ticket ticket, Message message) {
-        if (message != null && !message.isPublic) {
-            return privateMessageRecipients(ticket, message);
+    private Mail createMail(User recipient, String subject, String text, String html) {
+        String recipientEmail = recipient.email.trim().toLowerCase();
+        if ("text".equalsIgnoreCase(recipient.emailFormat)) {
+            return Mail.withText(recipientEmail, subject, text).setFrom(fromAddress);
         }
-        return standardRecipients(ticket);
+        if ("html".equalsIgnoreCase(recipient.emailFormat)) {
+            return Mail.withHtml(recipientEmail, subject, html).setFrom(fromAddress);
+        }
+        return Mail.withText(recipientEmail, subject, text).setFrom(fromAddress).setHtml(html);
     }
 
-    private List<String> standardRecipients(Ticket ticket) {
-        Set<String> emails = new LinkedHashSet<>();
-        addEmail(emails, ticket.requester);
-        if (ticket.tamUsers != null) {
-            for (User user : ticket.tamUsers) {
-                addEmail(emails, user);
-            }
-        }
-        if (ticket.supportUsers != null) {
-            for (User user : ticket.supportUsers) {
-                addEmail(emails, user);
-            }
-        }
-        return new ArrayList<>(emails);
-    }
-
-    private List<String> privateMessageRecipients(Ticket ticket, Message message) {
-        Set<String> emails = new LinkedHashSet<>();
-        MessageAudienceSupport.Audience audience = MessageAudienceSupport.audienceFor(message.author);
-        if (audience == null) {
-            return List.of();
-        }
-        switch (audience) {
-            case SUPPORT_TAM -> {
-                if (ticket.tamUsers != null) {
-                    for (User user : ticket.tamUsers) {
-                        addEmail(emails, user);
-                    }
-                }
-                if (ticket.supportUsers != null) {
-                    for (User user : ticket.supportUsers) {
-                        addEmail(emails, user);
-                    }
-                }
-            }
-            case USER_SUPERUSER -> {
-                addEmail(emails, ticket.requester);
-                if (ticket.company != null && ticket.company.users != null) {
-                    for (User user : ticket.company.users) {
-                        if (MessageAudienceSupport.belongsToAudience(user, audience)) {
-                            addEmail(emails, user);
-                        }
-                    }
-                }
-            }
-        }
-        return new ArrayList<>(emails);
-    }
-
-    private void addEmail(Set<String> emails, User user) {
-        if (user == null || user.email == null || user.email.isBlank()) {
+    private void addAttachments(Mail mail, Message message) {
+        if (message == null || message.attachments == null) {
             return;
         }
-        emails.add(user.email.trim().toLowerCase());
+        for (Attachment attachment : message.attachments) {
+            if (attachment != null && attachment.name != null && attachment.data != null) {
+                mail.addAttachment(attachment.name, attachment.data,
+                        attachment.mimeType == null || attachment.mimeType.isBlank() ? "application/octet-stream"
+                                : attachment.mimeType);
+            }
+        }
     }
 
     private String normalize(String value) {

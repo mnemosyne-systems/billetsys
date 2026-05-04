@@ -504,6 +504,41 @@ class SupportAccessTest extends AccessTestSupport {
     }
 
     @Test
+    void sendsTicketNotificationsUsingEachRecipientsPreferredEmailFormat() {
+        mailbox.clear();
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        setUserEmailFormat("support1@mnemosyne-systems.ai", "html");
+        setUserEmailFormat("tam1@mnemosyne-systems.ai", "text");
+        setUserEmailFormat("user@mnemosyne-systems.ai", null);
+        Long companyId = ensureCompany("Per Recipient Email Format Co");
+        ensureCompanyUsers(companyId, "tam1@mnemosyne-systems.ai", "user@mnemosyne-systems.ai");
+        Ticket ticket = ensureUnassignedOpenTicket(companyId);
+        String supportCookie = login("support1", "support1");
+        String body = "Per recipient email format " + System.nanoTime();
+
+        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie)
+                .multiPart("body", body).post("/support/tickets/" + ticket.id + "/messages").then().statusCode(303);
+
+        Mail htmlOnlyMail = latestMailTo("support1@mnemosyne-systems.ai");
+        Assertions.assertNull(htmlOnlyMail.getText());
+        Assertions.assertNotNull(htmlOnlyMail.getHtml());
+        Assertions.assertTrue(htmlOnlyMail.getHtml().contains(body));
+
+        Mail textOnlyMail = latestMailTo("tam1@mnemosyne-systems.ai");
+        Assertions.assertNotNull(textOnlyMail.getText());
+        Assertions.assertNull(textOnlyMail.getHtml());
+        Assertions.assertTrue(textOnlyMail.getText().contains(body));
+
+        Mail multipartMail = latestMailTo("user@mnemosyne-systems.ai");
+        Assertions.assertNotNull(multipartMail.getText());
+        Assertions.assertNotNull(multipartMail.getHtml());
+        Assertions.assertTrue(multipartMail.getText().contains(body));
+        Assertions.assertTrue(multipartMail.getHtml().contains(body));
+    }
+
+    @Test
     void sendsCorrectEmailsForTicketCreationAcrossRoles() {
         mailbox.clear();
         ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");

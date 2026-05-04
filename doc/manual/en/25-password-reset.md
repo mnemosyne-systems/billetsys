@@ -12,7 +12,7 @@ To maintain security while minimizing support overhead, billetsys allows users t
 
 1. **Requesting a Reset**: A user initiates the process from the login page by clicking "Forgot your password?". They are prompted to enter their email address.
 2. **CAP Verification**: Before the request is accepted, the user must solve a CAP challenge. This ensures that the request is coming from a human and protects the system from automated bots.
-3. **Email Delivery**: If the email matches an active account, billetsys sends an email containing the user's username and a secure, time-limited reset link.
+3. **Email Delivery**: If the email matches an active account, billetsys sends an email containing the user's username and a secure, time-limited reset link. The email format follows that user's profile preference when one has been configured.
 4. **Setting a New Password**: Clicking the link takes the user to a secure reset page where they can establish a new password and immediately regain access to the application.
 
 ## Security Considerations
@@ -20,6 +20,7 @@ To maintain security while minimizing support overhead, billetsys allows users t
 - **Privacy by Design**: To prevent account enumeration, the system returns a generic success message regardless of whether the email address exists in the database.
 - **Time-Limited Links**: Reset tokens expire automatically, reducing the risk of unauthorized access if an email is forwarded or discovered later.
 - **Single-Use Tokens**: Once a password has been successfully reset, the token is invalidated and cannot be used again.
+- **User Format Preference**: Reset emails respect the account's configured email format preference, allowing delivery as HTML, plain text, or multipart email depending on the user's profile settings.
 
 ## Administration and Configuration
 

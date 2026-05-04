@@ -66,6 +66,7 @@ export default function AuthenticatedHeader({
   session,
 }: AuthenticatedHeaderProps) {
   const [now, setNow] = useState(() => new Date());
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { darkModeToggleRef, toggleDarkMode } = useDarkModeToggle();
   const location = useLocation();
   const navigate = useNavigate();
@@ -452,7 +453,7 @@ export default function AuthenticatedHeader({
               <MoonIcon className="absolute right-2 size-3.5 opacity-90" />
               <span className="pointer-events-none inline-block h-6 w-6 translate-x-0 rounded-full bg-[var(--color-buttons-text)] shadow-sm transition-transform duration-200 ease-out group-aria-[pressed=true]:translate-x-8" />
             </button>
-            <DropdownMenu>
+            <DropdownMenu open={userMenuOpen} onOpenChange={setUserMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <button
                   className="flex items-center cursor-pointer list-none text-[var(--color-buttons-text)] outline-none rounded-full bg-[var(--color-buttons-bg)] p-0.5"
@@ -482,13 +483,25 @@ export default function AuthenticatedHeader({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
-                  <SmartLink href="/profile">Profile</SmartLink>
+                  <SmartLink
+                    href="/profile"
+                    onClick={() => setUserMenuOpen(false)}
+                  >
+                    Profile
+                  </SmartLink>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <SmartLink href="/profile/password">Password</SmartLink>
+                  <SmartLink
+                    href="/profile/password"
+                    onClick={() => setUserMenuOpen(false)}
+                  >
+                    Password
+                  </SmartLink>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <a href="/logout">Sign out</a>
+                  <a href="/logout" onClick={() => setUserMenuOpen(false)}>
+                    Sign out
+                  </a>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

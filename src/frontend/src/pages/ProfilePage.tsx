@@ -41,6 +41,7 @@ interface ProfileFormState {
   timezoneId: string;
   companyId: string;
   logoBase64: string;
+  emailFormat: string;
 }
 
 export default function ProfilePage(props: SessionPageProps) {
@@ -73,6 +74,7 @@ export default function ProfilePage(props: SessionPageProps) {
           ? String(profile.currentCompanyId)
           : "",
         logoBase64: profile.logoBase64 || "",
+        emailFormat: profile.emailFormat || "",
       });
     }
   }, [profile]);
@@ -157,6 +159,7 @@ export default function ProfilePage(props: SessionPageProps) {
             ? Number(formState.timezoneId)
             : null,
           companyId: formState.companyId ? Number(formState.companyId) : null,
+          emailFormat: formState.emailFormat || null,
         }),
       });
       if (!response.ok) {
@@ -179,6 +182,7 @@ export default function ProfilePage(props: SessionPageProps) {
                 ? String(updated.currentCompanyId)
                 : "",
               logoBase64: updated.logoBase64 || "",
+              emailFormat: updated.emailFormat || "",
             }
           : current,
       );
@@ -313,6 +317,24 @@ export default function ProfilePage(props: SessionPageProps) {
                         {timezone.name}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel>Email format</FieldLabel>
+                <Select
+                  value={formState.emailFormat || "both"}
+                  onValueChange={(value) =>
+                    updateField("emailFormat", value === "both" ? "" : value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select email format" />
+                  </SelectTrigger>
+                  <SelectContent position="popper">
+                    <SelectItem value="both">HTML &amp; Plain text</SelectItem>
+                    <SelectItem value="html">HTML only</SelectItem>
+                    <SelectItem value="text">Plain text only</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>

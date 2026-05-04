@@ -49,6 +49,7 @@ public class ProfileApiResource {
         user.phoneExtension = trimOrNull(request.phoneExtension());
         user.country = request.countryId() != null ? Country.findById(request.countryId()) : null;
         user.timezone = request.timezoneId() != null ? Timezone.findById(request.timezoneId()) : null;
+        user.emailFormat = normalizeEmailFormat(request.emailFormat());
         user.logoBase64 = trimOrNull(request.logoBase64());
 
         if (AuthHelper.isAdmin(user)) {
@@ -97,7 +98,7 @@ public class ProfileApiResource {
         return new ProfileResponse(user.type, user.name, user.getDisplayName(), user.email, user.fullName, user.social,
                 user.phoneNumber, user.phoneExtension, user.country == null ? null : user.country.id,
                 user.country == null ? null : user.country.name, user.timezone == null ? null : user.timezone.id,
-                user.timezone == null ? null : user.timezone.name, user.logoBase64,
+                user.timezone == null ? null : user.timezone.name, user.logoBase64, user.emailFormat,
                 currentCompany == null ? null : currentCompany.id, currentCompany == null ? null : currentCompany.name,
                 companyBase(user), AuthHelper.isSupport(user), countries, timezones, companies);
     }
@@ -151,6 +152,17 @@ public class ProfileApiResource {
         return value.trim();
     }
 
+    private String normalizeEmailFormat(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String trimmed = value.trim().toLowerCase();
+        if ("text".equals(trimmed) || "html".equals(trimmed)) {
+            return trimmed;
+        }
+        return null;
+    }
+
     private User requireUser(String auth) {
         User user = AuthHelper.findUser(auth);
         if (user == null) {
@@ -161,13 +173,14 @@ public class ProfileApiResource {
 
     public record ProfileResponse(String role, String username, String displayName, String email, String fullName,
             String social, String phoneNumber, String phoneExtension, Long countryId, String countryName,
-            Long timezoneId, String timezoneName, String logoBase64, Long currentCompanyId, String currentCompanyName,
-            String companyBase, boolean canSelectCompany, List<CountryOption> countries, List<TimezoneOption> timezones,
-            List<CompanyOption> companies) {
+            Long timezoneId, String timezoneName, String logoBase64, String emailFormat, Long currentCompanyId,
+            String currentCompanyName, String companyBase, boolean canSelectCompany, List<CountryOption> countries,
+            List<TimezoneOption> timezones, List<CompanyOption> companies) {
     }
 
     public record ProfileUpdateRequest(String name, String email, String fullName, String social, String phoneNumber,
-            String phoneExtension, Long countryId, Long timezoneId, Long companyId, String logoBase64) {
+            String phoneExtension, Long countryId, Long timezoneId, Long companyId, String logoBase64,
+            String emailFormat) {
     }
 
     public record PasswordUpdateRequest(String oldPassword, String newPassword, String confirmPassword) {

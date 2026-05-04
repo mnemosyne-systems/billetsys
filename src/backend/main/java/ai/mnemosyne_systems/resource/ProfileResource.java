@@ -127,6 +127,9 @@ public class ProfileResource {
             }
         }
 
+        String emailFormat = value(form, "emailFormat");
+        user.emailFormat = normalizeEmailFormat(emailFormat);
+
         String logoData = value(form, "logoData");
         if (logoData != null && !logoData.isBlank()) {
             user.logoBase64 = logoData.trim();
@@ -157,6 +160,17 @@ public class ProfileResource {
             return null;
         }
         return value.trim();
+    }
+
+    private String normalizeEmailFormat(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String trimmed = value.trim().toLowerCase();
+        if ("text".equals(trimmed) || "html".equals(trimmed)) {
+            return trimmed;
+        }
+        return null;
     }
 
     @GET
