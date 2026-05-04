@@ -51,6 +51,12 @@ Messages support ticket cross-references using the `#` mention syntax. Typing `#
 
 Mentions create a cross-reference record. Referenced tickets appear in a dedicated Related section, and inline mentions in messages show a hover preview.
 
+## Article mentions
+
+Messages support article references using the `$` mention syntax. Typing `$` followed by an article identifier in the message editor opens a suggestion list. Selecting an article inserts a mention that links to the referenced article.
+
+Article mentions create a reference record on the ticket side only, the referenced article itself is not modified. The inline mention in the rendered message displays the article title, while the dedicated Articles section on the ticket lists referenced articles sorted by title. Inline mentions in messages also show a hover preview.
+
 ## Communication flow
 
 The message thread supports a continuous support conversation:

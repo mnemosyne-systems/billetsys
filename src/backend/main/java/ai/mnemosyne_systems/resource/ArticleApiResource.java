@@ -15,15 +15,19 @@ import ai.mnemosyne_systems.util.AuthHelper;
 import io.smallrye.common.annotation.Blocking;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.CookieParam;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Path("/api/articles")
 @Produces(MediaType.APPLICATION_JSON)
@@ -45,6 +49,32 @@ public class ArticleApiResource {
     public ArticleBootstrapResponse bootstrap(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
         User user = requireUser(auth);
         return new ArticleBootstrapResponse(ArticleResource.canEdit(user), AuthHelper.isAdmin(user));
+    }
+
+    @GET
+    @Path("/suggest")
+    @Transactional
+    public ArticleSuggestionResponse suggest(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @QueryParam("q") @DefaultValue("") String q) {
+        requireUser(auth);
+        ArticleResource.ensureSampleArticle();
+        String needle = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
+        List<Article> all = Article.<Article> list("order by id desc");
+        List<ArticleSuggestion> matches = new ArrayList<>();
+        for (Article article : all) {
+            if (article.id == null) {
+                continue;
+            }
+            if (needle.isEmpty() || String.valueOf(article.id).contains(needle)
+                    || (article.title != null && article.title.toLowerCase(Locale.ROOT).contains(needle))) {
+                matches.add(new ArticleSuggestion(article.id, String.valueOf(article.id), article.title,
+                        "/articles/" + article.id));
+            }
+            if (matches.size() >= 6) {
+                break;
+            }
+        }
+        return new ArticleSuggestionResponse(matches);
     }
 
     @GET
@@ -83,6 +113,12 @@ public class ArticleApiResource {
     }
 
     public record ArticleSummary(Long id, String title, String tags) {
+    }
+
+    public record ArticleSuggestionResponse(List<ArticleSuggestion> items) {
+    }
+
+    public record ArticleSuggestion(Long id, String name, String title, String detailPath) {
     }
 
     public record ArticleDetailResponse(Long id, String title, String tags, String body, boolean canEdit,

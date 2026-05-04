@@ -68,6 +68,10 @@ This keeps article publishing aligned with operational responsibility.
 
 Articles support richer content than a plain note. They can include structured text and file attachments, which makes them useful for step-by-step guides, examples, and reference material.
 
+## Linked from tickets
+
+Ticket messages can reference articles using the `$` mention syntax in the message editor. In the rendered message, the mention is displayed as the article title. Each reference is recorded on the ticket and shown in a dedicated Articles section, sorted by title.
+
 ## Why it matters
 
 The articles feature turns day-to-day support experience into reusable organizational knowledge. Over time, that helps billetsys serve not only as a ticket system, but also as a knowledge platform for support teams and customers.

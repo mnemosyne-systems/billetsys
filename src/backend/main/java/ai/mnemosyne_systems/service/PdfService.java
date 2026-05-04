@@ -25,6 +25,10 @@ import java.util.Map;
 
 @ApplicationScoped
 public class PdfService {
+
+    @jakarta.inject.Inject
+    CrossReferenceService crossReferenceService;
+
     private final Color red = new Color(176, 0, 32);
     private final Color lightRedFontColor = new Color(178, 15, 30);
     private final Color lightRed = new Color(244, 235, 236);
@@ -85,6 +89,22 @@ public class PdfService {
                     relatedTable.addCell(new Phrase(related.displayTitle(), normalFont));
                 }
                 document.add(relatedTable);
+                document.add(Chunk.NEWLINE);
+            }
+            // Related articles
+            List<Article> relatedArticles = getRelatedArticles(ticket);
+            if (!relatedArticles.isEmpty()) {
+                Paragraph articlesSubTitle = new Paragraph("Articles:", normalFont);
+                articlesSubTitle.setAlignment(Paragraph.ALIGN_LEFT);
+                articlesSubTitle.setSpacingAfter(20);
+                document.add(articlesSubTitle);
+                PdfPTable articlesTable = new PdfPTable(1);
+                articlesTable.setWidthPercentage(100);
+                articlesTable.addCell(createCell("Title", red, Color.WHITE));
+                for (Article article : relatedArticles) {
+                    articlesTable.addCell(new Phrase(article.title == null ? "" : article.title, normalFont));
+                }
+                document.add(articlesTable);
                 document.add(Chunk.NEWLINE);
             }
             // users subtitle
@@ -365,6 +385,25 @@ public class PdfService {
         return result;
     }
 
+    private List<Article> getRelatedArticles(Ticket ticket) {
+        List<CrossReference> refs = CrossReference.list("sourceTicket = ?1 and targetType = 'article'", ticket);
+        if (refs.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Long> ids = new ArrayList<>();
+        for (CrossReference ref : refs) {
+            ids.add(ref.targetId);
+        }
+        List<Article> loaded = Article.list("id in ?1", ids);
+        Map<Long, Article> unique = new LinkedHashMap<>();
+        for (Article a : loaded) {
+            unique.put(a.id, a);
+        }
+        List<Article> result = new ArrayList<>(unique.values());
+        result.sort(Comparator.comparing(a -> a.title == null ? "" : a.title, String.CASE_INSENSITIVE_ORDER));
+        return result;
+    }
+
     private PdfPTable generateUsersTable(List<User> tams, List<User> supports) {
         List<User> safeTams = tams == null ? Collections.emptyList() : tams;
         List<User> safeSupports = supports == null ? Collections.emptyList() : supports;
@@ -399,6 +438,10 @@ public class PdfService {
             messageTable.addCell(emptyCell);
             return messageTable;
         }
+
+        Map<Long, Ticket> ticketCache = crossReferenceService
+                .preloadReferencedTickets(safeMessages.stream().map(m -> m.body).toList());
+
         for (Message message : safeMessages) {
             messageTable.addCell(createCell(message.date.format(formatter), red, Color.WHITE));
             messageTable.addCell(createCell(message.author == null ? "-" : message.author.email, red, Color.WHITE));
@@ -414,7 +457,8 @@ public class PdfService {
             }
             PdfPCell mergedCell = new PdfPCell();
             mergedCell.setColspan(2);
-            mergedCell.addElement(new Paragraph(message.body == null ? "" : message.body));
+            String transformedBody = crossReferenceService.transformBodyForPdf(message.body, ticketCache);
+            mergedCell.addElement(new Paragraph(transformedBody == null ? "" : transformedBody));
             mergedCell.addElement(new Paragraph(" "));
             mergedCell.addElement(attachmentTable);
             messageTable.addCell(mergedCell);

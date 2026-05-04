@@ -109,7 +109,16 @@ export interface CrossReferenceEntry {
   levelName: string | null;
 }
 
+export interface ArticleReferenceEntry {
+  articleId: Id;
+  articleName: string;
+  articleTitle: string;
+  articleExcerpt: string;
+  detailPath: string;
+}
+
 export interface CrossReferencesResponse {
   references: CrossReferenceEntry[];
   referencedBy: CrossReferenceEntry[];
+  articles: ArticleReferenceEntry[];
 }

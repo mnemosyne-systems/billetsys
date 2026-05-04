@@ -8,6 +8,7 @@
 
 package ai.mnemosyne_systems.service;
 
+import ai.mnemosyne_systems.model.Article;
 import ai.mnemosyne_systems.model.CrossReference;
 import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
@@ -26,12 +27,14 @@ import java.util.regex.Pattern;
 public class CrossReferenceService {
 
     public static final String TARGET_TYPE_TICKET = "ticket";
+    public static final String TARGET_TYPE_ARTICLE = "article";
 
-    private record ReferenceTypeConfig(Pattern pattern, String targetType, String displayPrefix) {
+    private record ReferenceTypeConfig(Pattern pattern, String targetType, String displayPrefix, String pathPrefix) {
     }
 
-    private final List<ReferenceTypeConfig> configs = List
-            .of(new ReferenceTypeConfig(Pattern.compile("#\\[(\\d+)]"), TARGET_TYPE_TICKET, "#"));
+    private final List<ReferenceTypeConfig> configs = List.of(
+            new ReferenceTypeConfig(Pattern.compile("#\\[(\\d+)]"), TARGET_TYPE_TICKET, "#", null),
+            new ReferenceTypeConfig(Pattern.compile("\\$\\[(\\d+)]"), TARGET_TYPE_ARTICLE, "$", "/articles/"));
 
     public void extractAndSaveReferences(Message message, Set<Long> accessibleTicketIds) {
         if (message == null || message.body == null || message.body.isBlank()) {
@@ -54,6 +57,11 @@ public class CrossReferenceService {
                         continue;
                     }
                     Ticket target = Ticket.findById(targetId);
+                    if (target == null) {
+                        continue;
+                    }
+                } else if (config.targetType.equals(TARGET_TYPE_ARTICLE)) {
+                    Article target = Article.findById(targetId);
                     if (target == null) {
                         continue;
                     }
@@ -112,6 +120,15 @@ public class CrossReferenceService {
                     if (target != null) {
                         String displayName = config.displayPrefix + target.name;
                         replacement = "[" + displayName + "](" + pathPrefix + targetId + ")";
+                    } else {
+                        replacement = matcher.group(0);
+                    }
+                } else if (config.targetType.equals(TARGET_TYPE_ARTICLE)) {
+                    Article article = Article.findById(targetId);
+                    if (article != null) {
+                        String displayName = article.title != null && !article.title.isBlank() ? article.title
+                                : config.displayPrefix + article.id;
+                        replacement = "[" + displayName + "](" + config.pathPrefix + article.id + ")";
                     } else {
                         replacement = matcher.group(0);
                     }
@@ -175,14 +192,97 @@ public class CrossReferenceService {
                                     : null));
         }
 
-        return new CrossReferencesResponse(references, referencedBy);
+        List<CrossReference> articleRefs = CrossReference.list("sourceTicket = ?1 and targetType = ?2", ticket,
+                TARGET_TYPE_ARTICLE);
+        List<ArticleReferenceEntry> articles = new ArrayList<>();
+        if (!articleRefs.isEmpty()) {
+            Set<Long> articleIds = new LinkedHashSet<>();
+            for (CrossReference ref : articleRefs) {
+                articleIds.add(ref.targetId);
+            }
+            List<Article> loadedArticles = Article.list("id in ?1", List.copyOf(articleIds));
+            Map<Long, Article> articleMap = new LinkedHashMap<>();
+            for (Article a : loadedArticles) {
+                articleMap.put(a.id, a);
+            }
+            for (CrossReference ref : articleRefs) {
+                Article a = articleMap.get(ref.targetId);
+                if (a != null) {
+                    articles.add(new ArticleReferenceEntry(a.id, String.valueOf(a.id), a.title, buildExcerpt(a.body),
+                            "/articles/" + a.id));
+                }
+            }
+            articles.sort((l, r) -> {
+                String lt = l.articleTitle() == null ? "" : l.articleTitle();
+                String rt = r.articleTitle() == null ? "" : r.articleTitle();
+                return lt.compareToIgnoreCase(rt);
+            });
+        }
+
+        return new CrossReferencesResponse(references, referencedBy, articles);
     }
 
     public record CrossReferenceEntry(Long ticketId, String ticketName, String ticketTitle, String detailPath,
             LocalDateTime createdAt, String status, String categoryName, String companyName, String levelName) {
     }
 
-    public record CrossReferencesResponse(List<CrossReferenceEntry> references,
-            List<CrossReferenceEntry> referencedBy) {
+    public static final int EXCERPT_MAX_LENGTH = 180;
+
+    public static String buildExcerpt(String body) {
+        if (body == null) {
+            return "";
+        }
+        String stripped = body.replaceAll("(?s)```.*?```", " ").replaceAll("`([^`]+)`", "$1")
+                .replaceAll("!\\[[^\\]]*]\\([^)]*\\)", " ").replaceAll("\\[([^\\]]+)]\\([^)]*\\)", "$1")
+                .replaceAll("[#>*_~|\\-]+", " ").replaceAll("\\s+", " ").trim();
+        if (stripped.length() <= EXCERPT_MAX_LENGTH) {
+            return stripped;
+        }
+        return stripped.substring(0, EXCERPT_MAX_LENGTH).trim() + "...";
+    }
+
+    public String transformBodyForPdf(String body, Map<Long, Ticket> ticketCache) {
+        if (body == null || body.isBlank()) {
+            return body;
+        }
+        String result = body;
+        for (ReferenceTypeConfig config : configs) {
+            Matcher matcher = config.pattern.matcher(result);
+            StringBuilder sb = new StringBuilder();
+            while (matcher.find()) {
+                long targetId = Long.parseLong(matcher.group(1));
+                String replacement;
+                if (config.targetType.equals(TARGET_TYPE_TICKET)) {
+                    Ticket target = ticketCache.get(targetId);
+                    if (target != null) {
+                        replacement = config.displayPrefix + target.name;
+                    } else {
+                        replacement = matcher.group(0);
+                    }
+                } else if (config.targetType.equals(TARGET_TYPE_ARTICLE)) {
+                    Article article = Article.findById(targetId);
+                    if (article != null) {
+                        replacement = article.title != null && !article.title.isBlank() ? article.title
+                                : config.displayPrefix + article.id;
+                    } else {
+                        replacement = matcher.group(0);
+                    }
+                } else {
+                    replacement = matcher.group(0);
+                }
+                matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+            }
+            matcher.appendTail(sb);
+            result = sb.toString();
+        }
+        return result;
+    }
+
+    public record ArticleReferenceEntry(Long articleId, String articleName, String articleTitle, String articleExcerpt,
+            String detailPath) {
+    }
+
+    public record CrossReferencesResponse(List<CrossReferenceEntry> references, List<CrossReferenceEntry> referencedBy,
+            List<ArticleReferenceEntry> articles) {
     }
 }

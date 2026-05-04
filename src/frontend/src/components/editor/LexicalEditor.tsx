@@ -64,6 +64,12 @@ import {
   $createTicketMentionNode,
 } from "./ticket-mention-node";
 import { TicketMentionsPlugin } from "./ticket-mentions-plugin";
+import {
+  ArticleMentionNode,
+  $isArticleMentionNode,
+  $createArticleMentionNode,
+} from "./article-mention-node";
+import { ArticleMentionsPlugin } from "./article-mentions-plugin";
 import { SpecialTextNode } from "./special-text-node";
 import { ActionsPlugin } from "./actions-plugin";
 import { ClearEditorActionPlugin } from "./clear-editor-plugin";
@@ -228,6 +234,23 @@ const TICKET_MENTION: TextMatchTransformer = {
   type: "text-match",
 };
 
+const ARTICLE_MENTION: TextMatchTransformer = {
+  dependencies: [ArticleMentionNode],
+  export: (node) => {
+    if (!$isArticleMentionNode(node)) return null;
+    return `$[${node.getArticleId()}]`;
+  },
+  importRegExp: /\$\[(\d+)\]/,
+  regExp: /\$\[(\d+)\]$/,
+  replace: (textNode, match) => {
+    const articleId = Number(match[1]);
+    const node = $createArticleMentionNode(articleId, String(articleId), "");
+    textNode.replace(node);
+  },
+  trigger: "]",
+  type: "text-match",
+};
+
 const ALL_TRANSFORMERS = [
   TABLE,
   HR,
@@ -235,6 +258,7 @@ const ALL_TRANSFORMERS = [
   EMOJI,
   TWEET,
   TICKET_MENTION,
+  ARTICLE_MENTION,
   CHECK_LIST,
   ...ELEMENT_TRANSFORMERS,
   ...MULTILINE_ELEMENT_TRANSFORMERS,
@@ -350,6 +374,7 @@ export default function LexicalEditor({
           EmojiNode,
           MentionNode,
           TicketMentionNode,
+          ArticleMentionNode,
           AutocompleteNode,
           SpecialTextNode,
           CodeNode,
@@ -434,6 +459,7 @@ export default function LexicalEditor({
                   excludeTicketId={excludeTicketId}
                 />
               )}
+              <ArticleMentionsPlugin />
               <AutoCompletePlugin />
               <ContextMenuPlugin />
               <SpecialTextPlugin />

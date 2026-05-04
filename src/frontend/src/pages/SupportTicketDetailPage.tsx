@@ -38,6 +38,7 @@ import type {
   NamedEntity,
   SupportTicketDetailRecord,
   VersionInfo,
+  ArticleReferenceEntry,
 } from "../types/domain";
 import type { SupportTicketDetailState } from "../types/forms";
 import { Button } from "../components/ui/button";
@@ -206,10 +207,12 @@ function TicketMessageCard({
   message,
   enableAttachmentPreviews,
   crossReferences,
+  articleReferences,
 }: {
   message: MessageReference;
   enableAttachmentPreviews: boolean;
   crossReferences?: CrossReferenceEntry[];
+  articleReferences?: ArticleReferenceEntry[];
 }) {
   const author = message.author;
   const authorLabel =
@@ -238,7 +241,10 @@ function TicketMessageCard({
 
       <div className="space-y-4 px-4 py-4">
         <div className="prose prose-sm max-w-none text-foreground dark:prose-invert [&>p:first-child]:mt-0 [&>p:last-child]:mb-0">
-          <MarkdownContent crossReferences={crossReferences}>
+          <MarkdownContent
+            crossReferences={crossReferences}
+            articleReferences={articleReferences}
+          >
             {message.body || ""}
           </MarkdownContent>
         </div>
@@ -321,6 +327,16 @@ export default function SupportTicketDetailPage({
       crossReferences.map((reference) => [reference.ticketId, reference]),
     ).values(),
   ).sort((left, right) => left.ticketName.localeCompare(right.ticketName));
+  const relatedArticles = Array.from(
+    new Map(
+      (refsState.data?.articles ?? []).map((reference) => [
+        reference.articleId,
+        reference,
+      ]),
+    ).values(),
+  ).sort((left, right) =>
+    (left.articleTitle ?? "").localeCompare(right.articleTitle ?? ""),
+  );
 
   useEffect(() => {
     if (!ticket) {
@@ -793,7 +809,36 @@ export default function SupportTicketDetailPage({
                           <div className="text-sm text-muted-foreground">-</div>
                         </Field>
                       )}
-                      <div className="hidden md:block" aria-hidden="true" />
+                      {relatedArticles.length > 0 ? (
+                        <Field>
+                          <FieldLabel>Articles</FieldLabel>
+                          <div className="border rounded-md overflow-hidden">
+                            <Table>
+                              <TableBody>
+                                {relatedArticles.map((ref) => (
+                                  <TableRow key={ref.articleId}>
+                                    <TableCell className="text-sm">
+                                      <a
+                                        href={ref.detailPath}
+                                        className="text-primary underline"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                      >
+                                        {ref.articleTitle}
+                                      </a>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </Field>
+                      ) : (
+                        <Field>
+                          <FieldLabel>Articles</FieldLabel>
+                          <div className="text-sm text-muted-foreground">-</div>
+                        </Field>
+                      )}
                     </>
                   );
                 })()}
@@ -846,6 +891,7 @@ export default function SupportTicketDetailPage({
                         message={message}
                         enableAttachmentPreviews={enableAttachmentPreviews}
                         crossReferences={crossReferences}
+                        articleReferences={relatedArticles}
                       />
                     ))}
                 </div>

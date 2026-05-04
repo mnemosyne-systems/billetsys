@@ -20,13 +20,18 @@ import rehypeHighlight from "rehype-highlight";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import type { CrossReferenceEntry } from "@/types/domain/tickets";
+import type {
+  CrossReferenceEntry,
+  ArticleReferenceEntry,
+} from "@/types/domain/tickets";
 import { TicketHoverPreview } from "@/components/tickets/TicketHoverPreview";
+import { ArticleHoverPreview } from "@/components/articles/ArticleHoverPreview";
 
 interface MarkdownContentProps {
   children?: ReactNode;
   className?: string;
   crossReferences?: CrossReferenceEntry[];
+  articleReferences?: ArticleReferenceEntry[];
 }
 
 const markdownLinkClassName =
@@ -91,6 +96,7 @@ function MarkdownCodeBlock({
 
 function buildLinkComponent(
   crossReferences?: CrossReferenceEntry[],
+  articleReferences?: ArticleReferenceEntry[],
 ): Components["a"] {
   function MarkdownLink({
     className,
@@ -116,6 +122,25 @@ function buildLinkComponent(
             >
               {children}
             </TicketHoverPreview>
+          );
+        }
+      }
+    }
+    if (articleReferences && href) {
+      const match = href.match(/\/articles\/(\d+)$/);
+      if (match) {
+        const articleId = Number(match[1]);
+        const ref = articleReferences.find((r) => r.articleId === articleId);
+        if (ref) {
+          return (
+            <ArticleHoverPreview
+              articleTitle={ref.articleTitle}
+              articleExcerpt={ref.articleExcerpt}
+              detailPath={ref.detailPath}
+              className={cn(markdownLinkClassName, className)}
+            >
+              {children}
+            </ArticleHoverPreview>
           );
         }
       }
@@ -322,6 +347,7 @@ export default function MarkdownContent({
   children,
   className,
   crossReferences,
+  articleReferences,
 }: MarkdownContentProps) {
   let content = typeof children === "string" ? children : "";
 
@@ -337,9 +363,16 @@ export default function MarkdownContent({
   const blocks = parseMarkdownBlocks(content);
 
   const components = useMemo(() => {
-    if (!crossReferences || crossReferences.length === 0) return undefined;
-    return { ...markdownComponents, a: buildLinkComponent(crossReferences) };
-  }, [crossReferences]);
+    if (
+      (!crossReferences || crossReferences.length === 0) &&
+      (!articleReferences || articleReferences.length === 0)
+    )
+      return undefined;
+    return {
+      ...markdownComponents,
+      a: buildLinkComponent(crossReferences, articleReferences),
+    };
+  }, [crossReferences, articleReferences]);
 
   return (
     <div className={cn("max-w-none text-sm text-foreground", className)}>
