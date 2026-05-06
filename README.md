@@ -1,4 +1,4 @@
-# billetsys: Modern Support Ticket solution
+# billetsys: Modern Support Ticket Solution
 
 <p align="center">
   <img src="doc/logo/logo-128.png" alt="billetsys logo" width="128" height="128">
@@ -10,9 +10,13 @@ navigate and get their work done quicker.
 ## Features
 
 * Support ticket system with 5 roles (User, Superuser, TAM, Support, Admin)
-* Transport Layer Security v1.3 (TLS) support
+* Ticket shortcuts
+* Ticket and article references
+* Branding
 * Email integration
 * Markdown editor
+* CSV import
+* Transport Layer Security v1.3 (TLS) support
 
 ## Technologies
 

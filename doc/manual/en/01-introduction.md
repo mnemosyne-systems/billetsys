@@ -8,6 +8,17 @@ The application is organized around the lifecycle of a ticket. A user can create
 
 ![Login page](images/login-page.png)
 
+## Features
+
+* Support ticket system with 5 roles (User, Superuser, TAM, Support, Admin)
+* Ticket shortcuts
+* Ticket and article references
+* Branding
+* Email integration
+* Markdown editor
+* CSV import
+* Transport Layer Security v1.3 (TLS) support
+
 ## Roles
 
 The interface is adapted for the main roles that participate in support work.
