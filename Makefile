@@ -18,8 +18,8 @@ frontend:
 	fi
 
 format: frontend
-	@npm run frontend:fix -q
-	@npm run frontend:check -q
+	@npm --prefix src/frontend run fix -q
+	@npm --prefix src/frontend run check -q
 
 clean:
 	@mvn clean

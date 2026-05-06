@@ -243,8 +243,8 @@ npm run check
 If you prefer to stay at the repository root, use:
 
 ```sh
-npm run frontend:fix
-npm run frontend:check
+npm --prefix src/frontend run fix
+npm --prefix src/frontend run check
 ```
 
 If you only need formatting without the ESLint auto-fix pass, run:
