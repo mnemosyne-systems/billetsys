@@ -41,6 +41,8 @@ Billetsys supports article creation and editing for the roles that contribute di
 
 Article editing is designed for practical support documentation. Content can be written in a structured text format and enriched with attachments when supporting files are needed.
 
+Each article title must be unique, so the knowledge base keeps one clear canonical entry per title.
+
 ## Knowledge workflow
 
 The article area works well as the next step after ticket resolution:

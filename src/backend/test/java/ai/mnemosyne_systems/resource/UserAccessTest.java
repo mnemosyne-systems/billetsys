@@ -278,17 +278,21 @@ class UserAccessTest extends AccessTestSupport {
     void reactArticlesApiReturnsArticleListAndDetail() {
         ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
         String cookie = login("support1", "support1");
-        Article article = ensureArticle("Runbook", "ops,prod", "## Seed article\n\nOperational notes");
+        ensureArticle("Zulu Runbook", "ops,prod", "## Zulu article\n\nOperational notes");
+        Article article = ensureArticle("Alpha Runbook", "ops,prod", "## Seed article\n\nOperational notes");
         Attachment attachment = ensureArticleAttachment(article, "runbook.txt", "Attachment body");
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/articles").then().statusCode(200)
                 .body("canCreate", Matchers.equalTo(true)).body("createPath", Matchers.equalTo("/articles/new"))
-                .body("items.title", Matchers.hasItem("Runbook"));
+                .body("items.title", Matchers.hasItems("Alpha Runbook", "Zulu Runbook"));
+        List<String> titles = RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/articles").then()
+                .statusCode(200).extract().jsonPath().getList("items.title");
+        Assertions.assertTrue(titles.indexOf("Alpha Runbook") < titles.indexOf("Zulu Runbook"));
 
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/articles/" + article.id).then()
-                .statusCode(200).body("title", Matchers.equalTo("Runbook")).body("tags", Matchers.equalTo("ops,prod"))
-                .body("body", Matchers.containsString("Seed article")).body("canEdit", Matchers.equalTo(true))
-                .body("canDelete", Matchers.equalTo(false))
+                .statusCode(200).body("title", Matchers.equalTo("Alpha Runbook"))
+                .body("tags", Matchers.equalTo("ops,prod")).body("body", Matchers.containsString("Seed article"))
+                .body("canEdit", Matchers.equalTo(true)).body("canDelete", Matchers.equalTo(false))
                 .body("editPath", Matchers.equalTo("/articles/" + article.id + "/edit"))
                 .body("attachments.name", Matchers.hasItem("runbook.txt"))
                 .body("attachments.downloadPath", Matchers.hasItem("/attachments/" + attachment.id + "/data"));

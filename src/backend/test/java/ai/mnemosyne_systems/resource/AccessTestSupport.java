@@ -390,17 +390,17 @@ abstract class AccessTestSupport {
 
     @Transactional
     Attachment ensureArticleAttachment(Article article, String name, String body) {
-        Attachment attachment = Attachment.find("article = ?1 and name = ?2", article, name).firstResult();
+        Article managedArticle = article == null || article.id == null ? article : Article.findById(article.id);
+        Attachment attachment = Attachment.find("article = ?1 and name = ?2", managedArticle, name).firstResult();
         if (attachment == null) {
             attachment = new Attachment();
-            attachment.article = article;
+            attachment.article = managedArticle;
             attachment.name = name;
         }
         attachment.mimeType = "text/plain";
         attachment.data = body.getBytes(StandardCharsets.UTF_8);
         if (attachment.id == null) {
             attachment.persist();
-            article.attachments.add(attachment);
         }
         return attachment;
     }

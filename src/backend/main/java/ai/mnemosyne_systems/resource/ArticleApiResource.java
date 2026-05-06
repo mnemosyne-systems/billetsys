@@ -39,7 +39,7 @@ public class ArticleApiResource {
     public ArticleListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
         User user = requireUser(auth);
         ArticleResource.ensureSampleArticle();
-        List<ArticleSummary> items = Article.<Article> list("order by id desc").stream()
+        List<ArticleSummary> items = Article.<Article> list("order by lower(title), id").stream()
                 .map(article -> new ArticleSummary(article.id, article.title, article.tags)).toList();
         return new ArticleListResponse(ArticleResource.canEdit(user), "/articles/new", items);
     }

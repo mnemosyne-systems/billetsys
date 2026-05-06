@@ -211,6 +211,10 @@ class SupportAccessTest extends AccessTestSupport {
                 .multiPart("body", "![pic](attachment://article.png)\n\n**Important**")
                 .multiPart("attachments", "article.png", "img".getBytes(StandardCharsets.UTF_8), "image/png")
                 .post("/articles").then().statusCode(303);
+        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie)
+                .contentType("multipart/form-data").multiPart("title", "  article one  ").multiPart("tags", "duplicate")
+                .multiPart("body", "Duplicate body").post("/articles").then().statusCode(400)
+                .body(Matchers.containsString("Article title already exists"));
 
         Article created = Article.find("title", "Article One").firstResult();
         Assertions.assertNotNull(created);
@@ -234,6 +238,10 @@ class SupportAccessTest extends AccessTestSupport {
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, adminCookie)
                 .get("/articles/" + seeded.id).then().statusCode(303)
                 .header("Location", Matchers.endsWith("/articles/" + seeded.id));
+        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, tamCookie)
+                .contentType("multipart/form-data").multiPart("title", "Runbook").multiPart("tags", "ops")
+                .multiPart("body", "Updated body").post("/articles/" + created.id).then().statusCode(400)
+                .body(Matchers.containsString("Article title already exists"));
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, adminCookie)
                 .post("/articles/" + seeded.id + "/delete").then().statusCode(303);
         Assertions.assertNull(refreshedArticle(seeded.id));

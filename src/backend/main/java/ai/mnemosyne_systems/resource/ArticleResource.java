@@ -33,6 +33,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
@@ -90,9 +91,9 @@ public class ArticleResource {
         String title = AttachmentHelper.readFormValue(input, "title");
         String tags = AttachmentHelper.readFormValue(input, "tags");
         String body = AttachmentHelper.readFormValue(input, "body");
-        validate(title, body);
+        String normalizedTitle = validate(title, body, null);
         Article article = new Article();
-        article.title = title.trim();
+        article.title = normalizedTitle;
         article.tags = tags == null ? null : tags.trim();
         article.body = body.trim();
         article.persist();
@@ -118,8 +119,8 @@ public class ArticleResource {
         String title = AttachmentHelper.readFormValue(input, "title");
         String tags = AttachmentHelper.readFormValue(input, "tags");
         String body = AttachmentHelper.readFormValue(input, "body");
-        validate(title, body);
-        article.title = title.trim();
+        String normalizedTitle = validate(title, body, article.id);
+        article.title = normalizedTitle;
         article.tags = tags == null ? null : tags.trim();
         article.body = body.trim();
         List<Attachment> attachments = storeAttachments(article,
@@ -170,13 +171,30 @@ public class ArticleResource {
         return updated;
     }
 
-    private void validate(String title, String body) {
+    private String validate(String title, String body, Long articleId) {
         if (title == null || title.isBlank()) {
-            throw new BadRequestException("Title is required");
+            throw badRequest("Title is required");
+        }
+        String normalizedTitle = title.trim();
+        if (titleExists(normalizedTitle, articleId)) {
+            throw badRequest("Article title already exists");
         }
         if (body == null || body.isBlank()) {
-            throw new BadRequestException("Body is required");
+            throw badRequest("Body is required");
         }
+        return normalizedTitle;
+    }
+
+    private boolean titleExists(String title, Long articleId) {
+        String normalizedTitle = title.toLowerCase(Locale.ROOT);
+        long count = articleId == null ? Article.count("lower(title) = ?1", normalizedTitle)
+                : Article.count("lower(title) = ?1 and id <> ?2", normalizedTitle, articleId);
+        return count > 0;
+    }
+
+    private BadRequestException badRequest(String message) {
+        return new BadRequestException(
+                Response.status(Response.Status.BAD_REQUEST).entity(message).type(MediaType.TEXT_PLAIN_TYPE).build());
     }
 
     static void ensureSampleArticle() {

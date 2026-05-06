@@ -51,6 +51,9 @@ export default function ArticleFormPage({ mode }: ArticleFormPageProps) {
   const isEdit = mode === "edit";
 
   const updateFormState = (field: keyof ArticleFormState, value: string) => {
+    if (saveState.error) {
+      setSaveState((current) => ({ ...current, error: "" }));
+    }
     setFormState((current) =>
       current ? { ...current, [field]: value } : current,
     );
@@ -137,6 +140,9 @@ export default function ArticleFormPage({ mode }: ArticleFormPageProps) {
                       className="bg-background shadow-sm"
                       required
                     />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Article titles must be unique.
+                    </p>
                   </Field>
                   <Field>
                     <FieldLabel className="text-muted-foreground">
@@ -173,6 +179,12 @@ export default function ArticleFormPage({ mode }: ArticleFormPageProps) {
                     />
                   </div>
                 </div>
+
+                {saveState.error && (
+                  <p className="text-sm font-medium text-destructive">
+                    {saveState.error}
+                  </p>
+                )}
 
                 <div className="flex items-center justify-between py-6 mt-4">
                   <div>

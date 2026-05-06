@@ -18,11 +18,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "articles")
+@Table(name = "articles", uniqueConstraints = @UniqueConstraint(name = "uk_articles_title", columnNames = "title"))
 public class Article extends PanacheEntityBase {
 
     @Id
