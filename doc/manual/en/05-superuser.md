@@ -4,7 +4,7 @@
 
 The **Superuser** role is a customer-side coordination role with broader access than a normal user.
 
-![Superuser workspace](images/05-superuser.png)
+![Superuser workspace](images/05-superuser.png){ width=100% }
 
 ## Main purpose
 

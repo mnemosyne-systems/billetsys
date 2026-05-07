@@ -4,7 +4,7 @@
 
 The **Navigation** structure in billetsys helps users move through the application according to their role and scope of responsibility.
 
-![Role-based navigation view](images/24-navigation.png)
+![Role-based navigation view](images/24-navigation.png){ width=100% }
 
 ## Purpose
 

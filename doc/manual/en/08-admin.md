@@ -4,7 +4,7 @@
 
 The **Admin** role is responsible for maintaining the application and the data structures that the rest of billetsys depends on.
 
-![Admin home](images/08-admin.png)
+![Admin home](images/08-admin.png){ width=100% }
 
 ## Main purpose
 

@@ -4,7 +4,7 @@
 
 The **Versions** feature gives billetsys a way to connect tickets to product or release context.
 
-![Entitlement version view](images/20-versions.png)
+![Entitlement version view](images/20-versions.png){ width=100% }
 
 ## Purpose
 

@@ -4,7 +4,7 @@
 
 The **Email** functionality in billetsys connects ticket activity with outgoing notifications, direct incoming email, and mailbox-based ticket updates.
 
-![Ticket conversation related to email flow](images/14-email.png)
+![Ticket conversation related to email flow](images/14-email.png){ width=100% }
 
 ## Purpose
 

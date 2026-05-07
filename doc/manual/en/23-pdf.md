@@ -4,7 +4,7 @@
 
 The **PDF** functionality in billetsys makes it possible to turn ticket and report information into portable documents.
 
-![Report export view](images/23-pdf.png)
+![Report export view](images/23-pdf.png){ width=100% }
 
 ## Purpose
 

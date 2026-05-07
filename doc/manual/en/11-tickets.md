@@ -4,7 +4,7 @@
 
 The **Ticket** is the central object in billetsys. It represents a support case from the first report through investigation, communication, and final resolution.
 
-![Open tickets view](images/11-tickets.png)
+![Open tickets view](images/11-tickets.png){ width=100% }
 
 ## Purpose
 
@@ -68,7 +68,8 @@ For roles that use the ticket queues, these keyboard shortcuts are available fro
 * `Ctrl+O` opens **Open tickets**
 * `Ctrl+C` opens **Closed tickets**
 * `Ctrl++` opens **Create ticket**
-* `Ctrl+1` through `Ctrl+9` open the first through ninth ticket in the currently visible list order, and `Ctrl+0` opens the tenth ticket
+
+When a ticket queue view is open, `Ctrl+1` through `Ctrl+9` open the first through ninth ticket in the currently visible list order, and `Ctrl+0` opens the tenth ticket.
 
 ## Ticket search
 

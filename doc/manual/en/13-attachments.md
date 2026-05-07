@@ -4,7 +4,7 @@
 
 The **Attachments** feature in billetsys allows files to travel together with the ticket conversation and related knowledge content.
 
-![Attachment upload area](images/13-attachments.png)
+![Attachment upload area](images/13-attachments.png){ width=100% }
 
 ## Purpose
 

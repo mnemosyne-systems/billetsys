@@ -4,7 +4,7 @@
 
 The **Users** feature manages the individual accounts that access billetsys and participate in support workflows.
 
-![Users administration](images/16-users.png)
+![Users administration](images/16-users.png){ width=100% }
 
 ## Purpose
 

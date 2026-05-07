@@ -4,7 +4,7 @@
 
 The **Security** model in billetsys controls who can sign in, what they can access, and how role-based boundaries are enforced throughout the application.
 
-![Password management page](images/22-security.png)
+![Password management page](images/22-security.png){ width=100% }
 
 ## Purpose
 

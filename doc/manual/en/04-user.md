@@ -4,7 +4,7 @@
 
 The **User** role is intended for the people who report issues and follow their own support cases.
 
-![User home view](images/04-user.png)
+![User home view](images/04-user.png){ width=100% }
 
 ## Main purpose
 

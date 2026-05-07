@@ -4,7 +4,7 @@
 
 The **TAM** role represents the Technical Account Manager.
 
-![TAM workspace](images/06-tam.png)
+![TAM workspace](images/06-tam.png){ width=100% }
 
 ## Main purpose
 

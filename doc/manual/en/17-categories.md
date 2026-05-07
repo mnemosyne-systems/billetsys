@@ -4,7 +4,7 @@
 
 The **Categories** feature helps billetsys classify tickets by the kind of issue they represent.
 
-![Categories administration](images/17-categories.png)
+![Categories administration](images/17-categories.png){ width=100% }
 
 ## Purpose
 
@@ -46,7 +46,7 @@ In addition to a name, categories can carry richer descriptive context. This mak
 
 That context can help administrators keep the classification system understandable as the support operation grows.
 
-Categories do not include attachments. If supporting files are needed, they belong in ticket messages or articles rather than in the category definition itself.
+Categories can include attachments. This makes it possible to keep supporting examples, templates, or reference files directly on the category definition.
 
 ## Role perspective
 

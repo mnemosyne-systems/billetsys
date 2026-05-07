@@ -4,7 +4,7 @@
 
 This chapter describes how to prepare a local development setup for [**billetsys**](https://github.com/mnemosyne-systems/billetsys) using PostgreSQL and how to start the application in development mode.
 
-![Application after startup](images/02-gettingstarted.png)
+![Application after startup](images/02-gettingstarted.png){ width=100% }
 
 ## Requirements
 
@@ -46,7 +46,7 @@ cd billetsys
 
 ## Start support services
 
-Billetsys uses a local CAP service for CAPTCHA protection on the login page. Start the support services before starting the application:
+Billetsys uses a local CAP service for CAPTCHA protection on the password reset flow. Start the support services before starting the application:
 
 ```sh
 make platform

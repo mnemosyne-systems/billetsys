@@ -4,7 +4,7 @@
 
 The **Entitlements** feature represents the service relationship that connects a company to the support offering it has in billetsys.
 
-![Entitlements administration](images/18-entitlements.png)
+![Entitlements administration](images/18-entitlements.png){ width=100% }
 
 ## Purpose
 

@@ -4,7 +4,7 @@
 
 The **Profile** feature allows each user to maintain their own account details inside billetsys.
 
-![Profile page](images/21-profile.png)
+![Profile page](images/21-profile.png){ width=100% }
 
 ## Purpose
 

@@ -13,5 +13,3 @@ toc-own-page: true
 listings-disable-line-numbers: true
 table-use-row-colors: true
 ...
-
-![billetsys logo](images/logo-128.png)

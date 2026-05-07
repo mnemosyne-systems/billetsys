@@ -4,7 +4,7 @@
 
 The **Companies** feature organizes the customer and organizational structure that tickets belong to.
 
-![Companies administration](images/15-companies.png)
+![Companies administration](images/15-companies.png){ width=100% }
 
 ## Purpose
 

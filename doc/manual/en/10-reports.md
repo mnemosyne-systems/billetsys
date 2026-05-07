@@ -4,7 +4,7 @@
 
 The **Reports** area provides analytical views of ticket activity so that teams can understand workload, trends, and service behavior over time.
 
-![Reports dashboard](images/10-reports.png)
+![Reports dashboard](images/10-reports.png){ width=100% }
 
 ## Purpose
 

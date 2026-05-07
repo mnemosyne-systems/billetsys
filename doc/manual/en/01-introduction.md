@@ -6,7 +6,7 @@
 
 The application is organized around the lifecycle of a ticket. A user can create a ticket, describe the problem, add follow-up messages, and attach files. Support staff can assign ownership, track progress, update status, and connect the ticket to product versions, entitlements, categories, and external issue trackers.
 
-![Login page](images/login-page.png)
+![Login page](images/login-page.png){ width=100% }
 
 ## Features
 

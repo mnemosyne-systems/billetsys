@@ -4,7 +4,7 @@
 
 The **Levels** feature defines support tiers and service expectations that can be used throughout billetsys.
 
-![Levels administration](images/19-levels.png)
+![Levels administration](images/19-levels.png){ width=100% }
 
 ## Purpose
 

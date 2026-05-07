@@ -4,7 +4,7 @@
 
 The **Support** role is used by the people who actively process tickets and communicate with customers during investigation and resolution.
 
-![Support workspace](images/07-support.png)
+![Support workspace](images/07-support.png){ width=100% }
 
 ## Main purpose
 

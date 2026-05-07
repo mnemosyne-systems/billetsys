@@ -4,7 +4,7 @@
 
 The **Messages** area of billetsys captures the conversation that happens around a ticket.
 
-![Ticket message thread](images/12-messages.png)
+![Ticket message thread](images/12-messages.png){ width=100% }
 
 ## Purpose
 

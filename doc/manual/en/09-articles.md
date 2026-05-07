@@ -4,7 +4,7 @@
 
 The **Articles** area in billetsys provides a shared knowledge base for solutions, guides, and reusable support information.
 
-![Articles page](images/09-articles.png)
+![Articles page](images/09-articles.png){ width=100% }
 
 ## Purpose
 
