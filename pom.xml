@@ -3,7 +3,7 @@
 
     <groupId>ai.mnemosyne-systems</groupId>
     <artifactId>billetsys</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.0-SNAPSHOT</version>
     <packaging>quarkus</packaging>
 
     <developers>
@@ -27,7 +27,7 @@
         <url>https://github.com/mnemosyne-systems/billetsys</url>
         <connection>scm:git:git@github.com:mnemosyne-systems/billetsys.git</connection>
         <developerConnection>scm:git:git@github.com:mnemosyne-systems/billetsys.git</developerConnection>
-        <tag>billetsys-0.2.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>
