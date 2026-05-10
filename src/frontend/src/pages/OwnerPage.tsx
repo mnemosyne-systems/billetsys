@@ -121,14 +121,16 @@ function BrandingColorTable({
           <tr>
             {BRANDING_COLOR_COLUMNS.map((column) => (
               <td key={column.key} className="px-4 py-4">
-                <div
-                  aria-label={column.label}
-                  className="h-10 w-full rounded-md border border-border"
-                  style={{
-                    backgroundColor:
-                      colors[column.key] || DEFAULT_INSTALLATION_COLOR,
-                  }}
-                />
+                <div className="flex justify-start">
+                  <div
+                    aria-label={column.label}
+                    className="h-11 w-24 rounded-md border border-border"
+                    style={{
+                      backgroundColor:
+                        colors[column.key] || DEFAULT_INSTALLATION_COLOR,
+                    }}
+                  />
+                </div>
               </td>
             ))}
           </tr>
@@ -164,7 +166,7 @@ function BrandingColorPickerTable({
           <tr>
             {BRANDING_COLOR_COLUMNS.map((column) => (
               <td key={column.key} className="px-4 py-4">
-                <div className="flex justify-center">
+                <div className="flex justify-start">
                   <Input
                     type="color"
                     value={colors[column.key] || DEFAULT_INSTALLATION_COLOR}
