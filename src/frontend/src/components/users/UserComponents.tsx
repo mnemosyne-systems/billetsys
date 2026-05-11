@@ -45,6 +45,9 @@ export function UserHoverLink({
     return children;
   }
 
+  const tooltipName =
+    user.displayName || user.fullName || user.name || user.username || "";
+
   const updateTooltip = (event: MouseEvent<HTMLAnchorElement>) => {
     const pad = 12;
     const width = 240;
@@ -104,10 +107,7 @@ export function UserHoverLink({
               </div>
               <div className="flex flex-col min-w-0">
                 <div className="text-sm font-semibold truncate">
-                  {user.username || ""}
-                </div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {user.fullName || ""}
+                  {tooltipName}
                 </div>
               </div>
             </div>
