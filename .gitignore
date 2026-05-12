@@ -10,3 +10,7 @@ src/backend/main/resources/META-INF/resources/app/
 .m2/
 tmp/
 .env
+
+# keycloak secrets
+keycloak/.env-keycloak
+keycloak/keycloak-realm.json

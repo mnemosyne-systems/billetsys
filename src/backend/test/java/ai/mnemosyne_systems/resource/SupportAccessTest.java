@@ -23,8 +23,12 @@ import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.service.MailboxPollingService;
 import ai.mnemosyne_systems.service.TicketEmailService;
+// [REMOVE] import ai.mnemosyne_systems.util.AuthHelper; -- AUTH_COOKIE no longer needed
+//   NOTE: AuthHelper.INACTIVITY_TIMEOUT_SECONDS and WARNING_LEAD_SECONDS are still
+//         referenced below as installation config constants (not auth); replace with
+//         their literal values or a shared constant if AuthHelper is fully removed.
 import ai.mnemosyne_systems.util.AuthHelper;
-import io.quarkus.elytron.security.common.BcryptUtil;
+// [REMOVE] import io.quarkus.elytron.security.common.BcryptUtil; -- Keycloak owns passwords
 import io.quarkus.hibernate.orm.panache.Panache;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.MockMailbox;
@@ -46,33 +50,38 @@ import java.util.Properties;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+// [ADD] Keycloak JWT test security imports replacing cookie-based auth
+import io.quarkus.test.security.TestSecurity;
+import io.quarkus.test.security.jwt.Claim;
+import io.quarkus.test.security.jwt.JwtSecurity;
 
 @QuarkusTest
 class SupportAccessTest extends AccessTestSupport {
 
     @Test
+    @TestSecurity(user = "support1", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "support1@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "support") })
     void supportCanAccessSupportUsersMenu() {
-        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
-        ensureUser("support2", "support2@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support2");
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT);
+        ensureUser("support2", "support2@mnemosyne-systems.ai", User.TYPE_SUPPORT);
         ensureDefaultCategories();
         Long companyId = ensureCompany("Support Co");
         ensureCompanyUsers(companyId, "tam1@mnemosyne-systems.ai");
         ai.mnemosyne_systems.model.Ticket supportTicket = ensureTicket(companyId);
         ensureMessage(supportTicket, "Sample ticket created.");
         String supportTicketName = supportTicket == null ? "" : supportTicket.name;
-        String cookie = login("support1", "support1");
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .get("/support/users/" + companyId).then().statusCode(303)
+        RestAssured.given().redirects().follow(false).get("/support/users/" + companyId).then().statusCode(303)
                 .header("Location", Matchers.endsWith("/support/users?companyId=" + companyId));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("companyId", companyId)
-                .get("/api/support/users").then().statusCode(200).body("title", Matchers.equalTo("Users"))
+        RestAssured.given().queryParam("companyId", companyId).get("/api/support/users").then().statusCode(200)
+                .body("title", Matchers.equalTo("Users"))
                 .body("selectedCompanyId", Matchers.equalTo(companyId.intValue()))
                 .body("createPath", Matchers.equalTo("/support/users/new?companyId=" + companyId))
                 .body("items.username", Matchers.hasItem("tam1"));
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie).get("/support").then()
-                .statusCode(303).header("Location", Matchers.endsWith("/support/tickets"));
+        RestAssured.given().redirects().follow(false).get("/support").then().statusCode(303).header("Location",
+                Matchers.endsWith("/support/tickets"));
         ai.mnemosyne_systems.model.User supportUser = ai.mnemosyne_systems.model.User
                 .find("email", "support1@mnemosyne-systems.ai").firstResult();
         int assignedCount = ai.mnemosyne_systems.model.Ticket.find(
@@ -80,28 +89,25 @@ class SupportAccessTest extends AccessTestSupport {
                 supportUser).list().size();
         int openCount = ai.mnemosyne_systems.model.Ticket
                 .find("select distinct t from Ticket t where t.supportUsers is empty").list().size();
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("pageSize", 100)
-                .get("/api/support/tickets").then().statusCode(200).body("title", Matchers.equalTo("Tickets"))
-                .body("assignedCount", Matchers.equalTo(assignedCount)).body("openCount", Matchers.equalTo(openCount))
-                .body("items.name", Matchers.hasItem(supportTicketName))
+        RestAssured.given().queryParam("pageSize", 100).get("/api/support/tickets").then().statusCode(200)
+                .body("title", Matchers.equalTo("Tickets")).body("assignedCount", Matchers.equalTo(assignedCount))
+                .body("openCount", Matchers.equalTo(openCount)).body("items.name", Matchers.hasItem(supportTicketName))
                 .body("items.status", Matchers.hasItem("Assigned"))
                 .body("items.supportUser.username", Matchers.hasItem("support1"));
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie).get("/support/open").then()
-                .statusCode(303).header("Location", Matchers.endsWith("/support/tickets/open"));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("view", "open")
-                .get("/api/support/tickets").then().statusCode(200).body("title", Matchers.equalTo("Open tickets"))
+        RestAssured.given().redirects().follow(false).get("/support/open").then().statusCode(303).header("Location",
+                Matchers.endsWith("/support/tickets/open"));
+        RestAssured.given().queryParam("view", "open").get("/api/support/tickets").then().statusCode(200)
+                .body("title", Matchers.equalTo("Open tickets"))
                 .body("items.name", Matchers.hasItems("A-00002", "A-00003"));
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie).get("/support/closed")
-                .then().statusCode(303).header("Location", Matchers.endsWith("/support/tickets/closed"));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("view", "closed")
-                .get("/api/support/tickets").then().statusCode(200).body("title", Matchers.equalTo("Closed tickets"))
-                .body("items.name", Matchers.hasItem("A-00004"));
+        RestAssured.given().redirects().follow(false).get("/support/closed").then().statusCode(303).header("Location",
+                Matchers.endsWith("/support/tickets/closed"));
+        RestAssured.given().queryParam("view", "closed").get("/api/support/tickets").then().statusCode(200)
+                .body("title", Matchers.equalTo("Closed tickets")).body("items.name", Matchers.hasItem("A-00004"));
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .get("/support/tickets/create").then().statusCode(303)
+        RestAssured.given().redirects().follow(false).get("/support/tickets/create").then().statusCode(303)
                 .header("Location", Matchers.endsWith("/support/tickets/new"));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/support/tickets/bootstrap").then()
-                .statusCode(200).body("submitPath", Matchers.equalTo("/support/tickets"))
+        RestAssured.given().get("/api/support/tickets/bootstrap").then().statusCode(200)
+                .body("submitPath", Matchers.equalTo("/support/tickets"))
                 .body("categories.name", Matchers.hasItem("Question"))
                 .body("companyEntitlements.size()", Matchers.greaterThanOrEqualTo(1))
                 .body("ticketName", Matchers.not(Matchers.isEmptyOrNullString()));
@@ -112,8 +118,7 @@ class SupportAccessTest extends AccessTestSupport {
                 .find("entitlement = ?1 order by date asc, id asc", supportCreateEntitlement.entitlement).firstResult();
         Assertions.assertNotNull(supportCreateVersion);
         String supportCreateMessage = "Support create redirect coverage";
-        String supportCreateRedirect = RestAssured.given().redirects().follow(false)
-                .cookie(AuthHelper.AUTH_COOKIE, cookie).multiPart("status", "Open")
+        String supportCreateRedirect = RestAssured.given().redirects().follow(false).multiPart("status", "Open")
                 .multiPart("title", "Support create redirect title").multiPart("message", supportCreateMessage)
                 .multiPart("companyId", companyId).multiPart("companyEntitlementId", supportCreateEntitlement.id)
                 .multiPart("categoryId", Category.findDefault().id)
@@ -128,92 +133,107 @@ class SupportAccessTest extends AccessTestSupport {
         Assertions.assertTrue(supportCreateRedirect.endsWith("/support/tickets/" + createdSupportTicket.id));
 
         Long ticketId = supportTicket == null ? null : supportTicket.id;
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .get("/tickets/" + ticketId + "/edit").then().statusCode(303)
+        RestAssured.given().redirects().follow(false).get("/tickets/" + ticketId + "/edit").then().statusCode(303)
                 .header("Location", Matchers.endsWith("/tickets/" + ticketId + "/edit"));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/ticket-workbench/" + ticketId).then()
-                .statusCode(200).body("entitlements.name", Matchers.hasItem(Matchers.containsString("Starter")))
+        RestAssured.given().get("/api/ticket-workbench/" + ticketId).then().statusCode(200)
+                .body("entitlements.name", Matchers.hasItem(Matchers.containsString("Starter")))
                 .body("messages.body", Matchers.hasItem("Sample ticket created."));
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie).get("/tickets/1/edit")
-                .then().statusCode(303).header("Location", Matchers.endsWith("/tickets/1/edit"));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/ticket-workbench/1").then().statusCode(200)
-                .body("ticket.externalIssueLink",
-                        Matchers.equalTo("https://github.com/mnemosyne-systems/billetsys/issues/6"));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .queryParam("url", "https://github.com/mnemosyne-systems/billetsys/issues/6")
+        RestAssured.given().redirects().follow(false).get("/tickets/1/edit").then().statusCode(303).header("Location",
+                Matchers.endsWith("/tickets/1/edit"));
+        RestAssured.given().get("/api/ticket-workbench/1").then().statusCode(200).body("ticket.externalIssueLink",
+                Matchers.equalTo("https://github.com/mnemosyne-systems/billetsys/issues/6"));
+        RestAssured.given().queryParam("url", "https://github.com/mnemosyne-systems/billetsys/issues/6")
                 .get("/tickets/external-preview").then().statusCode(200).body(Matchers
                         .containsString("<title>https://github.com/mnemosyne-systems/billetsys/issues/6</title>"));
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .get("/support/tickets/" + ticketId).then().statusCode(303)
+        RestAssured.given().redirects().follow(false).get("/support/tickets/" + ticketId).then().statusCode(303)
                 .header("Location", Matchers.endsWith("/support/tickets/" + ticketId));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/support/tickets/" + ticketId).then()
-                .statusCode(200).body("messages.body", Matchers.hasItem("Sample ticket created."))
+        RestAssured.given().get("/api/support/tickets/" + ticketId).then().statusCode(200)
+                .body("messages.body", Matchers.hasItem("Sample ticket created."))
                 .body("supportUsers.username", Matchers.hasItem("support1"))
                 .body("tamUsers.username", Matchers.hasItem("tam1")).body("companyName", Matchers.equalTo("Support Co"))
                 .body("entitlementName", Matchers.not(Matchers.isEmptyOrNullString()))
                 .body("levelName", Matchers.equalTo("Normal")).body("categoryName", Matchers.nullValue())
                 .body("statusOptions", Matchers.hasItems("Open", "Assigned", "In Progress", "Resolved", "Closed"));
         ai.mnemosyne_systems.model.Ticket unassignedTicket = ensureUnassignedOpenTicket(companyId);
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .multiPart("body", "Auto assign on support reply")
+        RestAssured.given().redirects().follow(false).multiPart("body", "Auto assign on support reply")
                 .post("/support/tickets/" + unassignedTicket.id + "/messages").then().statusCode(303);
         Ticket autoAssignedTicket = refreshedTicket(unassignedTicket.id);
         Assertions.assertEquals("Assigned", autoAssignedTicket.status);
         Assertions.assertTrue(ticketHasSupportUser(unassignedTicket.id, supportUser.id));
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .contentType(ContentType.URLENC).formParam("title", supportTicket.displayTitle())
-                .formParam("status", "Assigned").formParam("companyId", supportTicket.company.id)
+        RestAssured.given().redirects().follow(false).contentType(ContentType.URLENC)
+                .formParam("title", supportTicket.displayTitle()).formParam("status", "Assigned")
+                .formParam("companyId", supportTicket.company.id)
                 .formParam("companyEntitlementId", supportTicket.companyEntitlement.id)
                 .formParam("affectsVersionId", ensureVersion(supportTicket.companyEntitlement.entitlement, "1.0.0").id)
                 .post("/support/tickets/" + ticketId).then().statusCode(303);
         Ticket updatedSupportTicket = refreshedTicket(ticketId);
         Assertions.assertEquals("Assigned", updatedSupportTicket.status);
         Assertions.assertTrue(ticketHasSupportUser(ticketId, supportUser.id));
-        String userCookie = login("user", "user");
-        String tamCookie = login("tam1", "tam1");
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, userCookie)
-                .get("/tickets/" + ticketId).then().statusCode(303)
-                .header("Location", Matchers.endsWith("/user/tickets/" + ticketId));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, userCookie).get("/api/user/tickets/" + ticketId).then()
-                .statusCode(200).body("displayStatus", Matchers.equalTo("Assigned"));
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, tamCookie)
-                .get("/tickets/" + ticketId).then().statusCode(303)
-                .header("Location", Matchers.endsWith("/user/tickets/" + ticketId));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, tamCookie).get("/api/user/tickets/" + ticketId).then()
-                .statusCode(200).body("displayStatus", Matchers.equalTo("Assigned"));
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie).get("/profile").then()
-                .statusCode(303).header("Location", Matchers.endsWith("/profile"));
-
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie).get("/profile/password")
-                .then().statusCode(303).header("Location", Matchers.endsWith("/profile/password"));
+        RestAssured.given().redirects().follow(false).get("/profile").then().statusCode(303).header("Location",
+                Matchers.endsWith("/profile"));
+        RestAssured.given().redirects().follow(false).get("/profile/password").then().statusCode(303).header("Location",
+                Matchers.endsWith("/profile/password"));
     }
 
     @Test
-    void articlesRespectRolePermissions() {
-        ensureUser("admin", "admin@mnemosyne-systems.ai", User.TYPE_ADMIN, "admin");
-        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
-        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
-        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
-        Article seeded = ensureArticle("Runbook", "ops,prod", "Seed article");
-        String supportCookie = login("support1", "support1");
-        String tamCookie = login("tam1", "tam1");
-        String userCookie = login("user", "user");
-        String adminCookie = login("admin", "admin");
+    @TestSecurity(user = "user", roles = "user")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "user@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "user") })
+    void userTicketRedirectWorksForUserRole() {
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT);
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM);
+        Long companyId = ensureCompany("Support Co User View");
+        ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai", "tam1@mnemosyne-systems.ai");
+        Ticket ticket = ensureTicket(companyId);
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie).get("/articles")
-                .then().statusCode(303).header("Location", Matchers.endsWith("/articles"));
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie)
-                .get("/articles/create").then().statusCode(303).header("Location", Matchers.endsWith("/articles/new"));
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie)
-                .contentType("multipart/form-data").multiPart("title", "Article One").multiPart("tags", "guide")
+        RestAssured.given().redirects().follow(false).get("/tickets/" + ticket.id).then().statusCode(303)
+                .header("Location", Matchers.endsWith("/user/tickets/" + ticket.id));
+        RestAssured.given().get("/api/user/tickets/" + ticket.id).then().statusCode(200).body("displayStatus",
+                Matchers.equalTo("Assigned"));
+    }
+
+    @Test
+    @TestSecurity(user = "tam1", roles = "tam")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "tam1@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "tam") })
+    void userTicketRedirectWorksForTamRole() {
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT);
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM);
+        Long companyId = ensureCompany("Support Co TAM View");
+        ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai", "tam1@mnemosyne-systems.ai");
+        Ticket ticket = ensureTicket(companyId);
+
+        RestAssured.given().redirects().follow(false).get("/tickets/" + ticket.id).then().statusCode(303)
+                .header("Location", Matchers.endsWith("/user/tickets/" + ticket.id));
+        RestAssured.given().get("/api/user/tickets/" + ticket.id).then().statusCode(200).body("displayStatus",
+                Matchers.equalTo("Assigned"));
+    }
+
+    @Test
+    @TestSecurity(user = "support1", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "support1@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "support") })
+    void supportCanCreateAndViewArticles() {
+        // [CHANGE] ensureUser calls — removed password argument
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT);
+        Article seeded = ensureArticle("Runbook", "ops,prod", "Seed article");
+
+        RestAssured.given().redirects().follow(false).get("/articles").then().statusCode(303).header("Location",
+                Matchers.endsWith("/articles"));
+        RestAssured.given().redirects().follow(false).get("/articles/create").then().statusCode(303).header("Location",
+                Matchers.endsWith("/articles/new"));
+        RestAssured.given().redirects().follow(false).contentType("multipart/form-data")
+                .multiPart("title", "Article One").multiPart("tags", "guide")
                 .multiPart("body", "![pic](attachment://article.png)\n\n**Important**")
                 .multiPart("attachments", "article.png", "img".getBytes(StandardCharsets.UTF_8), "image/png")
                 .post("/articles").then().statusCode(303);
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie)
-                .contentType("multipart/form-data").multiPart("title", "  article one  ").multiPart("tags", "duplicate")
+        RestAssured.given().redirects().follow(false).contentType("multipart/form-data")
+                .multiPart("title", "  article one  ").multiPart("tags", "duplicate")
                 .multiPart("body", "Duplicate body").post("/articles").then().statusCode(400)
                 .body(Matchers.containsString("Article title already exists"));
 
@@ -221,57 +241,88 @@ class SupportAccessTest extends AccessTestSupport {
         Assertions.assertNotNull(created);
         Assertions.assertTrue(created.body.contains("/attachments/"));
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, tamCookie).get("/articles/create")
-                .then().statusCode(303).header("Location", Matchers.endsWith("/articles/new"));
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, userCookie)
-                .get("/articles/" + created.id).then().statusCode(303)
+        RestAssured.given().redirects().follow(false).get("/articles/" + created.id).then().statusCode(303)
                 .header("Location", Matchers.endsWith("/articles/" + created.id));
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie)
-                .get("/articles/" + created.id).then().statusCode(303)
-                .header("Location", Matchers.endsWith("/articles/" + created.id));
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, userCookie).get("/articles/create")
-                .then().statusCode(303);
+    }
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, adminCookie).get("/articles")
-                .then().statusCode(303).header("Location", Matchers.endsWith("/articles"));
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, adminCookie)
-                .get("/articles/create").then().statusCode(303);
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, adminCookie)
-                .get("/articles/" + seeded.id).then().statusCode(303)
-                .header("Location", Matchers.endsWith("/articles/" + seeded.id));
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, tamCookie)
-                .contentType("multipart/form-data").multiPart("title", "Runbook").multiPart("tags", "ops")
-                .multiPart("body", "Updated body").post("/articles/" + created.id).then().statusCode(400)
+    @Test
+    @TestSecurity(user = "tam1", roles = "tam")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "tam1@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "tam") })
+    void tamCanCreateAndViewArticles() {
+        // [CHANGE] ensureUser calls — removed password argument
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM);
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT);
+        Article seeded = ensureArticle("Runbook TAM", "ops", "Seed article");
+
+        RestAssured.given().redirects().follow(false).get("/articles/create").then().statusCode(303).header("Location",
+                Matchers.endsWith("/articles/new"));
+
+        // TAM can also update an existing article; duplicate title check applies
+        Article existing = ensureArticle("Article One TAM", "guide", "body");
+        RestAssured.given().redirects().follow(false).contentType("multipart/form-data")
+                .multiPart("title", "Runbook TAM").multiPart("tags", "ops").multiPart("body", "Updated body")
+                .post("/articles/" + existing.id).then().statusCode(400)
                 .body(Matchers.containsString("Article title already exists"));
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, adminCookie)
-                .post("/articles/" + seeded.id + "/delete").then().statusCode(303);
+    }
+
+    @Test
+    @TestSecurity(user = "user", roles = "user")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "user@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "user") })
+    void userCanViewButNotCreateArticles() {
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
+        Article created = ensureArticle("Article For User", "guide", "body");
+
+        RestAssured.given().redirects().follow(false).get("/articles/" + created.id).then().statusCode(303)
+                .header("Location", Matchers.endsWith("/articles/" + created.id));
+
+        RestAssured.given().redirects().follow(false).get("/articles/create").then().statusCode(303);
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = "admin")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "admin@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "admin") })
+    void adminCanViewAndDeleteArticles() {
+        ensureUser("admin", "admin@mnemosyne-systems.ai", User.TYPE_ADMIN);
+        Article seeded = ensureArticle("Runbook Admin", "ops,prod", "Seed article");
+
+        RestAssured.given().redirects().follow(false).get("/articles").then().statusCode(303).header("Location",
+                Matchers.endsWith("/articles"));
+        RestAssured.given().redirects().follow(false).get("/articles/create").then().statusCode(303);
+        RestAssured.given().redirects().follow(false).get("/articles/" + seeded.id).then().statusCode(303)
+                .header("Location", Matchers.endsWith("/articles/" + seeded.id));
+        RestAssured.given().redirects().follow(false).post("/articles/" + seeded.id + "/delete").then().statusCode(303);
         Assertions.assertNull(refreshedArticle(seeded.id));
     }
 
     @Test
+    @TestSecurity(user = "support3", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "support3@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "support-003") })
     void supportCanManageTicketsAndMessages() {
-        ensureUser("support3", "support3@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support3");
+        ensureUser("support3", "support3@mnemosyne-systems.ai", User.TYPE_SUPPORT);
         ensureDefaultCategories();
-        String cookie = login("support3", "support3");
+
         Long companyId = ensureCompany("Support CRUD Co");
         Company company = Company.findById(companyId);
         Entitlement entitlement = ensureEntitlement("Starter", "Email support");
         Level level = ensureLevel("Normal", "Normal response level", 1440, "White");
         CompanyEntitlement entry = ensureCompanyEntitlement(company, entitlement, level);
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .contentType(ContentType.URLENC).formParam("status", "Open").formParam("title", "CRUD create title")
-                .formParam("companyId", company.id).formParam("companyEntitlementId", entry.id).post("/tickets").then()
-                .statusCode(303);
+        RestAssured.given().redirects().follow(false).contentType(ContentType.URLENC).formParam("status", "Open")
+                .formParam("title", "CRUD create title").formParam("companyId", company.id)
+                .formParam("companyEntitlementId", entry.id).post("/tickets").then().statusCode(303);
         Ticket ticket = Ticket.find("company = ?1 order by id desc", company).firstResult();
         Assertions.assertNotNull(ticket);
         Assertions.assertNotNull(ticket.category);
         Assertions.assertEquals("Question", ticket.category.name);
 
         Category bugCategory = Category.find("name", "Bug").firstResult();
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .contentType(ContentType.URLENC).formParam("status", "In Progress").formParam("companyId", company.id)
-                .formParam("companyEntitlementId", entry.id).formParam("categoryId", bugCategory.id)
+        RestAssured.given().redirects().follow(false).contentType(ContentType.URLENC).formParam("status", "In Progress")
+                .formParam("companyId", company.id).formParam("companyEntitlementId", entry.id)
+                .formParam("categoryId", bugCategory.id)
                 .formParam("affectsVersionId", ensureVersion(entry.entitlement, "1.0.0").id)
                 .formParam("externalIssueLink", "https://github.com/example/issue/1").post("/tickets/" + ticket.id)
                 .then().statusCode(303);
@@ -280,26 +331,23 @@ class SupportAccessTest extends AccessTestSupport {
         Assertions.assertNotNull(updatedTicket.category);
         Assertions.assertEquals("Bug", updatedTicket.category.name);
         Assertions.assertEquals("https://github.com/example/issue/1", updatedTicket.externalIssueLink);
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie).get("/tickets").then()
-                .statusCode(303).header("Location", Matchers.endsWith("/tickets"));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/ticket-workbench").then().statusCode(200)
-                .body("items.name", Matchers.hasItem(ticket.name));
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie).get("/tickets/new").then()
-                .statusCode(303).header("Location", Matchers.endsWith("/tickets/new"));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/ticket-workbench/bootstrap").then()
-                .statusCode(200).body("title", Matchers.equalTo("New ticket"));
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .get("/tickets/" + ticket.id + "/edit").then().statusCode(303)
+        RestAssured.given().redirects().follow(false).get("/tickets").then().statusCode(303).header("Location",
+                Matchers.endsWith("/tickets"));
+        RestAssured.given().get("/api/ticket-workbench").then().statusCode(200).body("items.name",
+                Matchers.hasItem(ticket.name));
+        RestAssured.given().redirects().follow(false).get("/tickets/new").then().statusCode(303).header("Location",
+                Matchers.endsWith("/tickets/new"));
+        RestAssured.given().get("/api/ticket-workbench/bootstrap").then().statusCode(200).body("title",
+                Matchers.equalTo("New ticket"));
+        RestAssured.given().redirects().follow(false).get("/tickets/" + ticket.id + "/edit").then().statusCode(303)
                 .header("Location", Matchers.endsWith("/tickets/" + ticket.id + "/edit"));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/ticket-workbench/" + ticket.id).then()
-                .statusCode(200)
+        RestAssured.given().get("/api/ticket-workbench/" + ticket.id).then().statusCode(200)
                 .body("ticket.externalIssueLink", Matchers.equalTo("https://github.com/example/issue/1"));
 
         byte[] attachmentData = "Attachment line one\nAttachment line two".getBytes(StandardCharsets.UTF_8);
         byte[] attachmentDataTwo = "Second attachment".getBytes(StandardCharsets.UTF_8);
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .multiPart("body", "Support note").multiPart("date", "2024-01-01T10:00")
-                .multiPart("ticketId", String.valueOf(ticket.id))
+        RestAssured.given().redirects().follow(false).multiPart("body", "Support note")
+                .multiPart("date", "2024-01-01T10:00").multiPart("ticketId", String.valueOf(ticket.id))
                 .multiPart("attachments", "note.txt", attachmentData, "text/plain")
                 .multiPart("attachments", "note-2.txt", attachmentDataTwo, "text/plain")
                 .post("/support/tickets/" + ticket.id + "/messages").then().statusCode(303);
@@ -315,24 +363,21 @@ class SupportAccessTest extends AccessTestSupport {
         Assertions.assertEquals("note-2.txt", secondAttachment.name);
         Assertions.assertEquals(attachmentDataTwo.length, secondAttachment.data.length);
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/support/tickets/" + ticket.id).then()
-                .statusCode(200)
+        RestAssured.given().get("/api/support/tickets/" + ticket.id).then().statusCode(200)
                 .body("messages.attachments.name.flatten()", Matchers.hasItems("note.txt", "note-2.txt"))
                 .body("messages.attachments.mimeType.flatten()", Matchers.hasItem("text/plain"))
                 .body("categoryName", Matchers.equalTo("Bug"))
                 .body("externalIssueLink", Matchers.equalTo("https://github.com/example/issue/1"));
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .get("/attachments/" + attachment.id).then().statusCode(303)
+        RestAssured.given().redirects().follow(false).get("/attachments/" + attachment.id).then().statusCode(303)
                 .header("Location", Matchers.endsWith("/attachments/" + attachment.id));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/attachments/" + attachment.id).then()
-                .statusCode(200).body("name", Matchers.equalTo("note.txt"))
+        RestAssured.given().get("/api/attachments/" + attachment.id).then().statusCode(200)
+                .body("name", Matchers.equalTo("note.txt"))
                 .body("lines.content", Matchers.hasItem("Attachment line two"));
 
         byte[] replyData = "Reply attachment".getBytes(StandardCharsets.UTF_8);
         byte[] replyDataTwo = "Second reply attachment".getBytes(StandardCharsets.UTF_8);
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .multiPart("body", "Reply with attachments")
+        RestAssured.given().redirects().follow(false).multiPart("body", "Reply with attachments")
                 .multiPart("attachments", "reply.txt", replyData, "text/plain")
                 .multiPart("attachments", "reply-2.txt", replyDataTwo, "text/plain")
                 .post("/support/tickets/" + ticket.id + "/messages").then().statusCode(303);
@@ -344,43 +389,44 @@ class SupportAccessTest extends AccessTestSupport {
         Assertions.assertEquals("reply.txt", replyAttachments.get(0).name);
         Assertions.assertEquals("reply-2.txt", replyAttachments.get(1).name);
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .post("/tickets/" + ticket.id + "/delete").then().statusCode(303);
+        RestAssured.given().redirects().follow(false).post("/tickets/" + ticket.id + "/delete").then().statusCode(303);
         Assertions.assertNull(refreshedTicket(ticket.id));
     }
 
     @Test
+    @TestSecurity(user = "support1", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "support1@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "support") })
     void supportTicketSearchMatchesTicketNumberAndMessages() {
-        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT);
         Long companyId = ensureCompany("Support Search Co");
         Ticket ticket = ensureTicket(companyId);
         String messageBody = "support-search-message-" + System.nanoTime();
         ensureMessageWithBody(ticket, messageBody);
-        String cookie = login("support1", "support1");
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("q", ticket.name)
-                .get("/api/support/tickets").then().statusCode(200).body("searchTerm", Matchers.equalTo(ticket.name))
-                .body("items.name", Matchers.hasItem(ticket.name));
+        RestAssured.given().queryParam("q", ticket.name).get("/api/support/tickets").then().statusCode(200)
+                .body("searchTerm", Matchers.equalTo(ticket.name)).body("items.name", Matchers.hasItem(ticket.name));
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("q", messageBody)
-                .get("/api/support/tickets").then().statusCode(200).body("searchTerm", Matchers.equalTo(messageBody))
-                .body("items.name", Matchers.hasItem(ticket.name));
+        RestAssured.given().queryParam("q", messageBody).get("/api/support/tickets").then().statusCode(200)
+                .body("searchTerm", Matchers.equalTo(messageBody)).body("items.name", Matchers.hasItem(ticket.name));
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("q", "no-support-ticket-match")
-                .get("/api/support/tickets").then().statusCode(200).body("items.size()", Matchers.equalTo(0));
+        RestAssured.given().queryParam("q", "no-support-ticket-match").get("/api/support/tickets").then()
+                .statusCode(200).body("items.size()", Matchers.equalTo(0));
     }
 
     @Test
+    @TestSecurity(user = "support1", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "support1@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "support") })
     void supportTicketDetailUpdatesFieldsAndAddsRepliesWithAndWithoutAttachments() {
-        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
-        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
-        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT);
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM);
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
         ensureDefaultCategories();
         Long companyId = ensureCompany("Support Detail Flow Co");
         ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai", "tam1@mnemosyne-systems.ai");
         Ticket ticket = ensureTicket(companyId);
         ensureMessage(ticket, "Original support detail message");
-        String cookie = login("support1", "support1");
 
         Category bugCategory = Category.find("name", "Bug").firstResult();
         Assertions.assertNotNull(bugCategory);
@@ -390,9 +436,9 @@ class SupportAccessTest extends AccessTestSupport {
                 java.time.LocalDate.of(2024, 3, 1));
         String externalIssueLink = "https://github.com/mnemosyne-systems/billetsys/issues/6";
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .contentType(ContentType.URLENC).formParam("title", ticket.displayTitle())
-                .formParam("status", "Resolved").formParam("companyId", ticket.company.id)
+        RestAssured.given().redirects().follow(false).contentType(ContentType.URLENC)
+                .formParam("title", ticket.displayTitle()).formParam("status", "Resolved")
+                .formParam("companyId", ticket.company.id)
                 .formParam("companyEntitlementId", ticket.companyEntitlement.id).formParam("categoryId", bugCategory.id)
                 .formParam("externalIssueLink", externalIssueLink).formParam("affectsVersionId", affectsVersion.id)
                 .formParam("resolvedVersionId", resolvedVersion.id).post("/support/tickets/" + ticket.id).then()
@@ -405,8 +451,8 @@ class SupportAccessTest extends AccessTestSupport {
         Assertions.assertEquals(affectsVersion.id, updatedTicket.affectsVersion.id);
         Assertions.assertEquals(resolvedVersion.id, updatedTicket.resolvedVersion.id);
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/support/tickets/" + ticket.id).then()
-                .statusCode(200).body("actionPath", Matchers.equalTo("/support/tickets/" + ticket.id))
+        RestAssured.given().get("/api/support/tickets/" + ticket.id).then().statusCode(200)
+                .body("actionPath", Matchers.equalTo("/support/tickets/" + ticket.id))
                 .body("messageActionPath", Matchers.equalTo("/support/tickets/" + ticket.id + "/messages"))
                 .body("displayStatus", Matchers.equalTo("Resolved")).body("categoryName", Matchers.equalTo("Bug"))
                 .body("externalIssueLink", Matchers.equalTo(externalIssueLink))
@@ -415,9 +461,8 @@ class SupportAccessTest extends AccessTestSupport {
                 .body("messages.body", Matchers.hasItem("Original support detail message"));
 
         String plainReplyBody = "Support reply without attachments " + System.nanoTime();
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .multiPart("body", plainReplyBody).post("/support/tickets/" + ticket.id + "/messages").then()
-                .statusCode(303)
+        RestAssured.given().redirects().follow(false).multiPart("body", plainReplyBody)
+                .post("/support/tickets/" + ticket.id + "/messages").then().statusCode(303)
                 .header("Location", Matchers.endsWith("/support/tickets/" + ticket.id + "?replyAdded=1"));
 
         Message plainReply = Message.find("ticket = ?1 and body = ?2", ticket, plainReplyBody).firstResult();
@@ -426,8 +471,7 @@ class SupportAccessTest extends AccessTestSupport {
 
         byte[] replyAttachmentData = "Support detail attachment".getBytes(StandardCharsets.UTF_8);
         String attachmentReplyBody = "Support reply with attachments " + System.nanoTime();
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .multiPart("body", attachmentReplyBody)
+        RestAssured.given().redirects().follow(false).multiPart("body", attachmentReplyBody)
                 .multiPart("attachments", "detail-reply.txt", replyAttachmentData, "text/plain")
                 .post("/support/tickets/" + ticket.id + "/messages").then().statusCode(303)
                 .header("Location", Matchers.endsWith("/support/tickets/" + ticket.id + "?replyAdded=1"));
@@ -440,54 +484,84 @@ class SupportAccessTest extends AccessTestSupport {
         Assertions.assertEquals("text/plain", replyAttachments.get(0).mimeType);
         Assertions.assertEquals(replyAttachmentData.length, replyAttachments.get(0).data.length);
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/support/tickets/" + ticket.id).then()
-                .statusCode(200).body("messages.body", Matchers.hasItems(plainReplyBody, attachmentReplyBody))
+        RestAssured.given().get("/api/support/tickets/" + ticket.id).then().statusCode(200)
+                .body("messages.body", Matchers.hasItems(plainReplyBody, attachmentReplyBody))
                 .body("messages.attachments.name.flatten()", Matchers.hasItem("detail-reply.txt"))
                 .body("messages.attachments.mimeType.flatten()", Matchers.hasItem("text/plain"));
     }
 
     @Test
-    void attachmentsPageUsesRoleHeader() {
-        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
-        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
-        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
-        Long companyId = ensureCompany("Attachment Role Co");
+    @TestSecurity(user = "support1", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "support1@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "support") })
+    void attachmentsPageUsesRoleHeaderForSupport() {
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT);
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM);
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
+        Long companyId = ensureCompany("Attachment Role Co Support");
         ensureCompanyUsers(companyId, "tam1@mnemosyne-systems.ai");
         Ticket ticket = ensureTicket(companyId);
         Message message = ensureMessageWithBody(ticket, "Attachment role message");
         Attachment attachment = ensureAttachment(message, "role-attachment.txt");
 
-        String supportCookie = login("support1", "support1");
         User supportUser = User.find("email", "support1@mnemosyne-systems.ai").firstResult();
         SupportResource.SupportTicketCounts counts = SupportResource.loadTicketCounts(supportUser);
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie)
-                .get("/attachments/" + attachment.id).then().statusCode(303)
+        RestAssured.given().redirects().follow(false).get("/attachments/" + attachment.id).then().statusCode(303)
                 .header("Location", Matchers.endsWith("/attachments/" + attachment.id));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, supportCookie).get("/api/attachments/" + attachment.id)
-                .then().statusCode(200).body("backPath", Matchers.equalTo("/support/tickets/" + ticket.id));
-
-        String tamCookie = login("tam1", "tam1");
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, tamCookie).get("/api/attachments/" + attachment.id).then()
-                .statusCode(200).body("backPath", Matchers.equalTo("/user/tickets/" + ticket.id));
-
-        String userCookie = login("user", "user");
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, userCookie).get("/api/attachments/" + attachment.id).then()
-                .statusCode(200).body("backPath", Matchers.equalTo("/user/tickets/" + ticket.id));
+        RestAssured.given().get("/api/attachments/" + attachment.id).then().statusCode(200).body("backPath",
+                Matchers.equalTo("/support/tickets/" + ticket.id));
     }
 
     @Test
+    @TestSecurity(user = "tam1", roles = "tam")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "tam1@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "tam") })
+    void attachmentsPageUsesRoleHeaderForTam() {
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT);
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM);
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
+        Long companyId = ensureCompany("Attachment Role Co TAM");
+        ensureCompanyUsers(companyId, "tam1@mnemosyne-systems.ai");
+        Ticket ticket = ensureTicket(companyId);
+        Message message = ensureMessageWithBody(ticket, "Attachment role message tam");
+        Attachment attachment = ensureAttachment(message, "role-attachment-tam.txt");
+
+        RestAssured.given().get("/api/attachments/" + attachment.id).then().statusCode(200).body("backPath",
+                Matchers.equalTo("/user/tickets/" + ticket.id));
+    }
+
+    @Test
+    @TestSecurity(user = "user", roles = "user")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "user@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "user") })
+    void attachmentsPageUsesRoleHeaderForUser() {
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT);
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM);
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
+        Long companyId = ensureCompany("Attachment Role Co User");
+        ensureCompanyUsers(companyId, "tam1@mnemosyne-systems.ai");
+        Ticket ticket = ensureTicket(companyId);
+        Message message = ensureMessageWithBody(ticket, "Attachment role message user");
+        Attachment attachment = ensureAttachment(message, "role-attachment-user.txt");
+
+        RestAssured.given().get("/api/attachments/" + attachment.id).then().statusCode(200).body("backPath",
+                Matchers.equalTo("/user/tickets/" + ticket.id));
+    }
+
+    @Test
+    @TestSecurity(user = "support1", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "support1@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "support") })
     void sendsEmailsForTicketMessageAndStatusChanges() {
         mailbox.clear();
-        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
-        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
-        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT);
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM);
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
         Long companyId = ensureCompany("Email Notify Co");
         ensureCompanyUsers(companyId, "tam1@mnemosyne-systems.ai", "user@mnemosyne-systems.ai");
         Ticket ticket = ensureUnassignedOpenTicket(companyId);
-        String supportCookie = login("support1", "support1");
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie)
-                .multiPart("body", "Email notification reply " + System.nanoTime())
+        RestAssured.given().redirects().follow(false).multiPart("body", "Email notification reply " + System.nanoTime())
                 .multiPart("attachments", "notify.txt", "notify".getBytes(StandardCharsets.UTF_8), "text/plain")
                 .post("/support/tickets/" + ticket.id + "/messages").then().statusCode(303);
 
@@ -498,8 +572,8 @@ class SupportAccessTest extends AccessTestSupport {
         Assertions.assertTrue(firstMail.getText().contains("Message"));
         Assertions.assertEquals(1, firstMail.getAttachments().size());
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie)
-                .contentType(ContentType.URLENC).formParam("title", ticket.displayTitle()).formParam("status", "Closed")
+        RestAssured.given().redirects().follow(false).contentType(ContentType.URLENC)
+                .formParam("title", ticket.displayTitle()).formParam("status", "Closed")
                 .formParam("companyId", ticket.company.id)
                 .formParam("companyEntitlementId", ticket.companyEntitlement.id)
                 .formParam("affectsVersionId", ensureVersion(ticket.companyEntitlement.entitlement, "1.0.0").id)
@@ -513,22 +587,24 @@ class SupportAccessTest extends AccessTestSupport {
     }
 
     @Test
+    @TestSecurity(user = "support1", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "support1@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "support") })
     void sendsTicketNotificationsUsingEachRecipientsPreferredEmailFormat() {
         mailbox.clear();
-        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
-        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
-        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT);
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM);
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
         setUserEmailFormat("support1@mnemosyne-systems.ai", "html");
         setUserEmailFormat("tam1@mnemosyne-systems.ai", "text");
         setUserEmailFormat("user@mnemosyne-systems.ai", null);
         Long companyId = ensureCompany("Per Recipient Email Format Co");
         ensureCompanyUsers(companyId, "tam1@mnemosyne-systems.ai", "user@mnemosyne-systems.ai");
         Ticket ticket = ensureUnassignedOpenTicket(companyId);
-        String supportCookie = login("support1", "support1");
-        String body = "Per recipient email format " + System.nanoTime();
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie)
-                .multiPart("body", body).post("/support/tickets/" + ticket.id + "/messages").then().statusCode(303);
+        String body = "Per recipient email format " + System.nanoTime();
+        RestAssured.given().redirects().follow(false).multiPart("body", body)
+                .post("/support/tickets/" + ticket.id + "/messages").then().statusCode(303);
 
         Mail htmlOnlyMail = latestMailTo("support1@mnemosyne-systems.ai");
         Assertions.assertNull(htmlOnlyMail.getText());
@@ -548,12 +624,14 @@ class SupportAccessTest extends AccessTestSupport {
     }
 
     @Test
-    void sendsCorrectEmailsForTicketCreationAcrossRoles() {
+    @TestSecurity(user = "support1", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "support1@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "support") })
+    void sendsCorrectEmailForSupportTicketCreation() {
         mailbox.clear();
-        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
-        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
-        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
-        ensureUser("superuser1", "superuser1@mnemosyne-systems.ai", User.TYPE_SUPERUSER, "superuser1");
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT);
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM);
+        setUserEmailFormat("support1@mnemosyne-systems.ai", null);
         ensureDefaultCategories();
 
         Entitlement supportEntitlement = ensureEntitlement("Support Create Email Entitlement",
@@ -563,9 +641,9 @@ class SupportAccessTest extends AccessTestSupport {
         ensureCompanyUsers(supportCompanyId, "tam1@mnemosyne-systems.ai");
         CompanyEntitlement supportCompanyEntitlement = ensureCompanyEntitlement(supportCompanyId, supportEntitlement);
         String supportBody = "Support create mail body " + System.nanoTime();
-        String supportCookie = login("support1", "support1");
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, supportCookie)
-                .multiPart("status", "Open").multiPart("title", "Support mail title").multiPart("message", supportBody)
+
+        RestAssured.given().redirects().follow(false).multiPart("status", "Open")
+                .multiPart("title", "Support mail title").multiPart("message", supportBody)
                 .multiPart("companyId", supportCompanyId)
                 .multiPart("companyEntitlementId", supportCompanyEntitlement.id)
                 .multiPart("categoryId", Category.findDefault().id).multiPart("affectsVersionId", supportVersion.id)
@@ -573,6 +651,16 @@ class SupportAccessTest extends AccessTestSupport {
         Ticket createdSupportTicket = findMessageByBody(supportBody).ticket;
         assertTicketCreateMail(latestMailTo("support1@mnemosyne-systems.ai"), createdSupportTicket, "support1", "Open",
                 supportBody);
+    }
+
+    @Test
+    @TestSecurity(user = "user", roles = "user")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "user@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "user") })
+    void sendsCorrectEmailForUserTicketCreation() {
+        mailbox.clear();
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
+        ensureDefaultCategories();
 
         Entitlement userEntitlement = ensureEntitlement("User Create Email Entitlement",
                 "User create email assertions");
@@ -581,14 +669,24 @@ class SupportAccessTest extends AccessTestSupport {
         ensureCompanyUsers(userCompanyId, "user@mnemosyne-systems.ai");
         CompanyEntitlement userCompanyEntitlement = ensureCompanyEntitlement(userCompanyId, userEntitlement);
         String userBody = "User create mail body " + System.nanoTime();
-        String userCookie = login("user", "user");
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, userCookie)
-                .multiPart("status", "Open").multiPart("title", "User mail title").multiPart("message", userBody)
-                .multiPart("companyId", userCompanyId).multiPart("companyEntitlementId", userCompanyEntitlement.id)
+
+        RestAssured.given().redirects().follow(false).multiPart("status", "Open").multiPart("title", "User mail title")
+                .multiPart("message", userBody).multiPart("companyId", userCompanyId)
+                .multiPart("companyEntitlementId", userCompanyEntitlement.id)
                 .multiPart("categoryId", Category.findDefault().id).multiPart("affectsVersionId", userVersion.id)
                 .post("/user/tickets").then().statusCode(303);
         Ticket createdUserTicket = findMessageByBody(userBody).ticket;
         assertTicketCreateMail(latestMailTo("user@mnemosyne-systems.ai"), createdUserTicket, "user", "Open", userBody);
+    }
+
+    @Test
+    @TestSecurity(user = "superuser1", roles = "superuser")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "superuser1@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "superuser") })
+    void sendsCorrectEmailForSuperuserTicketCreation() {
+        mailbox.clear();
+        ensureUser("superuser1", "superuser1@mnemosyne-systems.ai", User.TYPE_SUPERUSER);
+        ensureDefaultCategories();
 
         Entitlement superuserEntitlement = ensureEntitlement("Superuser Create Email Entitlement",
                 "Superuser create email assertions");
@@ -598,10 +696,10 @@ class SupportAccessTest extends AccessTestSupport {
         CompanyEntitlement superuserCompanyEntitlement = ensureCompanyEntitlement(superuserCompanyId,
                 superuserEntitlement);
         String superuserBody = "Superuser create mail body " + System.nanoTime();
-        String superuserCookie = login("superuser1", "superuser1");
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, superuserCookie)
-                .multiPart("status", "Open").multiPart("title", "Superuser mail title")
-                .multiPart("message", superuserBody).multiPart("companyId", superuserCompanyId)
+
+        RestAssured.given().redirects().follow(false).multiPart("status", "Open")
+                .multiPart("title", "Superuser mail title").multiPart("message", superuserBody)
+                .multiPart("companyId", superuserCompanyId)
                 .multiPart("companyEntitlementId", superuserCompanyEntitlement.id)
                 .multiPart("categoryId", Category.findDefault().id).multiPart("affectsVersionId", superuserVersion.id)
                 .post("/superuser/tickets").then().statusCode(303);
@@ -640,14 +738,16 @@ class SupportAccessTest extends AccessTestSupport {
     }
 
     @Test
+    @TestSecurity(user = "user", roles = "user")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "user@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "user") })
     void reactAppSessionReturnsRoleAwareLinksWhenSignedIn() {
-        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
         setInstallationUse24HourClock(false);
-        String cookie = login("user", "user");
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/app/session").then().statusCode(200)
-                .body("authenticated", Matchers.equalTo(true)).body("username", Matchers.equalTo("user"))
-                .body("role", Matchers.equalTo("user")).body("homePath", Matchers.equalTo("/user/tickets"))
+        RestAssured.given().get("/api/app/session").then().statusCode(200).body("authenticated", Matchers.equalTo(true))
+                .body("username", Matchers.equalTo("user")).body("role", Matchers.equalTo("user"))
+                .body("homePath", Matchers.equalTo("/user/tickets"))
                 .body("installationLogoBase64", Matchers.startsWith("data:image/svg+xml;base64,"))
                 .body("installationBackgroundBase64",
                         Matchers.anyOf(Matchers.nullValue(), Matchers.startsWith("data:image/")))
@@ -664,31 +764,24 @@ class SupportAccessTest extends AccessTestSupport {
     }
 
     @Test
+    @TestSecurity(user = "support1", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "support1@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "support") })
     void reactAppSessionReturnsSupportTicketLink() {
-        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
-        String cookie = login("support1", "support1");
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT);
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/app/session").then().statusCode(200)
-                .body("role", Matchers.equalTo("support")).body("homePath", Matchers.equalTo("/support/tickets"))
+        RestAssured.given().get("/api/app/session").then().statusCode(200).body("role", Matchers.equalTo("support"))
+                .body("homePath", Matchers.equalTo("/support/tickets"))
                 .body("navigation.href", Matchers.hasItem("/support/tickets"))
                 .body("inactivityTimeoutSeconds", Matchers.equalTo(AuthHelper.INACTIVITY_TIMEOUT_SECONDS))
                 .body("inactivityWarningSeconds", Matchers.equalTo(AuthHelper.WARNING_LEAD_SECONDS));
     }
 
     @Test
-    void reactLoginRedirectsSupportToSupportTickets() {
-        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support1");
-
-        RestAssured.given().redirects().follow(false).contentType(ContentType.URLENC).formParam("username", "support1")
-                .formParam("password", "support1").post("/login").then().statusCode(303)
-                .header("Location", Matchers.equalTo("/support/tickets"));
-    }
-
-    @Test
     void incomingEmailWithTicketSubjectAddsMessageAndAttachments() {
         mailbox.clear();
-        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
-        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM);
         Long companyId = ensureCompany("Incoming Existing Co");
         ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai", "tam1@mnemosyne-systems.ai");
         Ticket ticket = ensureTicket(companyId);
@@ -713,7 +806,7 @@ class SupportAccessTest extends AccessTestSupport {
     @Test
     void incomingEmailWithoutTicketSubjectCreatesTicket() {
         mailbox.clear();
-        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
         Long companyId = ensureCompany("Incoming New Co");
         ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai");
         ensureTicket(companyId);
@@ -733,9 +826,9 @@ class SupportAccessTest extends AccessTestSupport {
     @Test
     void incomingEmailIgnoresUnknownOrMismatchedFrom() {
         mailbox.clear();
-        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
-        ensureUser("other", "other@mnemosyne-systems.ai", User.TYPE_USER, "other");
-        ensureUser("orphan", "orphan@mnemosyne-systems.ai", User.TYPE_USER, "orphan");
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
+        ensureUser("other", "other@mnemosyne-systems.ai", User.TYPE_USER);
+        ensureUser("orphan", "orphan@mnemosyne-systems.ai", User.TYPE_USER);
         Long companyA = ensureCompany("Incoming Match Co");
         Long companyB = ensureCompany("Incoming Other Co");
         ensureCompanyUsers(companyA, "user@mnemosyne-systems.ai");
@@ -774,8 +867,8 @@ class SupportAccessTest extends AccessTestSupport {
     @Test
     void incomingEmailNormalizesSenderAndAssignsCompanyTamsOnNewTicket() {
         mailbox.clear();
-        ensureUser("normalize-user", "normalize-user@mnemosyne-systems.ai", User.TYPE_USER, "normalize-user");
-        ensureUser("normalize-tam", "normalize-tam@mnemosyne-systems.ai", User.TYPE_TAM, "normalize-tam");
+        ensureUser("normalize-user", "normalize-user@mnemosyne-systems.ai", User.TYPE_USER);
+        ensureUser("normalize-tam", "normalize-tam@mnemosyne-systems.ai", User.TYPE_TAM);
         Long companyId = ensureCompany("Incoming Normalize Co");
         ensureCompanyUsers(companyId, "normalize-user@mnemosyne-systems.ai", "normalize-tam@mnemosyne-systems.ai");
         ensureTicket(companyId);
@@ -797,8 +890,8 @@ class SupportAccessTest extends AccessTestSupport {
     @Test
     void mailboxMessageWithTicketSubjectAddsMessageAndAttachments() throws Exception {
         mailbox.clear();
-        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
-        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM, "tam1");
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM);
         Long companyId = ensureCompany("Mailbox Existing Co");
         ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai", "tam1@mnemosyne-systems.ai");
         Ticket ticket = ensureTicket(companyId);
@@ -836,7 +929,7 @@ class SupportAccessTest extends AccessTestSupport {
     @Test
     void mailboxMessageWithoutTicketSubjectCreatesTicket() throws Exception {
         mailbox.clear();
-        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
         Long companyId = ensureCompany("Mailbox New Co");
         ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai");
         ensureTicket(companyId);
@@ -860,7 +953,7 @@ class SupportAccessTest extends AccessTestSupport {
     @Test
     void mailboxHtmlMessageStripsHtmlAndKeepsInlineAttachments() throws Exception {
         mailbox.clear();
-        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER, "user");
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
         Long companyId = ensureCompany("Mailbox Html Co");
         ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai");
         ensureTicket(companyId);
@@ -908,36 +1001,38 @@ class SupportAccessTest extends AccessTestSupport {
     }
 
     @Test
+    @TestSecurity(user = "support-json", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "support-json@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "support-002") })
     void reactSupportMutationsReturnJsonRedirects() {
-        ensureUser("support-json", "support-json@mnemosyne-systems.ai", User.TYPE_SUPPORT, "support-json");
+        ensureUser("support-json", "support-json@mnemosyne-systems.ai", User.TYPE_SUPPORT);
         ensureDefaultCategories();
-        String cookie = login("support-json", "support-json");
+
         Long companyId = ensureCompany("Support Json Co");
         Company company = Company.findById(companyId);
         Entitlement entitlement = ensureEntitlement("Support Json Entitlement", "Support json detail");
         Version version = ensureVersion(entitlement, "8.0.0", java.time.LocalDate.of(2026, 1, 1));
         CompanyEntitlement entry = ensureCompanyEntitlement(companyId, entitlement);
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).header("X-Billetsys-Client", "react")
-                .multiPart("status", "Open").multiPart("title", "Support json redirect title")
-                .multiPart("message", "Support json redirect create").multiPart("companyId", company.id)
-                .multiPart("companyEntitlementId", entry.id).multiPart("categoryId", Category.findDefault().id)
-                .multiPart("affectsVersionId", version.id).post("/support/tickets").then().statusCode(200)
+        RestAssured.given().header("X-Billetsys-Client", "react").multiPart("status", "Open")
+                .multiPart("title", "Support json redirect title").multiPart("message", "Support json redirect create")
+                .multiPart("companyId", company.id).multiPart("companyEntitlementId", entry.id)
+                .multiPart("categoryId", Category.findDefault().id).multiPart("affectsVersionId", version.id)
+                .post("/support/tickets").then().statusCode(200)
                 .body("redirectTo", Matchers.matchesPattern("/support/tickets/\\d+"));
 
         Ticket createdTicket = findMessageByBody("Support json redirect create").ticket;
         Assertions.assertNotNull(createdTicket);
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).header("X-Billetsys-Client", "react")
-                .contentType(ContentType.URLENC).formParam("title", createdTicket.displayTitle())
-                .formParam("status", "Assigned").formParam("companyId", company.id)
-                .formParam("companyEntitlementId", entry.id).formParam("categoryId", Category.findDefault().id)
-                .formParam("affectsVersionId", version.id).post("/support/tickets/" + createdTicket.id).then()
-                .statusCode(200).body("redirectTo", Matchers.equalTo("/support/tickets/" + createdTicket.id));
+        RestAssured.given().header("X-Billetsys-Client", "react").contentType(ContentType.URLENC)
+                .formParam("title", createdTicket.displayTitle()).formParam("status", "Assigned")
+                .formParam("companyId", company.id).formParam("companyEntitlementId", entry.id)
+                .formParam("categoryId", Category.findDefault().id).formParam("affectsVersionId", version.id)
+                .post("/support/tickets/" + createdTicket.id).then().statusCode(200)
+                .body("redirectTo", Matchers.equalTo("/support/tickets/" + createdTicket.id));
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).header("X-Billetsys-Client", "react")
+        RestAssured.given().header("X-Billetsys-Client", "react")
                 .post("/support/tickets/" + createdTicket.id + "/assign").then().statusCode(200)
                 .body("redirectTo", Matchers.equalTo("/support/tickets/" + createdTicket.id));
     }
-
 }

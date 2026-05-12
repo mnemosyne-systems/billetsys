@@ -22,13 +22,15 @@ import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
@@ -57,10 +59,14 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 @Produces(MediaType.TEXT_HTML)
 @Blocking
+@RolesAllowed("superuser")
 public class SuperuserResource {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMMM d yyyy, h.mma",
             Locale.ENGLISH);
+
+    @Inject
+    CurrentUser currentUser;
 
     @Inject
     CrossReferenceService crossReferenceService;
@@ -70,32 +76,28 @@ public class SuperuserResource {
 
     @GET
     @Path("superuser")
-    public Response home(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireSuperuser(auth);
+    public Response home() {
         return Response.seeOther(URI.create("/superuser/tickets")).build();
     }
 
     @GET
     @Path("superuser/users")
-    public Response usersRoot(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireSuperuser(auth);
+    public Response usersRoot() {
         return Response.seeOther(URI.create("/superuser/users")).build();
     }
 
     @GET
     @Path("superuser/users/{companyId}")
-    public Response listUsers(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("companyId") Long companyId) {
-        User user = requireSuperuser(auth);
+    public Response listUsers(@PathParam("companyId") Long companyId) {
+        User user = currentUser.get();
         Company company = allowedCompany(user, companyId);
         return Response.seeOther(URI.create("/superuser/users?companyId=" + company.id)).build();
     }
 
     @GET
     @Path("superuser/users/{companyId}/create")
-    public Response createUserForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("companyId") Long companyId) {
-        User user = requireSuperuser(auth);
+    public Response createUserForm(@PathParam("companyId") Long companyId) {
+        User user = currentUser.get();
         Company company = allowedCompany(user, companyId);
         return Response.seeOther(URI.create("/superuser/users/new?companyId=" + company.id)).build();
     }
@@ -103,13 +105,13 @@ public class SuperuserResource {
     @POST
     @Path("superuser/users")
     @Transactional
-    public Response createUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
-            @FormParam("fullName") String fullName, @FormParam("email") String email,
-            @FormParam("social") String social, @FormParam("phoneNumber") String phoneNumber,
-            @FormParam("phoneExtension") String phoneExtension, @FormParam("timezoneId") Long timezoneId,
-            @FormParam("countryId") Long countryId, @FormParam("password") String password,
-            @FormParam("type") String type, @FormParam("companyId") Long companyId) {
-        User user = requireSuperuser(auth);
+    public Response createUser(@FormParam("name") String name, @FormParam("fullName") String fullName,
+            @FormParam("email") String email, @FormParam("social") String social,
+            @FormParam("phoneNumber") String phoneNumber, @FormParam("phoneExtension") String phoneExtension,
+            @FormParam("timezoneId") Long timezoneId, @FormParam("countryId") Long countryId,
+            @FormParam("password") String password, @FormParam("type") String type,
+            @FormParam("companyId") Long companyId) {
+        User user = currentUser.get();
         if (name == null || name.isBlank()) {
             throw new BadRequestException("Username is required");
         }
@@ -145,29 +147,25 @@ public class SuperuserResource {
 
     @GET
     @Path("superuser/tickets")
-    public Response tickets(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireSuperuser(auth);
+    public Response tickets() {
         return Response.seeOther(URI.create("/superuser/tickets")).build();
     }
 
     @GET
     @Path("superuser/tickets/open")
-    public Response openTickets(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireSuperuser(auth);
+    public Response openTickets() {
         return Response.seeOther(URI.create("/superuser/tickets/open")).build();
     }
 
     @GET
     @Path("superuser/tickets/closed")
-    public Response closedTickets(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireSuperuser(auth);
+    public Response closedTickets() {
         return Response.seeOther(URI.create("/superuser/tickets/closed")).build();
     }
 
     @GET
     @Path("superuser/tickets/create")
-    public Response createTicketForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireSuperuser(auth);
+    public Response createTicketForm() {
         return Response.seeOther(URI.create("/superuser/tickets/new")).build();
     }
 
@@ -175,9 +173,8 @@ public class SuperuserResource {
     @Path("superuser/tickets")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
-    public Response createTicket(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
-        User user = requireSuperuser(auth);
+    public Response createTicket(@HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
+        User user = currentUser.get();
         String status = AttachmentHelper.readFormValue(input, "status");
         String title = Ticket.normalizeTitle(AttachmentHelper.readFormValue(input, "title"));
         String messageBody = AttachmentHelper.readFormValue(input, "message");
@@ -235,8 +232,7 @@ public class SuperuserResource {
 
     @GET
     @Path("superuser/support-users/{id}")
-    public Response viewSupportUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireSuperuser(auth);
+    public Response viewSupportUser(@PathParam("id") Long id) {
         User supportUser = User.findById(id);
         if (supportUser == null || !User.TYPE_SUPPORT.equalsIgnoreCase(supportUser.type)) {
             throw new NotFoundException();
@@ -246,8 +242,8 @@ public class SuperuserResource {
 
     @GET
     @Path("superuser/superuser-users/{id}")
-    public Response viewSuperuser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = requireSuperuser(auth);
+    public Response viewSuperuser(@PathParam("id") Long id) {
+        User user = currentUser.get();
         User viewedUser = User.findById(id);
         if (viewedUser == null || !User.TYPE_SUPERUSER.equalsIgnoreCase(viewedUser.type)) {
             throw new NotFoundException();
@@ -263,8 +259,8 @@ public class SuperuserResource {
 
     @GET
     @Path("superuser/user-profiles/{id}")
-    public Response viewUserProfile(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = requireSuperuser(auth);
+    public Response viewUserProfile(@PathParam("id") Long id) {
+        User user = currentUser.get();
         User viewedUser = User.findById(id);
         if (viewedUser == null) {
             throw new NotFoundException();
@@ -280,16 +276,16 @@ public class SuperuserResource {
 
     @GET
     @Path("superuser/companies/{id}")
-    public Response viewCompany(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = requireSuperuser(auth);
+    public Response viewCompany(@PathParam("id") Long id) {
+        User user = currentUser.get();
         Company company = allowedCompany(user, id);
         return Response.seeOther(URI.create("/superuser/companies/" + company.id)).build();
     }
 
     @GET
     @Path("superuser/tickets/{id}")
-    public Response ticketDetail(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = requireSuperuser(auth);
+    public Response ticketDetail(@PathParam("id") Long id) {
+        User user = currentUser.get();
         if (findTicketForSuperuser(user, id) == null) {
             throw new NotFoundException();
         }
@@ -300,9 +296,8 @@ public class SuperuserResource {
     @Path("superuser/tickets/{id}/messages")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
-    public Response addMessage(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            MultipartFormDataInput input) {
-        User user = requireSuperuser(auth);
+    public Response addMessage(@PathParam("id") Long id, MultipartFormDataInput input) {
+        User user = currentUser.get();
         String body = AttachmentHelper.readFormValue(input, "body");
         if (body == null || body.isBlank()) {
             throw new BadRequestException("Message is required");
@@ -329,8 +324,8 @@ public class SuperuserResource {
 
     @GET
     @Path("superuser/tickets/{id}/edit")
-    public Response ticketEdit(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = requireSuperuser(auth);
+    public Response ticketEdit(@PathParam("id") Long id) {
+        User user = currentUser.get();
         if (findTicketForSuperuser(user, id) == null) {
             throw new NotFoundException();
         }
@@ -340,11 +335,10 @@ public class SuperuserResource {
     @POST
     @Path("superuser/tickets/{id}")
     @Transactional
-    public Response updateTicket(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id,
+    public Response updateTicket(@HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id,
             @FormParam("title") String title, @FormParam("affectsVersionId") Long affectsVersionId,
             @FormParam("resolvedVersionId") Long resolvedVersionId) {
-        User user = requireSuperuser(auth);
+        User user = currentUser.get();
         String normalizedTitle = Ticket.normalizeTitle(title);
         Ticket ticket = findTicketForSuperuser(user, id);
         if (ticket == null) {
@@ -800,14 +794,6 @@ public class SuperuserResource {
     String formatDate(LocalDateTime date) {
         String formatted = DATE_FORMATTER.format(date);
         return formatted.replace("AM", "am").replace("PM", "pm");
-    }
-
-    private User requireSuperuser(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isSuperuser(user)) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
-        }
-        return user;
     }
 
     static class SupportTicketData {

@@ -14,12 +14,14 @@ import ai.mnemosyne_systems.model.Installation;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -39,21 +41,24 @@ import java.util.List;
 @Path("/profile")
 @Produces(MediaType.TEXT_HTML)
 @Blocking
+@RolesAllowed({ "admin", "support", "superuser", "tam", "user" })
 public class ProfileResource {
     @Inject
     Logger logger;
 
+    @Inject
+    CurrentUser currentUser;
+
     @GET
-    public Object edit(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireUser(auth);
+    public Object edit() {
         return Response.seeOther(URI.create("/profile")).build();
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Transactional
-    public Object update(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, MultivaluedMap<String, String> form) {
-        User user = requireUser(auth);
+    public Object update(MultivaluedMap<String, String> form) {
+        User user = currentUser.get();
         String name = value(form, "name");
         if (name == null || name.isBlank()) {
             return profileErrorRedirect("Username is required");
@@ -175,8 +180,7 @@ public class ProfileResource {
 
     @GET
     @Path("/password")
-    public Object passwordForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireUser(auth);
+    public Object passwordForm() {
         return Response.seeOther(URI.create("/profile/password")).build();
     }
 
@@ -184,10 +188,9 @@ public class ProfileResource {
     @Path("/password")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Transactional
-    public Object updatePassword(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @FormParam("oldPassword") String oldPassword, @FormParam("newPassword") String newPassword,
-            @FormParam("confirmPassword") String confirmPassword) {
-        User user = requireUser(auth);
+    public Object updatePassword(@FormParam("oldPassword") String oldPassword,
+            @FormParam("newPassword") String newPassword, @FormParam("confirmPassword") String confirmPassword) {
+        User user = currentUser.get();
         if (oldPassword == null || oldPassword.isBlank()) {
             return passwordErrorRedirect("Old password is required");
         }
@@ -210,14 +213,6 @@ public class ProfileResource {
 
     private Response passwordErrorRedirect(String error) {
         return Response.seeOther(URI.create("/profile/password?error=" + encodeQueryValue(error))).build();
-    }
-
-    private User requireUser(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (user == null) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
-        }
-        return user;
     }
 
     private String value(MultivaluedMap<String, String> form, String key) {

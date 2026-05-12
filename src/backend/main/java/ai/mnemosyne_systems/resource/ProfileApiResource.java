@@ -14,10 +14,13 @@ import ai.mnemosyne_systems.model.Installation;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.quarkus.elytron.security.common.BcryptUtil;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.POST;
@@ -30,20 +33,24 @@ import java.util.List;
 
 @Path("/api/profile")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed({ "admin", "support", "superuser", "tam", "user" })
 public class ProfileApiResource {
+
+    @Inject
+    CurrentUser currentUser;
 
     @GET
     @Transactional
-    public ProfileResponse profile(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        User user = requireUser(auth);
+    public ProfileResponse profile() {
+        User user = currentUser.get();
         return toResponse(user);
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Transactional
-    public ProfileResponse update(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, ProfileUpdateRequest request) {
-        User user = requireUser(auth);
+    public ProfileResponse update(ProfileUpdateRequest request) {
+        User user = currentUser.get();
         if (request == null || request.name() == null || request.name().isBlank()) {
             throw new WebApplicationException("Username is required", Response.Status.BAD_REQUEST);
         }
@@ -73,9 +80,8 @@ public class ProfileApiResource {
     @Path("/password")
     @Consumes(MediaType.APPLICATION_JSON)
     @Transactional
-    public PasswordResponse updatePassword(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            PasswordUpdateRequest request) {
-        User user = requireUser(auth);
+    public PasswordResponse updatePassword(PasswordUpdateRequest request) {
+        User user = currentUser.get();
         if (request == null || request.oldPassword() == null || request.oldPassword().isBlank()) {
             throw new WebApplicationException("Old password is required", Response.Status.BAD_REQUEST);
         }
@@ -177,14 +183,6 @@ public class ProfileApiResource {
             return null;
         }
         return Math.min(value, PaginationSupport.MAX_PAGE_SIZE);
-    }
-
-    private User requireUser(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (user == null) {
-            throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-        return user;
     }
 
     public record ProfileResponse(String role, String username, String displayName, String email, String fullName,

@@ -18,12 +18,14 @@ import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.service.PdfService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
@@ -58,12 +60,16 @@ import java.util.Set;
 @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 @Produces(MediaType.TEXT_HTML)
 @Blocking
+@RolesAllowed({ "admin", "support", "superuser", "tam", "user" })
 public class TicketResource {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMMM d yyyy, h.mma",
             Locale.ENGLISH);
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL)
             .connectTimeout(Duration.ofSeconds(10)).build();
+
+    @Inject
+    CurrentUser currentUser;
 
     @Inject
     SupportResource supportResource;
@@ -81,22 +87,22 @@ public class TicketResource {
     PdfService pdfService;
 
     @GET
-    public Response list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireSupport(auth);
+    @RolesAllowed("support")
+    public Response list() {
         return Response.seeOther(URI.create("/tickets")).build();
     }
 
     @GET
     @Path("/new")
-    public Response createForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireSupport(auth);
+    @RolesAllowed("support")
+    public Response createForm() {
         return Response.seeOther(URI.create("/tickets/new")).build();
     }
 
     @GET
     @Path("/{id}/edit")
-    public Response editForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireSupport(auth);
+    @RolesAllowed("support")
+    public Response editForm(@PathParam("id") Long id) {
         Ticket ticket = Ticket.find(
                 "select t from Ticket t left join fetch t.companyEntitlement ce left join fetch ce.entitlement left join fetch ce.supportLevel where t.id = ?1",
                 id).firstResult();
@@ -108,16 +114,16 @@ public class TicketResource {
 
     @GET
     @Path("/{id}")
-    public Object viewTicket(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = AuthHelper.findUser(auth);
+    public Object viewTicket(@PathParam("id") Long id) {
+        User user = currentUser.get();
         if (AuthHelper.isSupport(user)) {
-            return supportResource.ticketDetail(auth, id);
+            return supportResource.ticketDetail(id);
         }
         if (AuthHelper.isSuperuser(user)) {
-            return superuserResource.ticketDetail(auth, id);
+            return superuserResource.ticketDetail(id);
         }
         if (AuthHelper.isUser(user)) {
-            return userResource.ticketDetail(auth, id);
+            return userResource.ticketDetail(id);
         }
         return Response.seeOther(URI.create("/")).build();
     }
@@ -125,16 +131,16 @@ public class TicketResource {
     @GET
     @Path("/alarm/status")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response alarmStatus(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        User user = AuthHelper.findUser(auth);
+    public Response alarmStatus() {
+        User user = currentUser.get();
         boolean alarm = hasAlarm(user);
         return Response.ok(Boolean.toString(alarm)).build();
     }
 
     @GET
     @Path("/external-preview")
-    public Response externalPreview(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @QueryParam("url") String url) {
-        requireSupport(auth);
+    @RolesAllowed("support")
+    public Response externalPreview(@QueryParam("url") String url) {
         if (url == null || url.isBlank()) {
             throw new BadRequestException("URL is required");
         }
@@ -154,11 +160,11 @@ public class TicketResource {
 
     @POST
     @Transactional
-    public Response create(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, @FormParam("status") String status,
+    @RolesAllowed("support")
+    public Response create(@HeaderParam("X-Billetsys-Client") String client, @FormParam("status") String status,
             @FormParam("title") String title, @FormParam("companyId") Long companyId,
             @FormParam("companyEntitlementId") Long companyEntitlementId, @FormParam("categoryId") Long categoryId) {
-        User user = requireSupport(auth);
+        User user = currentUser.get();
         String normalizedTitle = Ticket.normalizeTitle(title);
         if (status == null || status.isBlank()) {
             throw new BadRequestException("Status is required");
@@ -198,13 +204,14 @@ public class TicketResource {
     @POST
     @Path("/{id}")
     @Transactional
-    public Response update(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @HeaderParam("X-Billetsys-Client") String client, @FormParam("status") String status,
-            @FormParam("companyId") Long companyId, @FormParam("companyEntitlementId") Long companyEntitlementId,
-            @FormParam("categoryId") Long categoryId, @FormParam("externalIssueLink") String externalIssueLink,
+    @RolesAllowed("support")
+    public Response update(@PathParam("id") Long id, @HeaderParam("X-Billetsys-Client") String client,
+            @FormParam("status") String status, @FormParam("companyId") Long companyId,
+            @FormParam("companyEntitlementId") Long companyEntitlementId, @FormParam("categoryId") Long categoryId,
+            @FormParam("externalIssueLink") String externalIssueLink,
             @FormParam("affectsVersionId") Long affectsVersionId,
             @FormParam("resolvedVersionId") Long resolvedVersionId) {
-        User user = requireSupport(auth);
+        User user = currentUser.get();
         Ticket ticket = Ticket.findById(id);
         if (ticket == null) {
             throw new NotFoundException();
@@ -254,9 +261,8 @@ public class TicketResource {
     @POST
     @Path("/{id}/delete")
     @Transactional
-    public Response delete(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
-        requireSupport(auth);
+    @RolesAllowed("support")
+    public Response delete(@HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
         Ticket ticket = Ticket.findById(id);
         if (ticket == null) {
             throw new NotFoundException();
@@ -267,8 +273,8 @@ public class TicketResource {
 
     @GET
     @Path("/company/{id}/entitlements")
-    public Response companyEntitlements(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireSupport(auth);
+    @RolesAllowed("support")
+    public Response companyEntitlements(@PathParam("id") Long id) {
         Company company = Company.findById(id);
         if (company == null) {
             throw new NotFoundException();
@@ -317,8 +323,8 @@ public class TicketResource {
     @GET
     @Path("/export/{id}")
     @Produces("application/pdf")
-    public Response exportTicketToPdf(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = AuthHelper.findUser(auth);
+    public Response exportTicketToPdf(@PathParam("id") Long id) {
+        User user = currentUser.get();
         if (!AuthHelper.isSupport(user) && !AuthHelper.isUser(user) && !AuthHelper.isSuperuser(user)) {
             throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
         }
@@ -333,14 +339,6 @@ public class TicketResource {
                 MessageVisibilitySupport.loadMessagesForViewer(ticket, user));
         return Response.ok(ticketPdf).header("Content-Disposition", "attachment; filename=\"" + ticket.name + ".pdf\"")
                 .build();
-    }
-
-    private User requireSupport(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isSupport(user)) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
-        }
-        return user;
     }
 
     private String fetchExternalPreviewHtml(URI previewUri) {

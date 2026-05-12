@@ -12,8 +12,8 @@ import ai.mnemosyne_systems.model.Company;
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
@@ -25,13 +25,13 @@ import java.util.List;
 
 @Path("/api/admin/users")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("admin")
 public class AdminUserApiResource {
 
     @GET
     @Transactional
-    public UserDirectoryApiModels.DirectoryListResponse list(@CookieParam("authUserIdV3") String auth,
-            @QueryParam("companyId") Long companyId) {
-        OwnerResource.requireAdmin(auth);
+    public UserDirectoryApiModels.DirectoryListResponse list(@QueryParam("companyId") Long companyId) {
+
         List<Company> companies = Company.list("order by name");
         boolean unassignedSelected = companyId != null && companyId.longValue() == 0L;
         Company selectedCompany = unassignedSelected ? null : selectCompany(companies, companyId);
@@ -52,10 +52,9 @@ public class AdminUserApiResource {
     @GET
     @Path("/bootstrap")
     @Transactional
-    public UserDirectoryApiModels.UserFormResponse bootstrap(@CookieParam("authUserIdV3") String auth,
-            @QueryParam("userId") Long userId, @QueryParam("companyId") Long companyId,
-            @QueryParam("countryId") Long countryId) {
-        OwnerResource.requireAdmin(auth);
+    public UserDirectoryApiModels.UserFormResponse bootstrap(@QueryParam("userId") Long userId,
+            @QueryParam("companyId") Long companyId, @QueryParam("countryId") Long countryId) {
+
         List<Company> companies = Company.list("order by name");
         User user = userId == null ? new User() : User.findById(userId);
         if (userId != null && user == null) {
@@ -102,9 +101,8 @@ public class AdminUserApiResource {
     @GET
     @Path("/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse detail(@CookieParam("authUserIdV3") String auth,
-            @PathParam("id") Long id) {
-        OwnerResource.requireAdmin(auth);
+    public UserDirectoryApiModels.UserDetailResponse detail(@PathParam("id") Long id) {
+
         User user = User.findById(id);
         if (user == null) {
             throw new NotFoundException();

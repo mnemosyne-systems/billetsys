@@ -16,9 +16,10 @@ import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.infra.BrandingProvider;
 import ai.mnemosyne_systems.util.AuthHelper;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
@@ -36,34 +37,31 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 @Produces(MediaType.TEXT_HTML)
 @Blocking
+@RolesAllowed("admin")
 public class OwnerResource {
 
     @GET
-    public Response viewOwner(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public Response viewOwner() {
         return Response.seeOther(URI.create("/owner")).build();
     }
 
     @GET
     @Path("/edit")
-    public Response editOwner(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public Response editOwner() {
         return Response.seeOther(URI.create("/owner/edit")).build();
     }
 
     @POST
     @Path("/edit")
     @Transactional
-    public Response updateOwner(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
-            @FormParam("address1") String address1, @FormParam("address2") String address2,
-            @FormParam("city") String city, @FormParam("state") String state, @FormParam("zip") String zip,
-            @FormParam("countryId") Long countryId, @FormParam("timezoneId") Long timezoneId,
-            @FormParam("phoneNumber") String phoneNumber, @FormParam("supportIds") List<Long> supportIds,
-            @FormParam("tamIds") List<Long> tamIds, @FormParam("headerFooterColor") String headerFooterColor,
-            @FormParam("headersColor") String headersColor, @FormParam("buttonsColor") String buttonsColor,
-            @FormParam("use24HourClock") Boolean use24HourClock,
+    public Response updateOwner(@FormParam("name") String name, @FormParam("address1") String address1,
+            @FormParam("address2") String address2, @FormParam("city") String city, @FormParam("state") String state,
+            @FormParam("zip") String zip, @FormParam("countryId") Long countryId,
+            @FormParam("timezoneId") Long timezoneId, @FormParam("phoneNumber") String phoneNumber,
+            @FormParam("supportIds") List<Long> supportIds, @FormParam("tamIds") List<Long> tamIds,
+            @FormParam("headerFooterColor") String headerFooterColor, @FormParam("headersColor") String headersColor,
+            @FormParam("buttonsColor") String buttonsColor, @FormParam("use24HourClock") Boolean use24HourClock,
             @FormParam("ticketAutoCloseDays") Integer ticketAutoCloseDays) {
-        requireAdmin(auth);
         Company company = findOwnerCompany();
         if (name == null || name.isBlank()) {
             throw new jakarta.ws.rs.BadRequestException("Name is required");

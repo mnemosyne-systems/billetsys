@@ -14,10 +14,11 @@ import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
@@ -36,6 +37,7 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 @Produces(MediaType.TEXT_HTML)
 @Blocking
+@RolesAllowed("admin")
 public class LevelResource {
     public static final class ColorOption {
         private final String value;
@@ -70,22 +72,19 @@ public class LevelResource {
             new ColorOption("Teal"), new ColorOption("Aqua"));
 
     @GET
-    public Response listLevels(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public Response listLevels() {
         return Response.seeOther(URI.create("/levels")).build();
     }
 
     @GET
     @Path("create")
-    public Response createForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public Response createForm() {
         return Response.seeOther(URI.create("/levels/new")).build();
     }
 
     @GET
     @Path("{id}/edit")
-    public Response editForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public Response editForm(@PathParam("id") Long id) {
         if (Level.findById(id) == null) {
             throw new NotFoundException();
         }
@@ -95,14 +94,12 @@ public class LevelResource {
     @POST
     @Path("")
     @Transactional
-    public Response createLevel(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
+    public Response createLevel(@HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
             @FormParam("description") String description, @FormParam("level") Integer levelValue,
             @FormParam("color") String color, @FormParam("fromDay") Integer fromDay,
             @FormParam("fromTime") Integer fromTime, @FormParam("toDay") Integer toDay,
             @FormParam("toTime") Integer toTime, @FormParam("countryId") Long countryId,
             @FormParam("timezoneId") Long timezoneId) {
-        requireAdmin(auth);
         Integer normalizedFromDay = normalizeDay(fromDay, Level.DayOption.MONDAY.getCode());
         Integer normalizedFromTime = normalizeTime(fromTime, Level.HourOption.H00.getCode());
         Integer normalizedToDay = normalizeDay(toDay, Level.DayOption.SUNDAY.getCode());
@@ -129,14 +126,12 @@ public class LevelResource {
     @POST
     @Path("{id}")
     @Transactional
-    public Response updateLevel(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
-            @FormParam("description") String description, @FormParam("level") Integer levelValue,
-            @FormParam("color") String color, @FormParam("fromDay") Integer fromDay,
-            @FormParam("fromTime") Integer fromTime, @FormParam("toDay") Integer toDay,
-            @FormParam("toTime") Integer toTime, @FormParam("countryId") Long countryId,
-            @FormParam("timezoneId") Long timezoneId) {
-        requireAdmin(auth);
+    public Response updateLevel(@PathParam("id") Long id, @HeaderParam("X-Billetsys-Client") String client,
+            @FormParam("name") String name, @FormParam("description") String description,
+            @FormParam("level") Integer levelValue, @FormParam("color") String color,
+            @FormParam("fromDay") Integer fromDay, @FormParam("fromTime") Integer fromTime,
+            @FormParam("toDay") Integer toDay, @FormParam("toTime") Integer toTime,
+            @FormParam("countryId") Long countryId, @FormParam("timezoneId") Long timezoneId) {
         Level level = Level.findById(id);
         if (level == null) {
             throw new NotFoundException();
@@ -169,9 +164,7 @@ public class LevelResource {
     @POST
     @Path("{id}/delete")
     @Transactional
-    public Response deleteLevel(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public Response deleteLevel(@HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
         Level level = Level.findById(id);
         if (level == null) {
             throw new NotFoundException();

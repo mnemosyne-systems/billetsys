@@ -13,8 +13,11 @@ import ai.mnemosyne_systems.model.Level;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.Path;
@@ -26,12 +29,15 @@ import java.util.List;
 
 @Path("/api/levels")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("admin")
 public class LevelApiResource {
+
+    @Inject
+    CurrentUser currentUser;
 
     @GET
     @Transactional
-    public LevelListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public LevelListResponse list() {
         List<Level> levels = Level.list("order by name");
         return new LevelListResponse("/levels/new", levels.stream().map(this::toListItem).toList());
     }
@@ -39,16 +45,14 @@ public class LevelApiResource {
     @GET
     @Path("/bootstrap")
     @Transactional
-    public LevelBootstrapResponse bootstrap(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public LevelBootstrapResponse bootstrap() {
         return bootstrapResponse();
     }
 
     @GET
     @Path("/{id}")
     @Transactional
-    public LevelDetailResponse detail(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public LevelDetailResponse detail(@PathParam("id") Long id) {
         Level level = Level.findById(id);
         if (level == null) {
             throw new jakarta.ws.rs.NotFoundException();
@@ -141,14 +145,6 @@ public class LevelApiResource {
             return "";
         }
         return "(" + color + ")";
-    }
-
-    private User requireAdmin(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isAdmin(user)) {
-            throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-        return user;
     }
 
     public record LevelListResponse(String createPath, List<LevelListItem> items) {

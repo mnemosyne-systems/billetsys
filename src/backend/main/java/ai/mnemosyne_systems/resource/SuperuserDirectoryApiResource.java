@@ -14,8 +14,11 @@ import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
@@ -29,17 +32,19 @@ import java.util.List;
 
 @Path("/api/superuser")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("superuser")
 public class SuperuserDirectoryApiResource {
+
+    @Inject
+    CurrentUser currentUser;
 
     @GET
     @Path("/users")
     @Transactional
-    public UserDirectoryApiModels.DirectoryListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId) {
-        User currentUser = requireSuperuser(auth);
+    public UserDirectoryApiModels.DirectoryListResponse list(@QueryParam("companyId") Long companyId) {
+        User u = currentUser.get();
         List<Company> companies = Company
-                .find("select distinct c from Company c join c.users u where u = ?1 order by c.name", currentUser)
-                .list();
+                .find("select distinct c from Company c join c.users u where u = ?1 order by c.name", u).list();
         Company selectedCompany = selectCompany(companies, companyId);
         List<User> users = selectedCompany == null ? List.of()
                 : Company.<User> find("select u from Company c join c.users u where c = ?1 order by u.name",
@@ -55,12 +60,11 @@ public class SuperuserDirectoryApiResource {
     @GET
     @Path("/users/bootstrap")
     @Transactional
-    public UserDirectoryApiModels.UserFormResponse bootstrap(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId, @QueryParam("countryId") Long countryId) {
-        User currentUser = requireSuperuser(auth);
+    public UserDirectoryApiModels.UserFormResponse bootstrap(@QueryParam("companyId") Long companyId,
+            @QueryParam("countryId") Long countryId) {
+        User u = currentUser.get();
         List<Company> companies = Company
-                .find("select distinct c from Company c join c.users u where u = ?1 order by c.name", currentUser)
-                .list();
+                .find("select distinct c from Company c join c.users u where u = ?1 order by c.name", u).list();
         Company selectedCompany = selectCompany(companies, companyId);
         if (selectedCompany == null) {
             throw new NotFoundException();
@@ -87,43 +91,39 @@ public class SuperuserDirectoryApiResource {
     @GET
     @Path("/support-users/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse supportUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        User currentUser = requireSuperuser(auth);
+    public UserDirectoryApiModels.UserDetailResponse supportUser(@PathParam("id") Long id) {
+        User u = currentUser.get();
         User user = userByType(id, User.TYPE_SUPPORT);
-        return detailResponse(currentUser, user, canViewSupportUser(currentUser, user));
+        return detailResponse(u, user, canViewSupportUser(u, user));
     }
 
     @GET
     @Path("/superuser-users/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse superuser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        User currentUser = requireSuperuser(auth);
+    public UserDirectoryApiModels.UserDetailResponse superuser(@PathParam("id") Long id) {
+        User u = currentUser.get();
         User user = userByType(id, User.TYPE_SUPERUSER);
-        return detailResponse(currentUser, user, false);
+        return detailResponse(u, user, false);
     }
 
     @GET
     @Path("/user-profiles/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse profile(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        User currentUser = requireSuperuser(auth);
+    public UserDirectoryApiModels.UserDetailResponse profile(@PathParam("id") Long id) {
+        User u = currentUser.get();
         User user = User.findById(id);
         if (user == null) {
             throw new NotFoundException();
         }
-        return detailResponse(currentUser, user, false);
+        return detailResponse(u, user, false);
     }
 
     @GET
     @Path("/companies/{id}")
     @Transactional
-    public UserDirectoryApiModels.CompanyDetailResponse company(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        User currentUser = requireSuperuser(auth);
-        Company company = allowedCompany(currentUser, id);
+    public UserDirectoryApiModels.CompanyDetailResponse company(@PathParam("id") Long id) {
+        User u = currentUser.get();
+        Company company = allowedCompany(u, id);
         return new UserDirectoryApiModels.CompanyDetailResponse(company.id, company.name, company.address1,
                 company.address2, company.city, company.state, company.zip, company.phoneNumber,
                 company.country == null ? null : company.country.name,

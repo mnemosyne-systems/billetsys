@@ -16,8 +16,9 @@ import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -33,19 +34,18 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Blocking
+@RolesAllowed("admin")
 public class OwnerApiResource {
 
     @GET
     @Transactional
-    public OwnerResponse owner(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public OwnerResponse owner() {
         return toResponse(OwnerResource.findOwnerCompany());
     }
 
     @POST
     @Transactional
-    public OwnerResponse update(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, OwnerUpdateRequest request) {
-        requireAdmin(auth);
+    public OwnerResponse update(OwnerUpdateRequest request) {
         if (request == null || request.name() == null || request.name().isBlank()) {
             throw new WebApplicationException("Name is required", Response.Status.BAD_REQUEST);
         }
@@ -87,14 +87,6 @@ public class OwnerApiResource {
         installation.logoBase64 = trimToNull(request.logoBase64());
         installation.backgroundBase64 = trimToNull(request.backgroundBase64());
         return toResponse(company);
-    }
-
-    private User requireAdmin(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isAdmin(user)) {
-            throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-        return user;
     }
 
     private OwnerResponse toResponse(Company company) {

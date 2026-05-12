@@ -13,12 +13,14 @@ import ai.mnemosyne_systems.model.Attachment;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.quarkus.hibernate.orm.panache.Panache;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
@@ -40,31 +42,35 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 @Path("/articles")
 @Produces(MediaType.TEXT_HTML)
 @Blocking
+@RolesAllowed({ "admin", "support", "superuser", "tam", "user" })
 public class ArticleResource {
     private static final String SAMPLE_TITLE = "Getting Started Guide";
     private static final String SAMPLE_TAGS = "guide, onboarding";
     private static final String SAMPLE_BODY = "## Welcome to billetsys\n\n- Open a ticket from the Tickets menu\n- Use Markdown in messages\n- Attach files with the attachment picker";
     private static final String LEGACY_SAMPLE_BODY_PREFIX = "# Getting Started";
 
+    @Inject
+    CurrentUser currentUser;
+
     @GET
     @Transactional
-    public Response list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireLoggedIn(auth);
+    public Response list() {
+        currentUser.get();
         ensureSampleArticle();
         return Response.seeOther(URI.create("/articles")).build();
     }
 
     @GET
     @Path("/create")
-    public Response createForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireCreateEdit(auth);
+    public Response createForm() {
+        requireCreateEdit();
         return Response.seeOther(URI.create("/articles/new")).build();
     }
 
     @GET
     @Path("/{id}/edit")
-    public Response editForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireCreateEdit(auth);
+    public Response editForm(@PathParam("id") Long id) {
+        requireCreateEdit();
         if (findArticleWithAttachments(id) == null) {
             throw new NotFoundException();
         }
@@ -73,8 +79,8 @@ public class ArticleResource {
 
     @GET
     @Path("/{id}")
-    public Response view(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireView(auth);
+    public Response view(@PathParam("id") Long id) {
+        requireView();
         ensureSampleArticle();
         if (findArticleWithAttachments(id) == null) {
             throw new NotFoundException();
@@ -85,9 +91,8 @@ public class ArticleResource {
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
-    public Response create(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
-        requireCreateEdit(auth);
+    public Response create(@HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
+        requireCreateEdit();
         String title = AttachmentHelper.readFormValue(input, "title");
         String tags = AttachmentHelper.readFormValue(input, "tags");
         String body = AttachmentHelper.readFormValue(input, "body");
@@ -107,9 +112,9 @@ public class ArticleResource {
     @Path("/{id}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
-    public Response update(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
-        requireCreateEdit(auth);
+    public Response update(@PathParam("id") Long id, @HeaderParam("X-Billetsys-Client") String client,
+            MultipartFormDataInput input) {
+        requireCreateEdit();
         Article article = Article
                 .find("select distinct a from Article a left join fetch a.attachments where a.id = ?1", id)
                 .firstResult();
@@ -132,9 +137,8 @@ public class ArticleResource {
     @POST
     @Path("/{id}/delete")
     @Transactional
-    public Response delete(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    @RolesAllowed("admin")
+    public Response delete(@HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
         Article article = Article.findById(id);
         if (article == null) {
             throw new NotFoundException();
@@ -218,28 +222,29 @@ public class ArticleResource {
                 .firstResult();
     }
 
-    private User requireLoggedIn(String auth) {
-        User user = AuthHelper.findUser(auth);
+    private User requireLoggedIn() {
+        User user = currentUser.get();
         if (user == null) {
             throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
         }
         return user;
     }
 
-    private User requireView(String auth) {
-        return requireLoggedIn(auth);
+    private User requireView() {
+        return requireLoggedIn();
     }
 
-    private User requireCreateEdit(String auth) {
-        User user = requireLoggedIn(auth);
+    private User requireCreateEdit() {
+        User user = currentUser.get();
         if (!canEdit(user)) {
+            // TODO return ForbiddenException() ?!
             throw new WebApplicationException(Response.seeOther(URI.create("/articles")).build());
         }
         return user;
     }
 
-    private User requireAdmin(String auth) {
-        User user = requireLoggedIn(auth);
+    private User requireAdmin() {
+        User user = requireLoggedIn();
         if (!AuthHelper.isAdmin(user)) {
             throw new WebApplicationException(Response.seeOther(URI.create("/articles")).build());
         }

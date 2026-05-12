@@ -10,8 +10,11 @@ package ai.mnemosyne_systems.resource;
 
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
-import jakarta.ws.rs.CookieParam;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -22,11 +25,15 @@ import jakarta.ws.rs.core.Response;
 @Path("/")
 @Produces(MediaType.TEXT_HTML)
 @Blocking
+@RolesAllowed({ "admin", "support", "superuser", "tam", "user" })
 public class HomeResource {
 
+    @Inject
+    CurrentUser currentUser;
+
     @GET
-    public Object index(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @QueryParam("error") String error) {
-        User user = AuthHelper.findUser(auth);
+    public Object index(@QueryParam("error") String error) {
+        User user = currentUser.get();
         if (AuthHelper.isAdmin(user) || AuthHelper.isSupport(user) || AuthHelper.isSuperuser(user)
                 || AuthHelper.isUser(user)) {
             return Response.status(Response.Status.SEE_OTHER).header("Location", "/").build();
@@ -37,8 +44,8 @@ public class HomeResource {
 
     @GET
     @Path("/admin")
-    public Object adminHome(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        User user = AuthHelper.findUser(auth);
+    public Object adminHome() {
+        User user = currentUser.get();
         if (!AuthHelper.isAdmin(user)) {
             return Response.status(Response.Status.SEE_OTHER).header("Location", "/").build();
         }

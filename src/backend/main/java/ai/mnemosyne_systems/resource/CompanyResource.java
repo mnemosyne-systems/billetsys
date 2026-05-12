@@ -18,11 +18,12 @@ import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
@@ -44,25 +45,23 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 @Produces(MediaType.TEXT_HTML)
 @Blocking
+@RolesAllowed("admin")
 public class CompanyResource {
 
     @GET
-    public Response listCompanies(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public Response listCompanies() {
         return Response.seeOther(URI.create("/companies")).build();
     }
 
     @GET
     @Path("/create")
-    public Response createForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public Response createForm() {
         return Response.seeOther(URI.create("/companies/new")).build();
     }
 
     @GET
     @Path("{id}/edit")
-    public Response editForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public Response editForm(@PathParam("id") Long id) {
         if (Company.findById(id) == null) {
             throw new NotFoundException();
         }
@@ -71,8 +70,7 @@ public class CompanyResource {
 
     @GET
     @Path("{id}")
-    public Response viewCompany(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public Response viewCompany(@PathParam("id") Long id) {
         if (Company.findById(id) == null) {
             throw new NotFoundException();
         }
@@ -82,8 +80,7 @@ public class CompanyResource {
     @POST
     @Path("")
     @Transactional
-    public Response createCompany(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
+    public Response createCompany(@HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
             @FormParam("address1") String address1, @FormParam("address2") String address2,
             @FormParam("city") String city, @FormParam("state") String state, @FormParam("zip") String zip,
             @FormParam("countryId") Long countryId, @FormParam("timezoneId") Long timezoneId,
@@ -93,7 +90,6 @@ public class CompanyResource {
             @FormParam("entitlementDates") java.util.List<String> entitlementDates,
             @FormParam("entitlementDurations") java.util.List<Integer> entitlementDurations,
             @FormParam("phoneNumber") String phoneNumber) {
-        requireAdmin(auth);
         if (name == null || name.isBlank()) {
             throw new BadRequestException("Name is required");
         }
@@ -117,18 +113,17 @@ public class CompanyResource {
     @POST
     @Path("{id}")
     @Transactional
-    public Response updateCompany(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
-            @FormParam("address1") String address1, @FormParam("address2") String address2,
-            @FormParam("city") String city, @FormParam("state") String state, @FormParam("zip") String zip,
-            @FormParam("countryId") Long countryId, @FormParam("timezoneId") Long timezoneId,
-            @FormParam("userIds") java.util.List<Long> userIds, @FormParam("tamIds") java.util.List<Long> tamIds,
+    public Response updateCompany(@PathParam("id") Long id, @HeaderParam("X-Billetsys-Client") String client,
+            @FormParam("name") String name, @FormParam("address1") String address1,
+            @FormParam("address2") String address2, @FormParam("city") String city, @FormParam("state") String state,
+            @FormParam("zip") String zip, @FormParam("countryId") Long countryId,
+            @FormParam("timezoneId") Long timezoneId, @FormParam("userIds") java.util.List<Long> userIds,
+            @FormParam("tamIds") java.util.List<Long> tamIds,
             @FormParam("entitlementIds") java.util.List<Long> entitlementIds,
             @FormParam("levelIds") java.util.List<Long> levelIds,
             @FormParam("entitlementDates") java.util.List<String> entitlementDates,
             @FormParam("entitlementDurations") java.util.List<Integer> entitlementDurations,
             @FormParam("phoneNumber") String phoneNumber, @Context HttpServletRequest request) {
-        requireAdmin(auth);
         Company company = Company.findById(id);
         if (company == null) {
             throw new NotFoundException();
@@ -172,23 +167,13 @@ public class CompanyResource {
     @POST
     @Path("{id}/delete")
     @Transactional
-    public Response deleteCompany(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public Response deleteCompany(@HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
         Company company = Company.findById(id);
         if (company == null) {
             throw new NotFoundException();
         }
         company.delete();
         return ReactRedirectSupport.redirect(client, "/companies");
-    }
-
-    private User requireAdmin(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isAdmin(user)) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
-        }
-        return user;
     }
 
     private java.util.List<User> resolveUsers(java.util.List<Long> userIds, java.util.List<Long> tamIds,
