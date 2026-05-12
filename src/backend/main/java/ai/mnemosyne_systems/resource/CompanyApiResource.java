@@ -16,8 +16,9 @@ import ai.mnemosyne_systems.model.Level;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
@@ -33,12 +34,12 @@ import java.util.List;
 
 @Path("/api/companies")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("admin")
 public class CompanyApiResource {
 
     @GET
     @Transactional
-    public CompanyListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public CompanyListResponse list() {
         List<Company> companies = Company.list("lower(name) <> lower(?1) order by name", "mnemosyne systems");
         return new CompanyListResponse("/companies/new", companies.stream().map(this::toSummary).toList());
     }
@@ -46,8 +47,7 @@ public class CompanyApiResource {
     @GET
     @Path("/bootstrap")
     @Transactional
-    public CompanyBootstrapResponse bootstrap(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public CompanyBootstrapResponse bootstrap() {
         return new CompanyBootstrapResponse(optionCountries(), optionTimezones(),
                 optionUsers(User.TYPE_SUPERUSER, null), optionUsers(User.TYPE_USER, null),
                 optionUsers(User.TYPE_TAM, null), optionEntitlements(), optionLevels(), defaultCountryId(),
@@ -59,8 +59,7 @@ public class CompanyApiResource {
     @GET
     @Path("/{id}")
     @Transactional
-    public CompanyDetailResponse detail(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public CompanyDetailResponse detail(@PathParam("id") Long id) {
         Company company = Company.find("select distinct c from Company c left join fetch c.users where c.id = ?1", id)
                 .firstResult();
         if (company == null) {
@@ -82,7 +81,7 @@ public class CompanyApiResource {
                 selectedTamOptions.stream().map(UserOption::id).toList());
         List<UserOption> superuserOptions = optionUsers(User.TYPE_SUPERUSER, company.id);
         List<UserOption> userOptions = optionUsers(User.TYPE_USER, company.id);
-        CompanyBootstrapResponse bootstrap = bootstrap(auth);
+        CompanyBootstrapResponse bootstrap = bootstrap();
         return new CompanyDetailResponse(company.id, company.name, company.address1, company.address2, company.city,
                 company.state, company.zip, company.phoneNumber, company.country == null ? null : company.country.id,
                 company.country == null ? null : company.country.name,
@@ -183,14 +182,6 @@ public class CompanyApiResource {
             return false;
         }
         return LocalDate.now().isAfter(endDate);
-    }
-
-    private User requireAdmin(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isAdmin(user)) {
-            throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-        return user;
     }
 
     public record CompanyListResponse(String createPath, List<CompanySummary> items) {

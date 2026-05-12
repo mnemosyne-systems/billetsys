@@ -20,9 +20,10 @@ import ai.mnemosyne_systems.model.event.Event;
 import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotAuthorizedException;
@@ -41,7 +42,11 @@ import java.util.Set;
 
 @Path("/api/user/tickets")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed({ "tam", "user" })
 public class UserTicketApiResource {
+
+    @Inject
+    CurrentUser currentUser;
 
     @Inject
     CrossReferenceService crossReferenceService;
@@ -54,11 +59,11 @@ public class UserTicketApiResource {
 
     @GET
     @Transactional
-    public SupportTicketApiResource.SupportTicketListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+    public SupportTicketApiResource.SupportTicketListResponse list(
             @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q,
             @QueryParam("page") Integer page, @QueryParam("pageSize") Integer pageSize, @QueryParam("sort") String sort,
             @QueryParam("dir") String dir) {
-        User user = requireUser(auth);
+        User user = currentUser.get();
         UserResource.SupportTicketData data = userResource.buildTicketDataForUser(user);
         String normalizedView = normalizeView(view);
         List<Ticket> tickets = switch (normalizedView) {
@@ -91,10 +96,10 @@ public class UserTicketApiResource {
     @GET
     @Path("/suggest")
     @Transactional
-    public SupportTicketApiResource.TicketSuggestionResponse suggest(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+    public SupportTicketApiResource.TicketSuggestionResponse suggest(
             @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q,
             @QueryParam("exclude") Long exclude) {
-        User user = requireUser(auth);
+        User user = currentUser.get();
         UserResource.SupportTicketData data = userResource.buildTicketDataForUser(user);
         List<Ticket> tickets = TicketSearchSupport.combineTickets(data.assignedTickets, data.openTickets,
                 data.closedTickets);
@@ -110,10 +115,9 @@ public class UserTicketApiResource {
     @GET
     @Path("/bootstrap")
     @Transactional
-    public SupportTicketApiResource.SupportTicketBootstrapResponse bootstrap(
-            @CookieParam(AuthHelper.AUTH_COOKIE) String auth, @QueryParam("companyId") Long companyId,
+    public SupportTicketApiResource.SupportTicketBootstrapResponse bootstrap(@QueryParam("companyId") Long companyId,
             @QueryParam("companyEntitlementId") Long companyEntitlementId) {
-        User user = requireUser(auth);
+        User user = currentUser.get();
         UserResource.SupportTicketData data = userResource.buildTicketDataForUser(user);
         List<Company> companies = Company
                 .find("select distinct c from Company c join c.users u where u = ?1 order by c.name", user).list();
@@ -151,8 +155,8 @@ public class UserTicketApiResource {
     @GET
     @Path("/{id}")
     @Transactional
-    public RoleTicketDetailResponse detail(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = requireUser(auth);
+    public RoleTicketDetailResponse detail(@PathParam("id") Long id) {
+        User user = currentUser.get();
         Ticket ticket = userResource.findTicketForUser(user, id);
         if (ticket == null) {
             throw new NotFoundException();
@@ -215,9 +219,8 @@ public class UserTicketApiResource {
     @GET
     @Path("/{id}/references")
     @Transactional
-    public CrossReferenceService.CrossReferencesResponse references(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        User user = requireUser(auth);
+    public CrossReferenceService.CrossReferencesResponse references(@PathParam("id") Long id) {
+        User user = currentUser.get();
         Ticket ticket = userResource.findTicketForUser(user, id);
         if (ticket == null) {
             throw new NotFoundException();
@@ -370,14 +373,6 @@ public class UserTicketApiResource {
             case User.TYPE_TAM -> "/user/tam-users/" + user.id;
             default -> "/user/user-profiles/" + user.id;
         };
-    }
-
-    private User requireUser(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isUser(user)) {
-            throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-        return user;
     }
 
     public record RoleTicketDetailResponse(Long id, String name, String title, String displayStatus, int assignedCount,

@@ -54,6 +54,7 @@
     "highlight.js": "^11.11.1",
     "iconsax-react": "^0.0.8",
     "iso-country-currency": "^0.7.2",
+    "keycloak-js": "^26.2.4",
     "lexical": "^0.43.0",
     "lodash": "^4.18.1",
     "lucide-react": "^1.8.0",
