@@ -519,7 +519,7 @@ public class UserResource {
         if (editUser == null) {
             throw new NotFoundException();
         }
-        validateUserFields(name, email, type, false, password);
+        validateUserFields(name, email, type, false, password, editUser.name);
         if (editUser.name == null || editUser.name.isBlank()) {
             editUser.name = name.trim();
         }
@@ -614,6 +614,25 @@ public class UserResource {
             throw new BadRequestException("Username is required");
         }
         if (User.usernameExists(name)) {
+            throw new BadRequestException("Username already exists");
+        }
+        if (email == null || email.isBlank()) {
+            throw new BadRequestException("Email is required");
+        }
+        if (requirePassword && (password == null || password.isBlank())) {
+            throw new BadRequestException("Password is required");
+        }
+        if (type == null || type.isBlank()) {
+            throw new BadRequestException("Type is required");
+        }
+    }
+
+    private void validateUserFields(String name, String email, String type, boolean requirePassword, String password,
+            String currentName) {
+        if (name == null || name.isBlank()) {
+            throw new BadRequestException("Username is required");
+        }
+        if (!currentName.equals(name) && User.usernameExists(name)) {
             throw new BadRequestException("Username already exists");
         }
         if (email == null || email.isBlank()) {
