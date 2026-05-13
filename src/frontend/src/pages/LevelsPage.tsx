@@ -8,18 +8,61 @@
 
 import { Link } from "react-router-dom";
 import DataState from "../components/common/DataState";
+import PaginationControls from "../components/common/PaginationControls";
+import SortDropdown from "../components/common/SortDropdown";
 import { LevelColorBadge } from "../components/common/LevelColorBadge";
 import PageHeader from "../components/layout/PageHeader";
 import useJson from "../hooks/useJson";
+import useClientPagination from "../hooks/useClientPagination";
 import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
 import type { CollectionResponse, LevelRecord } from "../types/domain";
 import { Card, CardHeader } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 
-export default function LevelsPage(props: SessionPageProps) {
-  void props;
+const SORT_OPTIONS = [
+  { key: "name", label: "Name" },
+  { key: "level", label: "Level" },
+];
+
+const SORT_CONFIGS = [
+  {
+    key: "name",
+    comparator: (a: LevelRecord, b: LevelRecord) =>
+      (a.name || "").localeCompare(b.name || "", undefined, {
+        sensitivity: "base",
+      }),
+  },
+  {
+    key: "level",
+    comparator: (a: LevelRecord, b: LevelRecord) =>
+      Number(a.level ?? 0) - Number(b.level ?? 0),
+  },
+];
+
+export default function LevelsPage({ sessionState }: SessionPageProps) {
   const levelsState = useJson<CollectionResponse<LevelRecord>>("/api/levels");
+
+  const defaultPageSize = sessionState.data?.defaultPageSize ?? undefined;
+
+  const {
+    pageItems,
+    page,
+    pageSize,
+    totalItems,
+    totalPages,
+    sort,
+    dir,
+    setPage,
+    setPageSize,
+    setSort,
+    pageSizeOptions,
+  } = useClientPagination<LevelRecord>({
+    items: levelsState.data?.items || [],
+    defaultPageSize,
+    sortConfigs: SORT_CONFIGS,
+    defaultSort: "name",
+  });
 
   return (
     <section className="w-full mt-4">
@@ -36,8 +79,17 @@ export default function LevelsPage(props: SessionPageProps) {
         state={levelsState}
         emptyMessage="No levels are available yet."
       >
+        <div className="flex items-center justify-between mb-4">
+          <SortDropdown
+            options={SORT_OPTIONS}
+            currentSort={sort}
+            currentDir={dir}
+            onSort={setSort}
+          />
+        </div>
+
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {levelsState.data?.items.map((level: LevelRecord) => (
+          {pageItems.map((level: LevelRecord) => (
             <Card key={level.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
@@ -68,6 +120,16 @@ export default function LevelsPage(props: SessionPageProps) {
             </Card>
           ))}
         </div>
+
+        <PaginationControls
+          page={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
+          pageSizeOptions={pageSizeOptions}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </DataState>
     </section>
   );

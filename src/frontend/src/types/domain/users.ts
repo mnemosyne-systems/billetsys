@@ -67,6 +67,7 @@ export interface ProfileRecord extends UserReference {
   canSelectCompany?: boolean;
   currentCompanyId?: Id;
   emailFormat?: string;
+  pageSize?: number;
 }
 
 export interface DirectoryUserRecord extends UserReference {

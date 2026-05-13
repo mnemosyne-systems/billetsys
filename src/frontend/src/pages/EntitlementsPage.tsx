@@ -8,7 +8,10 @@
 
 import { Link } from "react-router-dom";
 import useJson from "../hooks/useJson";
+import useClientPagination from "../hooks/useClientPagination";
 import DataState from "../components/common/DataState";
+import PaginationControls from "../components/common/PaginationControls";
+import SortDropdown from "../components/common/SortDropdown";
 import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
 import type { CollectionResponse, EntitlementRecord } from "../types/domain";
@@ -33,10 +36,42 @@ function sortedSupportLevels(
   );
 }
 
-export default function EntitlementsPage(props: SessionPageProps) {
-  void props;
+const SORT_OPTIONS = [{ key: "name", label: "Name" }];
+
+const SORT_CONFIGS = [
+  {
+    key: "name",
+    comparator: (a: EntitlementRecord, b: EntitlementRecord) =>
+      (a.name || "").localeCompare(b.name || "", undefined, {
+        sensitivity: "base",
+      }),
+  },
+];
+
+export default function EntitlementsPage({ sessionState }: SessionPageProps) {
   const entitlementsState =
     useJson<CollectionResponse<EntitlementRecord>>("/api/entitlements");
+
+  const defaultPageSize = sessionState.data?.defaultPageSize ?? undefined;
+
+  const {
+    pageItems,
+    page,
+    pageSize,
+    totalItems,
+    totalPages,
+    sort,
+    dir,
+    setPage,
+    setPageSize,
+    setSort,
+    pageSizeOptions,
+  } = useClientPagination<EntitlementRecord>({
+    items: entitlementsState.data?.items || [],
+    defaultPageSize,
+    sortConfigs: SORT_CONFIGS,
+    defaultSort: "name",
+  });
 
   return (
     <section className="w-full mt-4">
@@ -53,51 +88,68 @@ export default function EntitlementsPage(props: SessionPageProps) {
         state={entitlementsState}
         emptyMessage="No entitlements are available yet."
       >
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {entitlementsState.data?.items.map(
-            (entitlement: EntitlementRecord) => (
-              <Card
-                key={entitlement.id}
-                className="hover:shadow-md transition-shadow"
-              >
-                <CardHeader>
-                  <h3 className="font-semibold leading-none tracking-tight">
-                    <Link
-                      className="text-[var(--color-header-bg)] hover:underline hover:opacity-80"
-                      to={`/entitlements/${entitlement.id}`}
-                    >
-                      {entitlement.name}
-                    </Link>
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                    {entitlement.descriptionPreview || "No description"}
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {sortedSupportLevels(entitlement.supportLevels).map(
-                      (level) => (
-                        <Badge
-                          variant="secondary"
-                          className="font-normal"
-                          key={
-                            typeof level === "string" ? level : String(level.id)
-                          }
-                        >
-                          {supportLevelLabel(level)}
-                        </Badge>
-                      ),
-                    )}
-                    {(!entitlement.supportLevels ||
-                      entitlement.supportLevels.length === 0) && (
-                      <span className="text-sm text-muted-foreground">
-                        No levels
-                      </span>
-                    )}
-                  </div>
-                </CardHeader>
-              </Card>
-            ),
-          )}
+        <div className="flex items-center justify-between mb-4">
+          <SortDropdown
+            options={SORT_OPTIONS}
+            currentSort={sort}
+            currentDir={dir}
+            onSort={setSort}
+          />
         </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {pageItems.map((entitlement: EntitlementRecord) => (
+            <Card
+              key={entitlement.id}
+              className="hover:shadow-md transition-shadow"
+            >
+              <CardHeader>
+                <h3 className="font-semibold leading-none tracking-tight">
+                  <Link
+                    className="text-[var(--color-header-bg)] hover:underline hover:opacity-80"
+                    to={`/entitlements/${entitlement.id}`}
+                  >
+                    {entitlement.name}
+                  </Link>
+                </h3>
+                <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                  {entitlement.descriptionPreview || "No description"}
+                </p>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {sortedSupportLevels(entitlement.supportLevels).map(
+                    (level) => (
+                      <Badge
+                        variant="secondary"
+                        className="font-normal"
+                        key={
+                          typeof level === "string" ? level : String(level.id)
+                        }
+                      >
+                        {supportLevelLabel(level)}
+                      </Badge>
+                    ),
+                  )}
+                  {(!entitlement.supportLevels ||
+                    entitlement.supportLevels.length === 0) && (
+                    <span className="text-sm text-muted-foreground">
+                      No levels
+                    </span>
+                  )}
+                </div>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+
+        <PaginationControls
+          page={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
+          pageSizeOptions={pageSizeOptions}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </DataState>
     </section>
   );

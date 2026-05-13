@@ -80,9 +80,10 @@ class SupportAccessTest extends AccessTestSupport {
                 supportUser).list().size();
         int openCount = ai.mnemosyne_systems.model.Ticket
                 .find("select distinct t from Ticket t where t.supportUsers is empty").list().size();
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/support/tickets").then().statusCode(200)
-                .body("title", Matchers.equalTo("Tickets")).body("assignedCount", Matchers.equalTo(assignedCount))
-                .body("openCount", Matchers.equalTo(openCount)).body("items.name", Matchers.hasItem(supportTicketName))
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("pageSize", 100)
+                .get("/api/support/tickets").then().statusCode(200).body("title", Matchers.equalTo("Tickets"))
+                .body("assignedCount", Matchers.equalTo(assignedCount)).body("openCount", Matchers.equalTo(openCount))
+                .body("items.name", Matchers.hasItem(supportTicketName))
                 .body("items.status", Matchers.hasItem("Assigned"))
                 .body("items.supportUser.username", Matchers.hasItem("support1"));
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie).get("/support/open").then()

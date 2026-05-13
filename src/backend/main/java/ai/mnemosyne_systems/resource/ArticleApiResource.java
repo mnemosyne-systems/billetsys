@@ -36,12 +36,21 @@ public class ArticleApiResource {
 
     @GET
     @Transactional
-    public ArticleListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
+    public ArticleListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @QueryParam("page") Integer page,
+            @QueryParam("pageSize") Integer pageSize, @QueryParam("sort") String sort, @QueryParam("dir") String dir) {
         User user = requireUser(auth);
         ArticleResource.ensureSampleArticle();
-        List<ArticleSummary> items = Article.<Article> list("order by lower(title), id").stream()
+        List<ArticleSummary> allItems = Article.<Article> list("order by lower(title), id").stream()
                 .map(article -> new ArticleSummary(article.id, article.title, article.tags)).toList();
-        return new ArticleListResponse(ArticleResource.canEdit(user), "/articles/new", items);
+        int totalItems = allItems.size();
+        java.util.Map<String, PaginationSupport.SortColumn<ArticleSummary>> sortColumns = java.util.Map.of("title",
+                PaginationSupport.sortColumn(ArticleSummary::title, String.CASE_INSENSITIVE_ORDER), "tags",
+                PaginationSupport.sortColumn(ArticleSummary::tags, String.CASE_INSENSITIVE_ORDER));
+        List<ArticleSummary> pageItems = PaginationSupport.sortAndPaginate(allItems, sort, dir, sortColumns, page,
+                pageSize);
+        PaginationSupport.PaginationMeta meta = PaginationSupport.meta(page, pageSize, totalItems);
+        return new ArticleListResponse(ArticleResource.canEdit(user), "/articles/new", pageItems, meta.page(),
+                meta.pageSize(), meta.totalItems(), meta.totalPages());
     }
 
     @GET
@@ -106,7 +115,8 @@ public class ArticleApiResource {
                 "/attachments/" + attachment.id + "/data");
     }
 
-    public record ArticleListResponse(boolean canCreate, String createPath, List<ArticleSummary> items) {
+    public record ArticleListResponse(boolean canCreate, String createPath, List<ArticleSummary> items, int page,
+            int pageSize, int totalItems, int totalPages) {
     }
 
     public record ArticleBootstrapResponse(boolean canEdit, boolean canDelete) {

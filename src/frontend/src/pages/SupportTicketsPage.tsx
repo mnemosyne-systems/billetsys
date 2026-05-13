@@ -6,11 +6,13 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import DataState from "../components/common/DataState";
+import PaginationControls from "../components/common/PaginationControls";
+import SortableTableHead from "../components/common/SortableTableHead";
 import PageHeader from "../components/layout/PageHeader";
-import useJson from "../hooks/useJson";
-import { shouldUseLightTextOnColor, toQueryString } from "../utils/formatting";
+import usePaginatedList from "../hooks/usePaginatedList";
+import { shouldUseLightTextOnColor } from "../utils/formatting";
 import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
 import type { CollectionResponse, TicketListItem } from "../types/domain";
@@ -37,6 +39,18 @@ interface TicketListResponse extends CollectionResponse<TicketListItem> {
   searchTerm?: string;
 }
 
+const SORT_KEYS = [
+  "name",
+  "title",
+  "date",
+  "status",
+  "category",
+  "company",
+  "entitlement",
+  "level",
+  "affects",
+] as const;
+
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) {
     return false;
@@ -54,6 +68,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
 export default function SupportTicketsPage({
   title,
   view,
+  sessionState,
   apiBase = "/api/support/tickets",
   createFallbackPath = "/support/tickets/new",
 }: SupportTicketsPageProps) {
@@ -61,11 +76,38 @@ export default function SupportTicketsPage({
   const navigate = useNavigate();
   const locationSearchTerm =
     new URLSearchParams(location.search).get("q") || "";
-  const query = toQueryString({
-    view: view !== "assigned" ? view : undefined,
-    q: locationSearchTerm || undefined,
+
+  const extraParams = useMemo(
+    () => ({
+      view: view !== "assigned" ? view : undefined,
+      q: locationSearchTerm || undefined,
+    }),
+    [view, locationSearchTerm],
+  );
+
+  const defaultPageSize = sessionState.data?.defaultPageSize ?? undefined;
+
+  const {
+    state: ticketsState,
+    page,
+    pageSize,
+    totalItems,
+    totalPages,
+    sort,
+    dir,
+    setPage,
+    setPageSize,
+    setSort,
+    pageSizeOptions,
+  } = usePaginatedList<TicketListResponse>({
+    apiUrl: apiBase,
+    extraParams,
+    defaultPageSize,
+    defaultSort: "name",
+    defaultDir: "asc",
+    sortKeys: SORT_KEYS,
   });
-  const ticketsState = useJson<TicketListResponse>(`${apiBase}${query}`);
+
   const currentView = ticketsState.data?.view || view || "assigned";
   const activeSearch = ticketsState.data?.searchTerm || locationSearchTerm;
   const showLevelColumn = apiBase !== "/api/user/tickets";
@@ -82,6 +124,7 @@ export default function SupportTicketsPage({
   const emptyMessage = activeSearch
     ? `No tickets matched "${activeSearch}".`
     : "No tickets";
+
   const shortcutTickets = (ticketsState.data?.items || []).slice(0, 10);
 
   useEffect(() => {
@@ -146,20 +189,82 @@ export default function SupportTicketsPage({
             <Table className="text-base">
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead className="whitespace-nowrap">Name</TableHead>
-                  <TableHead className="min-w-[160px]">Title</TableHead>
-                  <TableHead className="whitespace-nowrap">Date</TableHead>
-                  <TableHead className="whitespace-nowrap">Status</TableHead>
-                  <TableHead className="whitespace-nowrap">Category</TableHead>
+                  <SortableTableHead
+                    columnKey="name"
+                    currentSort={sort}
+                    currentDir={dir}
+                    onSort={setSort}
+                  >
+                    Name
+                  </SortableTableHead>
+                  <SortableTableHead
+                    columnKey="title"
+                    currentSort={sort}
+                    currentDir={dir}
+                    onSort={setSort}
+                    className="min-w-[160px]"
+                  >
+                    Title
+                  </SortableTableHead>
+                  <SortableTableHead
+                    columnKey="date"
+                    currentSort={sort}
+                    currentDir={dir}
+                    onSort={setSort}
+                  >
+                    Date
+                  </SortableTableHead>
+                  <SortableTableHead
+                    columnKey="status"
+                    currentSort={sort}
+                    currentDir={dir}
+                    onSort={setSort}
+                  >
+                    Status
+                  </SortableTableHead>
+                  <SortableTableHead
+                    columnKey="category"
+                    currentSort={sort}
+                    currentDir={dir}
+                    onSort={setSort}
+                  >
+                    Category
+                  </SortableTableHead>
                   <TableHead className="whitespace-nowrap">Support</TableHead>
-                  <TableHead className="whitespace-nowrap">Company</TableHead>
-                  <TableHead className="whitespace-nowrap">
+                  <SortableTableHead
+                    columnKey="company"
+                    currentSort={sort}
+                    currentDir={dir}
+                    onSort={setSort}
+                  >
+                    Company
+                  </SortableTableHead>
+                  <SortableTableHead
+                    columnKey="entitlement"
+                    currentSort={sort}
+                    currentDir={dir}
+                    onSort={setSort}
+                  >
                     Entitlement
-                  </TableHead>
+                  </SortableTableHead>
                   {showLevelColumn && (
-                    <TableHead className="whitespace-nowrap">Level</TableHead>
+                    <SortableTableHead
+                      columnKey="level"
+                      currentSort={sort}
+                      currentDir={dir}
+                      onSort={setSort}
+                    >
+                      Level
+                    </SortableTableHead>
                   )}
-                  <TableHead className="whitespace-nowrap">Affects</TableHead>
+                  <SortableTableHead
+                    columnKey="affects"
+                    currentSort={sort}
+                    currentDir={dir}
+                    onSort={setSort}
+                  >
+                    Affects
+                  </SortableTableHead>
                   {currentView === "closed" && (
                     <TableHead className="whitespace-nowrap">
                       Resolved
@@ -289,6 +394,16 @@ export default function SupportTicketsPage({
               </TableBody>
             </Table>
           </div>
+
+          <PaginationControls
+            page={page}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            totalPages={totalPages}
+            pageSizeOptions={pageSizeOptions}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </DataState>
       </div>
     </div>

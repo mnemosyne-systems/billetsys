@@ -74,6 +74,9 @@ public class User extends PanacheEntityBase {
     @Column(name = "email_format")
     public String emailFormat;
 
+    @Column(name = "page_size")
+    public Integer pageSize;
+
     public static boolean usernameExists(String username) {
         if (username == null || username.isBlank()) {
             return false;

@@ -62,6 +62,22 @@ Billetsys provides ticket lists that help each role focus on the cases relevant 
 
 This makes the ticket area useful both for individual follow-up and for operational queue management.
 
+### Pagination and page size
+
+Ticket lists are paginated. The default page size is **10**, but it can be changed per-page using the rows-per-page selector at the bottom of any list. Available options are 10, 25, and 50.
+
+Users can set a personal default in their **Profile** under *Default rows*. This preference applies to all paginated lists across the application. The per-page selector overrides this default for the current view.
+
+The current page, page size, sort column, and direction are preserved in the browser URL. This means paginated views are **bookmarkable** — sharing or reopening a URL returns to the exact same view state.
+
+### Column sorting
+
+Ticket list columns can be sorted by clicking the column header. Clicking a column that is already the active sort toggles between ascending (▲) and descending (▼) order. Clicking a different column starts ascending sort on that column.
+
+Sortable columns include: **Name**, **Title**, **Date**, **Status**, **Category**, **Company**, **Entitlement**, **Level**, and **Affects**.
+
+### Keyboard shortcuts
+
 For roles that use the ticket queues, these keyboard shortcuts are available from the application header:
 
 * `Ctrl+A` opens **Active tickets**

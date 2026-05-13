@@ -48,7 +48,9 @@ public class SupportTicketApiResource {
     @GET
     @Transactional
     public SupportTicketListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q) {
+            @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q,
+            @QueryParam("page") Integer page, @QueryParam("pageSize") Integer pageSize, @QueryParam("sort") String sort,
+            @QueryParam("dir") String dir) {
         User user = requireSupport(auth);
         SupportTicketViewSupport.SupportTicketData data = SupportTicketViewSupport.buildTicketData(user);
         SupportTicketViewSupport.SupportTicketCounts counts = SupportTicketViewSupport.loadTicketCounts(user);
@@ -64,13 +66,19 @@ public class SupportTicketApiResource {
                     data.closedTickets());
         }
         tickets = TicketSearchSupport.filterTicketsBySearch(tickets, searchTerm, user);
+        int totalItems = tickets.size();
+        List<SupportTicketSummary> allSummaries = tickets.stream().map(ticket -> toSummary(ticket, data)).toList();
+        List<SupportTicketSummary> pageItems = PaginationSupport.sortAndPaginate(allSummaries, sort, dir,
+                ticketSortColumns(), page, pageSize);
+        PaginationSupport.PaginationMeta meta = PaginationSupport.meta(page, pageSize, totalItems);
         String title = switch (normalizedView) {
             case "open" -> "Open tickets";
             case "closed" -> "Closed tickets";
             default -> "Tickets";
         };
         return new SupportTicketListResponse(normalizedView, title, counts.assignedCount(), counts.openCount(),
-                "/support/tickets/new", searchTerm, tickets.stream().map(ticket -> toSummary(ticket, data)).toList());
+                "/support/tickets/new", searchTerm, pageItems, meta.page(), meta.pageSize(), meta.totalItems(),
+                meta.totalPages());
     }
 
     @GET
@@ -198,11 +206,44 @@ public class SupportTicketApiResource {
         return "assigned";
     }
 
+    static java.util.Map<String, PaginationSupport.SortColumn<SupportTicketSummary>> ticketSortColumns() {
+        return java.util.Map
+                .ofEntries(
+                        java.util.Map.entry("name",
+                                PaginationSupport.sortColumn(SupportTicketSummary::name,
+                                        String.CASE_INSENSITIVE_ORDER)),
+                        java.util.Map.entry("title",
+                                PaginationSupport.sortColumn(SupportTicketSummary::title,
+                                        String.CASE_INSENSITIVE_ORDER)),
+                        java.util.Map.entry("date",
+                                PaginationSupport.sortColumn(SupportTicketSummary::messageDateSortKey,
+                                        java.util.Comparator.naturalOrder())),
+                        java.util.Map.entry("status",
+                                PaginationSupport.sortColumn(SupportTicketSummary::status,
+                                        String.CASE_INSENSITIVE_ORDER)),
+                        java.util.Map.entry("category",
+                                PaginationSupport.sortColumn(SupportTicketSummary::categoryName,
+                                        String.CASE_INSENSITIVE_ORDER)),
+                        java.util.Map.entry("company",
+                                PaginationSupport.sortColumn(SupportTicketSummary::companyName,
+                                        String.CASE_INSENSITIVE_ORDER)),
+                        java.util.Map.entry("entitlement",
+                                PaginationSupport.sortColumn(SupportTicketSummary::entitlementName,
+                                        String.CASE_INSENSITIVE_ORDER)),
+                        java.util.Map.entry("level",
+                                PaginationSupport.sortColumn(SupportTicketSummary::levelName,
+                                        String.CASE_INSENSITIVE_ORDER)),
+                        java.util.Map.entry("affects", PaginationSupport
+                                .sortColumn(SupportTicketSummary::affectsVersionName, String.CASE_INSENSITIVE_ORDER)));
+    }
+
     private SupportTicketSummary toSummary(Ticket ticket, SupportTicketViewSupport.SupportTicketData data) {
         User assignedSupport = data.supportAssignmentUsers().get(ticket.id);
         return new SupportTicketSummary(ticket.id, ticket.name, ticket.displayTitle(), ticket.status,
-                data.messageDateLabels().get(ticket.id), data.messageDirectionArrows().get(ticket.id),
-                data.slaColors().get(ticket.id), ticket.category == null ? null : ticket.category.name,
+                data.messageDateLabels().get(ticket.id),
+                data.messageDates().get(ticket.id) == null ? null : data.messageDates().get(ticket.id).toString(),
+                data.messageDirectionArrows().get(ticket.id), data.slaColors().get(ticket.id),
+                ticket.category == null ? null : ticket.category.name,
                 assignedSupport == null ? null : toUserReference(assignedSupport),
                 ticket.company == null ? null : ticket.company.id, ticket.company == null ? null : ticket.company.name,
                 ticket.companyEntitlement == null || ticket.companyEntitlement.entitlement == null ? null
@@ -338,7 +379,8 @@ public class SupportTicketApiResource {
     }
 
     public record SupportTicketListResponse(String view, String title, int assignedCount, int openCount,
-            String createPath, String searchTerm, List<SupportTicketSummary> items) {
+            String createPath, String searchTerm, List<SupportTicketSummary> items, int page, int pageSize,
+            int totalItems, int totalPages) {
     }
 
     public record TicketSuggestionResponse(List<TicketSuggestion> items) {
@@ -348,9 +390,9 @@ public class SupportTicketApiResource {
     }
 
     public record SupportTicketSummary(Long id, String name, String title, String status, String messageDateLabel,
-            String messageDirectionArrow, String slaColor, String categoryName, UserReference supportUser,
-            Long companyId, String companyName, String entitlementName, String levelName, String affectsVersionName,
-            String resolvedVersionName, String detailPath, String companyPath) {
+            String messageDateSortKey, String messageDirectionArrow, String slaColor, String categoryName,
+            UserReference supportUser, Long companyId, String companyName, String entitlementName, String levelName,
+            String affectsVersionName, String resolvedVersionName, String detailPath, String companyPath) {
     }
 
     public record SupportTicketBootstrapResponse(int assignedCount, int openCount, Long selectedCompanyId,

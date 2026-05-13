@@ -50,7 +50,9 @@ public class SuperuserTicketApiResource {
     @GET
     @Transactional
     public SupportTicketApiResource.SupportTicketListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q) {
+            @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q,
+            @QueryParam("page") Integer page, @QueryParam("pageSize") Integer pageSize, @QueryParam("sort") String sort,
+            @QueryParam("dir") String dir) {
         User user = requireSuperuser(auth);
         SuperuserResource.SupportTicketData data = superuserResource.buildTicketDataForUser(user);
         String normalizedView = normalizeView(view);
@@ -64,6 +66,12 @@ public class SuperuserTicketApiResource {
             tickets = TicketSearchSupport.combineTickets(data.assignedTickets, data.openTickets, data.closedTickets);
         }
         tickets = TicketSearchSupport.filterTicketsBySearch(tickets, searchTerm, user);
+        int totalItems = tickets.size();
+        List<SupportTicketApiResource.SupportTicketSummary> allSummaries = tickets.stream()
+                .map(ticket -> toSummary(ticket, data)).toList();
+        List<SupportTicketApiResource.SupportTicketSummary> pageItems = PaginationSupport.sortAndPaginate(allSummaries,
+                sort, dir, SupportTicketApiResource.ticketSortColumns(), page, pageSize);
+        PaginationSupport.PaginationMeta meta = PaginationSupport.meta(page, pageSize, totalItems);
         String title = switch (normalizedView) {
             case "open" -> "Open tickets";
             case "closed" -> "Closed tickets";
@@ -71,8 +79,8 @@ public class SuperuserTicketApiResource {
         };
         return new SupportTicketApiResource.SupportTicketListResponse(normalizedView, title,
                 data.assignedTickets == null ? 0 : data.assignedTickets.size(),
-                data.openTickets == null ? 0 : data.openTickets.size(), "/superuser/tickets/new", searchTerm,
-                tickets.stream().map(ticket -> toSummary(ticket, data)).toList());
+                data.openTickets == null ? 0 : data.openTickets.size(), "/superuser/tickets/new", searchTerm, pageItems,
+                meta.page(), meta.pageSize(), meta.totalItems(), meta.totalPages());
     }
 
     @GET
@@ -197,8 +205,10 @@ public class SuperuserTicketApiResource {
             SuperuserResource.SupportTicketData data) {
         User assignedSupport = data.supportAssignmentUsers.get(ticket.id);
         return new SupportTicketApiResource.SupportTicketSummary(ticket.id, ticket.name, ticket.displayTitle(),
-                ticket.status, data.messageDateLabels.get(ticket.id), data.messageDirectionArrows.get(ticket.id),
-                data.slaColors.get(ticket.id), ticket.category == null ? null : ticket.category.name,
+                ticket.status, data.messageDateLabels.get(ticket.id),
+                data.messageDates.get(ticket.id) == null ? null : data.messageDates.get(ticket.id).toString(),
+                data.messageDirectionArrows.get(ticket.id), data.slaColors.get(ticket.id),
+                ticket.category == null ? null : ticket.category.name,
                 assignedSupport == null ? null : toUserReference(assignedSupport),
                 ticket.company == null ? null : ticket.company.id, ticket.company == null ? null : ticket.company.name,
                 ticket.companyEntitlement == null || ticket.companyEntitlement.entitlement == null ? null

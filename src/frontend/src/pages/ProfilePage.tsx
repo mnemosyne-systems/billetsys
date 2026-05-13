@@ -42,6 +42,7 @@ interface ProfileFormState {
   companyId: string;
   logoBase64: string;
   emailFormat: string;
+  pageSize: string;
 }
 
 export default function ProfilePage(props: SessionPageProps) {
@@ -75,6 +76,7 @@ export default function ProfilePage(props: SessionPageProps) {
           : "",
         logoBase64: profile.logoBase64 || "",
         emailFormat: profile.emailFormat || "",
+        pageSize: profile.pageSize ? String(profile.pageSize) : "10",
       });
     }
   }, [profile]);
@@ -160,6 +162,7 @@ export default function ProfilePage(props: SessionPageProps) {
             : null,
           companyId: formState.companyId ? Number(formState.companyId) : null,
           emailFormat: formState.emailFormat || null,
+          pageSize: formState.pageSize ? Number(formState.pageSize) : null,
         }),
       });
       if (!response.ok) {
@@ -183,6 +186,7 @@ export default function ProfilePage(props: SessionPageProps) {
                 : "",
               logoBase64: updated.logoBase64 || "",
               emailFormat: updated.emailFormat || "",
+              pageSize: updated.pageSize ? String(updated.pageSize) : "10",
             }
           : current,
       );
@@ -335,6 +339,22 @@ export default function ProfilePage(props: SessionPageProps) {
                     <SelectItem value="both">HTML &amp; Plain text</SelectItem>
                     <SelectItem value="html">HTML only</SelectItem>
                     <SelectItem value="text">Plain text only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel>Default rows</FieldLabel>
+                <Select
+                  value={formState.pageSize || "10"}
+                  onValueChange={(value) => updateField("pageSize", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select rows" />
+                  </SelectTrigger>
+                  <SelectContent position="popper">
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
