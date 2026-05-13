@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -40,6 +40,10 @@ export interface CollectionResponse<T> {
   createPath?: string;
   items: T[];
   canCreate?: boolean;
+  page?: number;
+  pageSize?: number;
+  totalItems?: number;
+  totalPages?: number;
   [key: string]: unknown;
 }
 

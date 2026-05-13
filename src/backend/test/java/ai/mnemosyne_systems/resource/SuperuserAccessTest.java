@@ -131,7 +131,8 @@ class SuperuserAccessTest extends AccessTestSupport {
 
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie).get("/tickets/" + ticketId)
                 .then().statusCode(303).header("Location", Matchers.endsWith("/superuser/tickets/" + ticketId));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/superuser/tickets").then().statusCode(200)
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("pageSize", 100)
+                .get("/api/superuser/tickets").then().statusCode(200)
                 .body("items.name", Matchers.hasItem(superuserTicket.name))
                 .body("items.name", Matchers.not(Matchers.hasItem(otherCompanyTicket.name)));
 
@@ -155,20 +156,23 @@ class SuperuserAccessTest extends AccessTestSupport {
                 java.time.LocalDateTime.now().minusMinutes(10));
 
         String cookie = login("superuser1", "superuser1");
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/superuser/tickets").then().statusCode(200)
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("pageSize", 100)
+                .get("/api/superuser/tickets").then().statusCode(200)
                 .body("items.find { it.id == " + ticket.id + " }.slaColor", Matchers.equalTo("Red"));
 
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .multiPart("body", "Follow-up from superuser").post("/superuser/tickets/" + ticket.id + "/messages")
                 .then().statusCode(303);
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/superuser/tickets").then().statusCode(200)
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("pageSize", 100)
+                .get("/api/superuser/tickets").then().statusCode(200)
                 .body("items.find { it.id == " + ticket.id + " }.slaColor", Matchers.equalTo("White"));
 
         ensureTimedMessage(ticket, "Support follow-up", "support1@mnemosyne-systems.ai",
                 java.time.LocalDateTime.now().minusMinutes(1));
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/superuser/tickets").then().statusCode(200)
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("pageSize", 100)
+                .get("/api/superuser/tickets").then().statusCode(200)
                 .body("items.find { it.id == " + ticket.id + " }.slaColor", Matchers.equalTo("White"));
     }
 

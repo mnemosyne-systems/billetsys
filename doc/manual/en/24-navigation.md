@@ -49,6 +49,12 @@ For example, navigation helps users:
 * Reach profile and account maintenance
 * Switch between operational and administrative areas
 
+## Keyboard shortcuts and pagination
+
+Keyboard shortcuts such as `Ctrl+1` through `Ctrl+0` always refer to items **on the current page**. When a list spans multiple pages, moving to a different page updates the shortcut targets to match the visible items.
+
+This means that `Ctrl+1` on page 2 opens the first ticket on page 2 — not the first ticket across the entire dataset. This behavior keeps shortcuts predictable regardless of how many items exist.
+
 ## Why it matters
 
 Without structured navigation, a role-based support platform quickly becomes confusing. With it, billetsys turns role boundaries and system structure into a clearer day-to-day workflow for every kind of user.

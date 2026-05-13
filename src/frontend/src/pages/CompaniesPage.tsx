@@ -8,7 +8,10 @@
 
 import { Link } from "react-router-dom";
 import useJson from "../hooks/useJson";
+import useClientPagination from "../hooks/useClientPagination";
 import DataState from "../components/common/DataState";
+import PaginationControls from "../components/common/PaginationControls";
+import SortDropdown from "../components/common/SortDropdown";
 import PageHeader from "../components/layout/PageHeader";
 import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
@@ -16,10 +19,42 @@ import type { CollectionResponse, CompanyRecord } from "../types/domain";
 import { Card, CardHeader } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 
-export default function CompaniesPage(props: SessionPageProps) {
-  void props;
+const SORT_OPTIONS = [{ key: "name", label: "Name" }];
+
+const SORT_CONFIGS = [
+  {
+    key: "name",
+    comparator: (a: CompanyRecord, b: CompanyRecord) =>
+      (a.name || "").localeCompare(b.name || "", undefined, {
+        sensitivity: "base",
+      }),
+  },
+];
+
+export default function CompaniesPage({ sessionState }: SessionPageProps) {
   const companiesState =
     useJson<CollectionResponse<CompanyRecord>>("/api/companies");
+
+  const defaultPageSize = sessionState.data?.defaultPageSize ?? undefined;
+
+  const {
+    pageItems,
+    page,
+    pageSize,
+    totalItems,
+    totalPages,
+    sort,
+    dir,
+    setPage,
+    setPageSize,
+    setSort,
+    pageSizeOptions,
+  } = useClientPagination<CompanyRecord>({
+    items: companiesState.data?.items || [],
+    defaultPageSize,
+    sortConfigs: SORT_CONFIGS,
+    defaultSort: "name",
+  });
 
   return (
     <section className="w-full mt-4">
@@ -40,8 +75,17 @@ export default function CompaniesPage(props: SessionPageProps) {
         state={companiesState}
         emptyMessage="No companies are available yet."
       >
+        <div className="flex items-center justify-between mb-4">
+          <SortDropdown
+            options={SORT_OPTIONS}
+            currentSort={sort}
+            currentDir={dir}
+            onSort={setSort}
+          />
+        </div>
+
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {companiesState.data?.items.map((company: CompanyRecord) => (
+          {pageItems.map((company: CompanyRecord) => (
             <Card
               key={company.id}
               className="hover:shadow-md transition-shadow"
@@ -69,6 +113,16 @@ export default function CompaniesPage(props: SessionPageProps) {
             </Card>
           ))}
         </div>
+
+        <PaginationControls
+          page={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
+          pageSizeOptions={pageSizeOptions}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </DataState>
     </section>
   );

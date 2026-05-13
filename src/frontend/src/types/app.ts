@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -38,6 +38,7 @@ export interface Session {
   installationUse24HourClock?: boolean;
   inactivityTimeoutSeconds?: number;
   inactivityWarningSeconds?: number;
+  defaultPageSize?: number;
   displayName?: string;
   username?: string;
   logoBase64?: string;

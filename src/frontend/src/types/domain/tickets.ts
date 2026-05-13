@@ -49,6 +49,7 @@ export interface TicketListItem extends TicketReference {
   detailPath?: string;
   messageDirectionArrow?: string;
   messageDateLabel?: string;
+  messageDateSortKey?: string;
   status?: string;
   supportUser?: UserReference;
   companyPath?: string;

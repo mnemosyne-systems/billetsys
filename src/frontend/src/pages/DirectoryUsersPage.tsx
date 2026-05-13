@@ -8,8 +8,11 @@
 
 import { useLocation, useNavigate } from "react-router-dom";
 import DataState from "../components/common/DataState";
+import PaginationControls from "../components/common/PaginationControls";
+import SortDropdown from "../components/common/SortDropdown";
 import PageHeader from "../components/layout/PageHeader";
 import useJson from "../hooks/useJson";
+import useClientPagination from "../hooks/useClientPagination";
 import { toQueryString } from "../utils/formatting";
 import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
@@ -36,10 +39,43 @@ interface DirectoryUsersPageProps extends SessionPageProps {
   description?: string;
 }
 
+const SORT_OPTIONS = [
+  { key: "displayName", label: "Name" },
+  { key: "email", label: "Email" },
+  { key: "type", label: "Type" },
+];
+
+const SORT_CONFIGS = [
+  {
+    key: "displayName",
+    comparator: (a: DirectoryUserRecord, b: DirectoryUserRecord) =>
+      (a.displayName || a.username || "").localeCompare(
+        b.displayName || b.username || "",
+        undefined,
+        { sensitivity: "base" },
+      ),
+  },
+  {
+    key: "email",
+    comparator: (a: DirectoryUserRecord, b: DirectoryUserRecord) =>
+      (a.email || "").localeCompare(b.email || "", undefined, {
+        sensitivity: "base",
+      }),
+  },
+  {
+    key: "type",
+    comparator: (a: DirectoryUserRecord, b: DirectoryUserRecord) =>
+      (a.type || "").localeCompare(b.type || "", undefined, {
+        sensitivity: "base",
+      }),
+  },
+];
+
 export default function DirectoryUsersPage({
   apiBase,
   titleFallback,
   description = "",
+  sessionState,
 }: DirectoryUsersPageProps) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -48,6 +84,27 @@ export default function DirectoryUsersPage({
     `${apiBase}${toQueryString({ companyId })}`,
   );
   const directory = dataState.data;
+
+  const defaultPageSize = sessionState.data?.defaultPageSize ?? undefined;
+
+  const {
+    pageItems,
+    page,
+    pageSize,
+    totalItems,
+    totalPages,
+    sort,
+    dir,
+    setPage,
+    setPageSize,
+    setSort,
+    pageSizeOptions,
+  } = useClientPagination<DirectoryUserRecord>({
+    items: directory?.items || [],
+    defaultPageSize,
+    sortConfigs: SORT_CONFIGS,
+    defaultSort: "displayName",
+  });
 
   const selectCompany = (nextCompanyId: string) => {
     navigate(
@@ -71,43 +128,52 @@ export default function DirectoryUsersPage({
 
       <DataState state={dataState} emptyMessage="No users are available.">
         <div className="grid gap-6">
-          {directory?.showCompanySelector && (
-            <div className="grid gap-1.5 max-w-xs">
-              <label className="text-sm font-medium leading-none text-[var(--color-header-bg)]">
-                Company
-              </label>
-              <Select
-                value={
-                  directory.selectedCompanyId !== null &&
-                  directory.selectedCompanyId !== undefined
-                    ? String(directory.selectedCompanyId)
-                    : undefined
-                }
-                onValueChange={selectCompany}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select company" />
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  {(directory.companies || []).map((company: NamedEntity) => (
-                    <SelectItem
-                      key={company.id}
-                      value={
-                        company.id !== null && company.id !== undefined
-                          ? String(company.id)
-                          : "none"
-                      }
-                    >
-                      {company.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div className="flex flex-wrap items-end gap-4">
+            {directory?.showCompanySelector && (
+              <div className="grid gap-1.5 max-w-xs">
+                <label className="text-sm font-medium leading-none text-[var(--color-header-bg)]">
+                  Company
+                </label>
+                <Select
+                  value={
+                    directory.selectedCompanyId !== null &&
+                    directory.selectedCompanyId !== undefined
+                      ? String(directory.selectedCompanyId)
+                      : undefined
+                  }
+                  onValueChange={selectCompany}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select company" />
+                  </SelectTrigger>
+                  <SelectContent position="popper">
+                    {(directory.companies || []).map((company: NamedEntity) => (
+                      <SelectItem
+                        key={company.id}
+                        value={
+                          company.id !== null && company.id !== undefined
+                            ? String(company.id)
+                            : "none"
+                        }
+                      >
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <SortDropdown
+              options={SORT_OPTIONS}
+              currentSort={sort}
+              currentDir={dir}
+              onSort={setSort}
+            />
+          </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {(directory?.items || []).map((user: DirectoryUserRecord) => (
+            {pageItems.map((user: DirectoryUserRecord) => (
               <Card key={user.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">
@@ -152,6 +218,16 @@ export default function DirectoryUsersPage({
               No users are available for the selected company.
             </p>
           )}
+
+          <PaginationControls
+            page={page}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            totalPages={totalPages}
+            pageSizeOptions={pageSizeOptions}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       </DataState>
     </section>

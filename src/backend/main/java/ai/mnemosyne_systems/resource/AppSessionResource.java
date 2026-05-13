@@ -40,7 +40,7 @@ public class AppSessionResource {
             return new SessionResponse(false, null, null, null, null, null, installationCompanyName,
                     installationLogoBase64, installationBackgroundBase64, installationHeaderFooterColor,
                     installationHeadersColor, installationButtonsColor, installationUse24HourClock,
-                    AuthHelper.INACTIVITY_TIMEOUT_SECONDS, AuthHelper.WARNING_LEAD_SECONDS, "/login", List.of(),
+                    AuthHelper.INACTIVITY_TIMEOUT_SECONDS, AuthHelper.WARNING_LEAD_SECONDS, null, "/login", List.of(),
                     List.of("The React shell now uses clean URLs for login, tickets, and admin pages.",
                             "Sign in to see role-aware navigation."));
         }
@@ -48,7 +48,7 @@ public class AppSessionResource {
                 installationCompanyName, installationLogoBase64, installationBackgroundBase64,
                 installationHeaderFooterColor, installationHeadersColor, installationButtonsColor,
                 installationUse24HourClock, AuthHelper.INACTIVITY_TIMEOUT_SECONDS, AuthHelper.WARNING_LEAD_SECONDS,
-                homePath(user), navigation(user),
+                user.pageSize, homePath(user), navigation(user),
                 List.of("The React shell now covers tickets, admin management, profile, and reports.",
                         "Legacy page routes now redirect into the React screens for the same workflows."));
     }
@@ -96,7 +96,8 @@ public class AppSessionResource {
             String logoBase64, String installationCompanyName, String installationLogoBase64,
             String installationBackgroundBase64, String installationHeaderFooterColor, String installationHeadersColor,
             String installationButtonsColor, boolean installationUse24HourClock, int inactivityTimeoutSeconds,
-            int inactivityWarningSeconds, String homePath, List<NavLink> navigation, List<String> notices) {
+            int inactivityWarningSeconds, Integer defaultPageSize, String homePath, List<NavLink> navigation,
+            List<String> notices) {
     }
 
     public record NavLink(String label, String href) {

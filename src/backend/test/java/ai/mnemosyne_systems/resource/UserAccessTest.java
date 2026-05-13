@@ -79,8 +79,9 @@ class UserAccessTest extends AccessTestSupport {
                 .then().statusCode(303).header("Location", Matchers.endsWith("/user/tickets/closed"));
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie).get("/user/tickets/create")
                 .then().statusCode(303).header("Location", Matchers.endsWith("/user/tickets/new"));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/user/tickets").then().statusCode(200)
-                .body("title", Matchers.equalTo("Tickets")).body("createPath", Matchers.equalTo("/user/tickets/new"))
+        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).queryParam("pageSize", 100).get("/api/user/tickets")
+                .then().statusCode(200).body("title", Matchers.equalTo("Tickets"))
+                .body("createPath", Matchers.equalTo("/user/tickets/new"))
                 .body("items.name", Matchers.hasItem(userTicketName));
         RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).get("/api/user/tickets/bootstrap").then()
                 .statusCode(200).body("submitPath", Matchers.equalTo("/user/tickets"))

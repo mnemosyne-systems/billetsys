@@ -8,7 +8,10 @@
 
 import { Link } from "react-router-dom";
 import useJson from "../hooks/useJson";
+import useClientPagination from "../hooks/useClientPagination";
 import DataState from "../components/common/DataState";
+import PaginationControls from "../components/common/PaginationControls";
+import SortDropdown from "../components/common/SortDropdown";
 import PageHeader from "../components/layout/PageHeader";
 import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
@@ -17,10 +20,42 @@ import { Card, CardHeader } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 
-export default function CategoriesPage(props: SessionPageProps) {
-  void props;
+const SORT_OPTIONS = [{ key: "name", label: "Name" }];
+
+const SORT_CONFIGS = [
+  {
+    key: "name",
+    comparator: (a: CategoryRecord, b: CategoryRecord) =>
+      (a.name || "").localeCompare(b.name || "", undefined, {
+        sensitivity: "base",
+      }),
+  },
+];
+
+export default function CategoriesPage({ sessionState }: SessionPageProps) {
   const categoriesState =
     useJson<CollectionResponse<CategoryRecord>>("/api/categories");
+
+  const defaultPageSize = sessionState.data?.defaultPageSize ?? undefined;
+
+  const {
+    pageItems,
+    page,
+    pageSize,
+    totalItems,
+    totalPages,
+    sort,
+    dir,
+    setPage,
+    setPageSize,
+    setSort,
+    pageSizeOptions,
+  } = useClientPagination<CategoryRecord>({
+    items: categoriesState.data?.items || [],
+    defaultPageSize,
+    sortConfigs: SORT_CONFIGS,
+    defaultSort: "name",
+  });
 
   return (
     <section className="w-full mt-4">
@@ -41,8 +76,17 @@ export default function CategoriesPage(props: SessionPageProps) {
         state={categoriesState}
         emptyMessage="No categories are available yet."
       >
+        <div className="flex items-center justify-between mb-4">
+          <SortDropdown
+            options={SORT_OPTIONS}
+            currentSort={sort}
+            currentDir={dir}
+            onSort={setSort}
+          />
+        </div>
+
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {categoriesState.data?.items.map((category: CategoryRecord) => (
+          {pageItems.map((category: CategoryRecord) => (
             <Card
               key={category.id}
               className="hover:shadow-md transition-shadow"
@@ -73,6 +117,16 @@ export default function CategoriesPage(props: SessionPageProps) {
             </Card>
           ))}
         </div>
+
+        <PaginationControls
+          page={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
+          pageSizeOptions={pageSizeOptions}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </DataState>
     </section>
   );

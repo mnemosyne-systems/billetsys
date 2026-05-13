@@ -183,16 +183,62 @@ public class AppSeeder {
         ensureCompanyEntitlement(company, "Enterprise", "Escalate");
         ensureCompanyEntitlement(company, "Enterprise", "Normal");
         CompanyEntitlement enterpriseCritical = ensureCompanyEntitlement(company, "Enterprise", "Critical");
+        CompanyEntitlement enterpriseEscalate = ensureCompanyEntitlement(company, "Enterprise", "Escalate");
+        CompanyEntitlement enterpriseNormal = ensureCompanyEntitlement(company, "Enterprise", "Normal");
         Ticket a1 = seedTicket(Ticket.formatName(company, 1), company, user1, enterpriseCritical);
         Ticket a2 = seedTicket(Ticket.formatName(company, 2), company, user2, enterpriseCritical);
         Ticket a3 = seedTicket(Ticket.formatName(company, 3), company, user1, enterpriseCritical);
         Ticket a4 = seedTicket(Ticket.formatName(company, 4), company, user2, enterpriseCritical);
-        company.ticketSequence = 4L;
+        // Additional tickets for pagination testing (need 25+ total to span 3 pages at pageSize=10)
+        Ticket a5 = seedTicket(Ticket.formatName(company, 5), company, user1, enterpriseEscalate);
+        Ticket a6 = seedTicket(Ticket.formatName(company, 6), company, user2, enterpriseNormal);
+        Ticket a7 = seedTicket(Ticket.formatName(company, 7), company, user1, enterpriseCritical);
+        Ticket a8 = seedTicket(Ticket.formatName(company, 8), company, user2, enterpriseEscalate);
+        Ticket a9 = seedTicket(Ticket.formatName(company, 9), company, user1, enterpriseNormal);
+        Ticket a10 = seedTicket(Ticket.formatName(company, 10), company, user2, enterpriseCritical);
+        Ticket a11 = seedTicket(Ticket.formatName(company, 11), company, user1, enterpriseEscalate);
+        Ticket a12 = seedTicket(Ticket.formatName(company, 12), company, user2, enterpriseNormal);
+        Ticket a13 = seedTicket(Ticket.formatName(company, 13), company, user1, enterpriseCritical);
+        Ticket a14 = seedTicket(Ticket.formatName(company, 14), company, user2, enterpriseEscalate);
+        Ticket a15 = seedTicket(Ticket.formatName(company, 15), company, user1, enterpriseNormal);
+        Ticket a16 = seedTicket(Ticket.formatName(company, 16), company, user2, enterpriseCritical);
+        Ticket a17 = seedTicket(Ticket.formatName(company, 17), company, user1, enterpriseEscalate);
+        Ticket a18 = seedTicket(Ticket.formatName(company, 18), company, user2, enterpriseNormal);
+        Ticket a19 = seedTicket(Ticket.formatName(company, 19), company, user1, enterpriseCritical);
+        Ticket a20 = seedTicket(Ticket.formatName(company, 20), company, user2, enterpriseEscalate);
+        Ticket a21 = seedTicket(Ticket.formatName(company, 21), company, user1, enterpriseNormal);
+        Ticket a22 = seedTicket(Ticket.formatName(company, 22), company, user2, enterpriseCritical);
+        Ticket a23 = seedTicket(Ticket.formatName(company, 23), company, user1, enterpriseEscalate);
+        Ticket a24 = seedTicket(Ticket.formatName(company, 24), company, user2, enterpriseNormal);
+        Ticket a25 = seedTicket(Ticket.formatName(company, 25), company, user1, enterpriseCritical);
+        company.ticketSequence = 25L;
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         seedMessageAt(a1, "Sample ticket created.", now.minusMonths(8));
         seedMessageAt(a2, "Sample ticket created.", now.minusMonths(3));
         seedMessageAt(a3, "Sample ticket created.", now.minusMonths(1));
         seedMessageAt(a4, "Sample ticket created.", now.minusDays(13));
+        // Spread message dates across the year for varied sorting
+        seedMessageAt(a5, "Sample ticket created.", now.minusMonths(11));
+        seedMessageAt(a6, "Sample ticket created.", now.minusMonths(10));
+        seedMessageAt(a7, "Sample ticket created.", now.minusMonths(9));
+        seedMessageAt(a8, "Sample ticket created.", now.minusMonths(7));
+        seedMessageAt(a9, "Sample ticket created.", now.minusMonths(6));
+        seedMessageAt(a10, "Sample ticket created.", now.minusMonths(5));
+        seedMessageAt(a11, "Sample ticket created.", now.minusMonths(4));
+        seedMessageAt(a12, "Sample ticket created.", now.minusMonths(2));
+        seedMessageAt(a13, "Sample ticket created.", now.minusDays(45));
+        seedMessageAt(a14, "Sample ticket created.", now.minusDays(30));
+        seedMessageAt(a15, "Sample ticket created.", now.minusDays(20));
+        seedMessageAt(a16, "Sample ticket created.", now.minusDays(15));
+        seedMessageAt(a17, "Sample ticket created.", now.minusDays(10));
+        seedMessageAt(a18, "Sample ticket created.", now.minusDays(8));
+        seedMessageAt(a19, "Sample ticket created.", now.minusDays(6));
+        seedMessageAt(a20, "Sample ticket created.", now.minusDays(5));
+        seedMessageAt(a21, "Sample ticket created.", now.minusDays(4));
+        seedMessageAt(a22, "Sample ticket created.", now.minusDays(3));
+        seedMessageAt(a23, "Sample ticket created.", now.minusDays(2));
+        seedMessageAt(a24, "Sample ticket created.", now.minusDays(1));
+        seedMessageAt(a25, "Sample ticket created.", now.minusHours(2));
         Message attachmentMessage = Message.find("ticket = ?1 and body = ?2", a1, "Sample ticket created.")
                 .firstResult();
         seedAttachment(attachmentMessage, "sample.txt", "text/plain",
@@ -206,15 +252,72 @@ public class AppSeeder {
                 "Second attachment".getBytes(StandardCharsets.UTF_8));
         assignSupportIfMissing(a1, "support1@mnemosyne-systems.ai");
         assignSupportIfMissing(a4, "support1@mnemosyne-systems.ai");
+        assignSupportIfMissing(a7, "support1@mnemosyne-systems.ai");
+        assignSupportIfMissing(a10, "support1@mnemosyne-systems.ai");
+        assignSupportIfMissing(a13, "support1@mnemosyne-systems.ai");
+        assignSupportIfMissing(a16, "support1@mnemosyne-systems.ai");
+        assignSupportIfMissing(a19, "support1@mnemosyne-systems.ai");
+        assignSupportIfMissing(a22, "support1@mnemosyne-systems.ai");
+        assignSupportIfMissing(a25, "support1@mnemosyne-systems.ai");
         assignTamIfMissing(a1, "tam1@mnemosyne-systems.ai");
         assignTamIfMissing(a4, "tam1@mnemosyne-systems.ai");
+        // Set varied statuses
         if (a4 != null) {
             a4.status = "Closed";
             a4.persist();
         }
+        if (a5 != null) {
+            a5.status = "Assigned";
+            a5.persist();
+        }
+        if (a6 != null) {
+            a6.status = "In Progress";
+            a6.persist();
+        }
+        if (a8 != null) {
+            a8.status = "Resolved";
+            a8.persist();
+        }
+        if (a9 != null) {
+            a9.status = "Closed";
+            a9.persist();
+        }
+        if (a10 != null) {
+            a10.status = "Assigned";
+            a10.persist();
+        }
+        if (a12 != null) {
+            a12.status = "In Progress";
+            a12.persist();
+        }
+        if (a14 != null) {
+            a14.status = "Resolved";
+            a14.persist();
+        }
+        if (a16 != null) {
+            a16.status = "Closed";
+            a16.persist();
+        }
+        if (a18 != null) {
+            a18.status = "Assigned";
+            a18.persist();
+        }
+        if (a20 != null) {
+            a20.status = "In Progress";
+            a20.persist();
+        }
+        if (a22 != null) {
+            a22.status = "Resolved";
+            a22.persist();
+        }
+        if (a24 != null) {
+            a24.status = "Closed";
+            a24.persist();
+        }
 
         Category bugCategory = Category.find("name", "Bug").firstResult();
         Category featureCategory = Category.find("name", "Feature").firstResult();
+        Category questionCategory = Category.find("name", "Question").firstResult();
         if (a1 != null) {
             a1.externalIssueLink = "https://github.com/mnemosyne-systems/billetsys/issues/6";
             if (bugCategory != null) {
@@ -226,6 +329,40 @@ public class AppSeeder {
             a3.category = featureCategory;
             a3.persist();
         }
+        // Distribute categories across tickets for varied sort results
+        setCategory(a5, featureCategory);
+        setCategory(a7, bugCategory);
+        setCategory(a9, featureCategory);
+        setCategory(a11, questionCategory);
+        setCategory(a13, bugCategory);
+        setCategory(a15, featureCategory);
+        setCategory(a17, questionCategory);
+        setCategory(a19, bugCategory);
+        setCategory(a21, featureCategory);
+        setCategory(a23, questionCategory);
+        setCategory(a25, bugCategory);
+        // Set descriptive titles for some tickets
+        setTitle(a5, "Login page intermittent timeout");
+        setTitle(a6, "Add dark mode support");
+        setTitle(a7, "PDF export produces blank pages");
+        setTitle(a8, "Improve search autocomplete");
+        setTitle(a9, "API rate limiting not applied");
+        setTitle(a10, "Dashboard graph not updating");
+        setTitle(a11, "How to configure SSO?");
+        setTitle(a12, "Email notifications delayed");
+        setTitle(a13, "Crash on large file upload");
+        setTitle(a14, "Add keyboard shortcuts help dialog");
+        setTitle(a15, "Request for bulk ticket import");
+        setTitle(a16, "Memory leak in report generation");
+        setTitle(a17, "Can we export ticket history?");
+        setTitle(a18, "Audit log missing user actions");
+        setTitle(a19, "XSS vulnerability in comments");
+        setTitle(a20, "Add webhook integration");
+        setTitle(a21, "Request custom branding options");
+        setTitle(a22, "Date picker shows wrong timezone");
+        setTitle(a23, "What are the backup procedures?");
+        setTitle(a24, "Two-factor authentication setup");
+        setTitle(a25, "Connection pool exhaustion under load");
 
         User support1 = User.find("email", "support1@mnemosyne-systems.ai").firstResult();
         if (support1 != null) {
@@ -445,6 +582,20 @@ public class AppSeeder {
         ticket.persist();
         seedMessage(ticket, "Sample ticket created.");
         return ticket;
+    }
+
+    private void setCategory(Ticket ticket, Category category) {
+        if (ticket != null && category != null) {
+            ticket.category = category;
+            ticket.persist();
+        }
+    }
+
+    private void setTitle(Ticket ticket, String title) {
+        if (ticket != null && title != null) {
+            ticket.title = title;
+            ticket.persist();
+        }
     }
 
     private Version defaultAffectsVersion(CompanyEntitlement entitlement) {
