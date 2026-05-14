@@ -85,6 +85,16 @@ cd doc/manual/en
 
 This creates both `build/manual.html` and `build/manual.pdf`. If the Eisvogel template is stored in a non-standard location, set `EISVOGEL_TEMPLATE` before running the script.
 
+If PDF generation fails with `Mismatched LaTeX support files detected`, refresh the XeLaTeX format
+and rerun:
+
+```sh
+fmtutil-user --byfmt xelatex
+```
+
+If your TeX installation is managed system-wide and the user refresh does not help, rebuild the
+system format instead with `sudo fmtutil-sys --byfmt xelatex`.
+
 ### Build
 
 #### PostgreSQL

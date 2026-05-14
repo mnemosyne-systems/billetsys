@@ -21,6 +21,21 @@ require_command() {
   fi
 }
 
+print_latex_support_mismatch_help() {
+  cat >&2 <<'EOF'
+
+XeLaTeX format files are older than the installed LaTeX support files.
+Refresh the XeLaTeX formats and rerun the manual generator:
+
+  fmtutil-user --byfmt xelatex
+
+If your TeX installation is managed system-wide and the user format refresh does not help,
+rebuild the system format instead:
+
+  sudo fmtutil-sys --byfmt xelatex
+EOF
+}
+
 resolve_eisvogel_template() {
   local candidate
   local candidates=()
@@ -118,11 +133,24 @@ pandoc \
   --output="$html_output" \
   "${markdown_files[@]}"
 
-pandoc \
+pdf_log_file="$(mktemp)"
+cleanup_pdf_log() {
+  rm -f "$pdf_log_file"
+}
+trap cleanup_pdf_log EXIT
+
+if ! pandoc \
   "${common_args[@]}" \
   --pdf-engine=xelatex \
   --template="$eisvogel_template" \
   --output="$pdf_output" \
-  "${markdown_files[@]}"
+  "${markdown_files[@]}" \
+  2>"$pdf_log_file"; then
+  cat "$pdf_log_file" >&2
+  if grep -Fq "Mismatched LaTeX support files detected." "$pdf_log_file"; then
+    print_latex_support_mismatch_help
+  fi
+  exit 1
+fi
 
 printf 'Generated manual:\n  HTML: %s\n  PDF:  %s\n' "$html_output" "$pdf_output"
