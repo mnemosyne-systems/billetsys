@@ -50,6 +50,9 @@ public class Installation extends PanacheEntityBase {
     @Column(name = "use_24_hour_clock")
     public Boolean use24HourClock;
 
+    @Column(name = "ticket_auto_close_days")
+    public Integer ticketAutoCloseDays;
+
     @Column(name = "singleton_key", nullable = false, unique = true, updatable = false)
     public String singletonKey = "installation";
 

@@ -174,7 +174,7 @@ public class SuperuserTicketApiResource {
                         : ticket.companyEntitlement.entitlement.name,
                 superuserResource.resolveLowestEntitlementLevelName(ticket), ticket.externalIssueLink,
                 ticket.affectsVersion == null ? null : ticket.affectsVersion.id,
-                ticket.resolvedVersion == null ? null : ticket.resolvedVersion.id,
+                ticket.resolvedVersion == null ? null : ticket.resolvedVersion.id, ticket.rating, ticket.ratingComment,
                 superuserResource.availableVersions(ticket).stream()
                         .map(version -> new SupportTicketApiResource.VersionOption(version.id, version.name,
                                 version.date == null ? null : version.date.toString()))

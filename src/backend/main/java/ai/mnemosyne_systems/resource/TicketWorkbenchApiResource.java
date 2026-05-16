@@ -110,7 +110,8 @@ public class TicketWorkbenchApiResource {
                         ticket.companyEntitlement == null ? null : ticket.companyEntitlement.id,
                         ticket.category == null ? null : ticket.category.id, ticket.externalIssueLink,
                         ticket.affectsVersion == null ? null : ticket.affectsVersion.id,
-                        ticket.resolvedVersion == null ? null : ticket.resolvedVersion.id));
+                        ticket.resolvedVersion == null ? null : ticket.resolvedVersion.id, ticket.rating,
+                        ticket.ratingComment));
     }
 
     @GET
@@ -220,6 +221,7 @@ public class TicketWorkbenchApiResource {
     }
 
     public record TicketFormData(Long id, String title, String status, Long companyId, Long companyEntitlementId,
-            Long categoryId, String externalIssueLink, Long affectsVersionId, Long resolvedVersionId) {
+            Long categoryId, String externalIssueLink, Long affectsVersionId, Long resolvedVersionId, Integer rating,
+            String ratingComment) {
     }
 }

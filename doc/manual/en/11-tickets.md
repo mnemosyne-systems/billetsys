@@ -24,6 +24,7 @@ A ticket can hold the main context for a support issue, including:
 * Affected and resolved versions
 * Support and TAM assignments
 * External issue reference
+* Ticket rating and feedback
 * Message history
 
 This allows teams to understand both the current state of a case and how it reached that state.
@@ -40,7 +41,9 @@ A typical flow looks like this:
 * The ticket is reviewed and assigned
 * Support and customer communication continues in the message thread
 * Status changes reflect current progress
-* A resolved case is eventually closed
+* The ticket reaches "Resolved" state
+* The user provides an optional 10-star rating and feedback comment
+* A resolved case is eventually closed, either manually or automatically after a configured inactivity period (default is 7 days)
 
 This lifecycle gives both customer-facing roles and operational roles a shared view of progress.
 
@@ -115,6 +118,33 @@ The ticket detail page is where the full case comes together. It combines the cu
 This page is the main working area for understanding a case in context.
 
 Cross-references from other tickets that mention this ticket are shown in a dedicated Related section in the ticket header.
+
+## Ratings and feedback
+
+Once a ticket has been marked as **Resolved**, a rating can be submitted to capture customer satisfaction. A rating consists of a 1–10 star scale and an optional text comment. A ticket can only be rated once.
+
+### Who can submit a rating
+
+* **Users** can rate their own tickets — only tickets where they are the requester.
+* **Superusers** can rate tickets belonging to their company. A superuser can only see and interact with tickets scoped to the company they belong to.
+
+Support, TAM, and Admin roles cannot submit ratings.
+
+### Who can view a rating
+
+Once a rating has been submitted, it becomes a read-only display on the ticket detail page. Visibility follows the same company-scoping rules as the ticket itself:
+
+* **Users** see the rating on their own tickets.
+* **Superusers** see ratings on all tickets within their company.
+* **TAMs** see ratings on tickets for the companies they are assigned to.
+* **Support** agents see ratings on all tickets they have access to.
+* **Admins** see ratings through the ticket workbench, which provides a system-wide view across all companies.
+
+### Auto-close
+
+If a resolved ticket is not rated within a configurable period (default: 7 days), the system automatically closes it. The interval can be configured by an Admin through the **Owner** settings page under "Ticket auto-close." Setting the value to **0** disables auto-close entirely.
+
+When a ticket is auto-closed, its rating is set to **-1**. This sentinel value distinguishes auto-closed tickets from those that have not yet been rated (`null`) and those with an actual user-submitted rating (`1`–`10`).
 
 ## External tracking
 

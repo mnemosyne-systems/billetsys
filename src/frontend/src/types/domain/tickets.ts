@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -24,6 +24,8 @@ export interface TicketReference extends NamedEntity {
   entitlementName?: string;
   levelName?: string;
   externalIssueLink?: string;
+  rating?: number;
+  ratingComment?: string;
   affectsVersionId?: Id;
   resolvedVersionId?: Id;
   editableStatus?: boolean;

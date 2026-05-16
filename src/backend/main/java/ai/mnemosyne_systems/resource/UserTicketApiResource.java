@@ -178,7 +178,7 @@ public class UserTicketApiResource {
                         : ticket.companyEntitlement.entitlement.name,
                 tamView ? userResource.resolveLowestEntitlementLevelName(ticket) : null, ticket.externalIssueLink,
                 ticket.affectsVersion == null ? null : ticket.affectsVersion.id,
-                ticket.resolvedVersion == null ? null : ticket.resolvedVersion.id,
+                ticket.resolvedVersion == null ? null : ticket.resolvedVersion.id, ticket.rating, ticket.ratingComment,
                 userResource.availableVersions(ticket).stream()
                         .map(version -> new SupportTicketApiResource.VersionOption(version.id, version.name,
                                 version.date == null ? null : version.date.toString()))
@@ -346,7 +346,8 @@ public class UserTicketApiResource {
     public record RoleTicketDetailResponse(Long id, String name, String title, String displayStatus, int assignedCount,
             int openCount, Long companyId, String companyName, Long categoryId, String categoryName,
             Long companyEntitlementId, String entitlementName, String levelName, String externalIssueLink,
-            Long affectsVersionId, Long resolvedVersionId, List<SupportTicketApiResource.VersionOption> versions,
+            Long affectsVersionId, Long resolvedVersionId, Integer rating, String ratingComment,
+            List<SupportTicketApiResource.VersionOption> versions,
             List<SupportTicketApiResource.CategoryOption> categories,
             List<SupportTicketApiResource.UserReference> supportUsers, String secondaryUsersLabel,
             List<SupportTicketApiResource.UserReference> secondaryUsers,

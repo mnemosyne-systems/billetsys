@@ -167,11 +167,11 @@ public class SupportTicketApiResource {
                         : ticket.companyEntitlement.entitlement.name,
                 ticket.companyEntitlement == null || ticket.companyEntitlement.supportLevel == null ? null
                         : ticket.companyEntitlement.supportLevel.name,
-                ticket.externalIssueLink, ticket.affectsVersion == null ? null : ticket.affectsVersion.id,
-                ticket.resolvedVersion == null ? null : ticket.resolvedVersion.id, Version
-                        .<Version> list("entitlement = ?1 order by date asc, id asc",
-                                ticket.companyEntitlement == null ? null : ticket.companyEntitlement.entitlement)
-                        .stream()
+                ticket.externalIssueLink, ticket.affectsVersion == null ? null
+                        : ticket.affectsVersion.id,
+                ticket.resolvedVersion == null ? null : ticket.resolvedVersion.id, ticket.rating, ticket.ratingComment,
+                Version.<Version> list("entitlement = ?1 order by date asc, id asc",
+                        ticket.companyEntitlement == null ? null : ticket.companyEntitlement.entitlement).stream()
                         .map(version -> new VersionOption(version.id, version.name,
                                 version.date == null ? null : version.date.toString()))
                         .toList(),
@@ -430,9 +430,9 @@ public class SupportTicketApiResource {
     public record SupportTicketDetailResponse(Long id, String name, String title, String displayStatus,
             int assignedCount, int openCount, Long companyId, String companyName, Long categoryId, String categoryName,
             Long companyEntitlementId, String entitlementName, String levelName, String externalIssueLink,
-            Long affectsVersionId, Long resolvedVersionId, List<VersionOption> versions,
-            List<CategoryOption> categories, List<UserReference> supportUsers, List<UserReference> tamUsers,
-            List<MessageEntry> messages, boolean ticketEntitlementExpired, String actionPath, String messageActionPath,
-            String exportPath, List<String> statusOptions) {
+            Long affectsVersionId, Long resolvedVersionId, Integer rating, String ratingComment,
+            List<VersionOption> versions, List<CategoryOption> categories, List<UserReference> supportUsers,
+            List<UserReference> tamUsers, List<MessageEntry> messages, boolean ticketEntitlementExpired,
+            String actionPath, String messageActionPath, String exportPath, List<String> statusOptions) {
     }
 }

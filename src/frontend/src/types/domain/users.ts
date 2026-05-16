@@ -52,6 +52,7 @@ export interface OwnerCompany extends NamedEntity {
   headersColor?: string;
   buttonsColor?: string;
   use24HourClock?: boolean;
+  ticketAutoCloseDays?: number;
   supportUsers: UserReference[];
   tamUsers: UserReference[];
   supportOptions: UserReference[];

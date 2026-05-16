@@ -61,7 +61,8 @@ public class OwnerResource {
             @FormParam("phoneNumber") String phoneNumber, @FormParam("supportIds") List<Long> supportIds,
             @FormParam("tamIds") List<Long> tamIds, @FormParam("headerFooterColor") String headerFooterColor,
             @FormParam("headersColor") String headersColor, @FormParam("buttonsColor") String buttonsColor,
-            @FormParam("use24HourClock") Boolean use24HourClock) {
+            @FormParam("use24HourClock") Boolean use24HourClock,
+            @FormParam("ticketAutoCloseDays") Integer ticketAutoCloseDays) {
         requireAdmin(auth);
         Company company = findOwnerCompany();
         if (name == null || name.isBlank()) {
@@ -87,6 +88,7 @@ public class OwnerResource {
         installation.headersColor = normalizedHeadersColor;
         installation.buttonsColor = normalizedButtonsColor;
         installation.use24HourClock = Boolean.TRUE.equals(use24HourClock);
+        installation.ticketAutoCloseDays = clampAutoCloseDays(ticketAutoCloseDays);
         return Response.seeOther(URI.create("/owner")).build();
     }
 
@@ -145,6 +147,9 @@ public class OwnerResource {
         if (installation.use24HourClock == null) {
             installation.use24HourClock = false;
         }
+        if (installation.ticketAutoCloseDays == null) {
+            installation.ticketAutoCloseDays = 7;
+        }
         installation.persist();
         return installation;
     }
@@ -166,6 +171,13 @@ public class OwnerResource {
             }
         }
         return null;
+    }
+
+    static int clampAutoCloseDays(Integer value) {
+        if (value == null) {
+            return 7;
+        }
+        return Math.max(0, Math.min(365, value));
     }
 
     static User requireAdmin(String auth) {

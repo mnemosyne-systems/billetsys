@@ -405,6 +405,13 @@ public class SupportResource {
             throw new BadRequestException("Entitlement is required");
         }
         String previousStatus = ticketEmailService.computeEffectiveStatus(ticket, ticket.status);
+        if (sameStatus(status, "Resolved") || sameStatus(status, "Closed")) {
+            if (ticket.resolvedAt == null) {
+                ticket.resolvedAt = java.time.LocalDateTime.now();
+            }
+        } else {
+            ticket.resolvedAt = null;
+        }
         ticket.title = normalizedTitle;
         ticket.status = status;
         ticket.company = company;

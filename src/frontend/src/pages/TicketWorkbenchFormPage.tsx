@@ -53,6 +53,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
+import { Ratings } from "../components/ui/ratings";
 
 export default function TicketWorkbenchFormPage(props: SessionPageProps) {
   void props;
@@ -435,6 +436,22 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
                 </Field>
               </CardContent>
             </Card>
+
+            {bootstrap.edit && bootstrap.ticket?.rating != null && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Rating</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Ratings value={bootstrap.ticket.rating} variant="yellow" />
+                  {bootstrap.ticket.ratingComment && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {bootstrap.ticket.ratingComment}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {bootstrap.edit && (
               <Card>

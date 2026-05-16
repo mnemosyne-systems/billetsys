@@ -70,6 +70,15 @@ public class Ticket extends PanacheEntityBase {
     @JoinColumn(name = "resolved_version_id")
     public Version resolvedVersion;
 
+    @Column
+    public Integer rating;
+
+    @Column(name = "rating_comment", length = 2000)
+    public String ratingComment;
+
+    @Column(name = "resolved_at")
+    public java.time.LocalDateTime resolvedAt;
+
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<Message> messages = new ArrayList<>();
 

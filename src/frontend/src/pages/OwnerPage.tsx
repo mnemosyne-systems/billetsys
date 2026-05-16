@@ -63,6 +63,7 @@ interface OwnerFormState {
   headersColor: string;
   buttonsColor: string;
   use24HourClock: boolean;
+  ticketAutoCloseDays: number;
   supportIds: Array<string | number>;
   tamIds: Array<string | number>;
 }
@@ -93,6 +94,60 @@ function ClockFormatField({
         disabled={disabled}
         aria-label="Use 24-hour clock"
       />
+    </div>
+  );
+}
+
+function AutoCloseDaysField({
+  value,
+  onChange,
+  disabled = false,
+}: {
+  value: number;
+  onChange?: (value: number) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3">
+      <div className="space-y-1">
+        <div className="text-sm font-semibold text-[var(--color-section-header)]">
+          Auto-close unrated tickets
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {value === 0 ? (
+            "Disabled — resolved tickets will not be auto-closed."
+          ) : (
+            <>
+              Resolved tickets without a rating are closed after{" "}
+              <span className="font-medium text-foreground">
+                {value} {value === 1 ? "day" : "days"}
+              </span>
+              .
+            </>
+          )}
+        </p>
+      </div>
+      {!disabled && onChange && (
+        <Input
+          type="number"
+          min={0}
+          max={365}
+          value={value}
+          onChange={(e) => {
+            const parsed = parseInt(e.target.value, 10);
+            if (!isNaN(parsed)) {
+              onChange(Math.max(0, Math.min(365, parsed)));
+            }
+          }}
+          className="w-20 text-center"
+          aria-label="Auto-close days"
+        />
+      )}
+      {disabled && (
+        <span className="text-sm font-medium tabular-nums">
+          {value === 0 ? "Off" : `${value} days`}
+        </span>
+      )}
     </div>
   );
 }
@@ -308,6 +363,15 @@ export function OwnerPage(props: SessionPageProps) {
                 />
               </Field>
               <Field className="md:col-span-2">
+                <FieldLabel className="text-[var(--color-header-bg)]">
+                  Ticket auto-close
+                </FieldLabel>
+                <AutoCloseDaysField
+                  value={owner.ticketAutoCloseDays ?? 7}
+                  disabled
+                />
+              </Field>
+              <Field className="md:col-span-2">
                 <FieldLabel>Colors</FieldLabel>
                 <BrandingColorTable
                   colors={{
@@ -359,6 +423,7 @@ export function OwnerEditPage(props: SessionPageProps) {
         headersColor: owner.headersColor || DEFAULT_INSTALLATION_COLOR,
         buttonsColor: owner.buttonsColor || DEFAULT_INSTALLATION_COLOR,
         use24HourClock: Boolean(owner.use24HourClock),
+        ticketAutoCloseDays: owner.ticketAutoCloseDays ?? 7,
         supportIds: owner.supportUsers.map((user) => user.id),
         tamIds: owner.tamUsers.map((user) => user.id),
       });
@@ -379,6 +444,12 @@ export function OwnerEditPage(props: SessionPageProps) {
   };
 
   const updateToggleField = (field: "use24HourClock", value: boolean) => {
+    setFormState((current) =>
+      current ? { ...current, [field]: value } : current,
+    );
+  };
+
+  const updateNumericField = (field: "ticketAutoCloseDays", value: number) => {
     setFormState((current) =>
       current ? { ...current, [field]: value } : current,
     );
@@ -467,6 +538,7 @@ export function OwnerEditPage(props: SessionPageProps) {
         body: JSON.stringify({
           ...formState,
           use24HourClock: formState.use24HourClock,
+          ticketAutoCloseDays: formState.ticketAutoCloseDays,
           countryId: formState.countryId ? Number(formState.countryId) : null,
           timezoneId: formState.timezoneId
             ? Number(formState.timezoneId)
@@ -747,6 +819,17 @@ export function OwnerEditPage(props: SessionPageProps) {
                   checked={formState.use24HourClock}
                   onCheckedChange={(checked) =>
                     updateToggleField("use24HourClock", checked)
+                  }
+                />
+              </Field>
+              <Field className="md:col-span-2">
+                <FieldLabel className="text-[var(--color-header-bg)]">
+                  Ticket auto-close
+                </FieldLabel>
+                <AutoCloseDaysField
+                  value={formState.ticketAutoCloseDays}
+                  onChange={(value) =>
+                    updateNumericField("ticketAutoCloseDays", value)
                   }
                 />
               </Field>

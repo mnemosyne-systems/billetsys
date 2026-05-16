@@ -551,4 +551,28 @@ abstract class AccessTestSupport {
         RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
                 .post("/companies/" + companyId + "/delete").then().statusCode(303);
     }
+
+    @Transactional
+    Ticket ensureResolvedTicket(Long companyId) {
+        Ticket ticket = ensureTicket(companyId);
+        ticket.status = "Resolved";
+        ticket.resolvedAt = java.time.LocalDateTime.now();
+        return ticket;
+    }
+
+    @Transactional
+    void setTicketRating(Long ticketId, Integer rating, String comment) {
+        Ticket ticket = Ticket.findById(ticketId);
+        ticket.rating = rating;
+        ticket.ratingComment = comment;
+    }
+
+    @Transactional
+    void setTicketStatus(Long ticketId, String status) {
+        Ticket ticket = Ticket.findById(ticketId);
+        ticket.status = status;
+        if ("Resolved".equalsIgnoreCase(status) && ticket.resolvedAt == null) {
+            ticket.resolvedAt = java.time.LocalDateTime.now();
+        }
+    }
 }

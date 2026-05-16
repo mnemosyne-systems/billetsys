@@ -44,6 +44,7 @@ import type { SupportTicketDetailState } from "../types/forms";
 import { Button } from "../components/ui/button";
 import { Field, FieldLabel } from "../components/ui/field";
 import { Input } from "../components/ui/input";
+import { Textarea } from "../components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -59,6 +60,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
+import { Ratings } from "../components/ui/ratings";
+import { Card, CardContent } from "../components/ui/card";
 
 interface SupportTicketDetailPageProps extends SessionPageProps {
   apiBase?: string;
@@ -302,6 +305,9 @@ export default function SupportTicketDetailPage({
   const [replyBody, setReplyBody] = useState("");
   const [replyIsPublic, setReplyIsPublic] = useState(true);
   const [files, setFiles] = useState<File[]>([]);
+  const [ratingValue, setRatingValue] = useState<number>(0);
+  const [ratingComment, setRatingComment] = useState("");
+  const [ratingState, setRatingState] = useState({ saving: false, error: "" });
   const replyInputRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const messagesHeadingRef = useRef<HTMLHeadingElement | null>(null);
@@ -354,6 +360,8 @@ export default function SupportTicketDetailPage({
         ? String(ticket.resolvedVersionId)
         : "none",
     });
+    setRatingValue(ticket.rating ?? 0);
+    setRatingComment(ticket.ratingComment ?? "");
   }, [ticket]);
 
   useEffect(() => {
@@ -453,6 +461,51 @@ export default function SupportTicketDetailPage({
       submissionGuard.exit();
     }
     setSaveState({ saving: false, error: "" });
+  };
+
+  const submitRating = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!ticket || !submissionGuard.tryEnter()) {
+      return;
+    }
+
+    try {
+      setRatingState({ saving: true, error: "" });
+      const response = await postForm(
+        `/tickets/${ticket.id}/rating`,
+        [
+          ["rating", String(ratingValue)],
+          ["ratingComment", ratingComment],
+        ],
+        { headers: { "X-Billetsys-Client": "react" } },
+      );
+
+      const redirectPath = await resolvePostRedirectPath(
+        response,
+        location.pathname,
+      );
+
+      if (redirectPath !== location.pathname) {
+        toast.success("Rating submitted successfully.");
+        navigate(redirectPath);
+      } else {
+        setRefreshNonce((current) => current + 1);
+        toast.success("Rating submitted successfully.");
+      }
+    } catch (error: unknown) {
+      setRatingState({
+        saving: false,
+        error:
+          error instanceof Error ? error.message : "Unable to submit rating.",
+      });
+      toast.error(
+        error instanceof Error ? error.message : "Unable to submit rating.",
+      );
+      return;
+    } finally {
+      submissionGuard.exit();
+    }
+    setRatingState({ saving: false, error: "" });
   };
 
   const addReplyFiles = (event: ChangeEvent<HTMLInputElement>) => {
@@ -869,6 +922,105 @@ export default function SupportTicketDetailPage({
                   </div>
                 )}
             </form>
+
+            {(ticket.displayStatus === "Resolved" || ticket.rating != null) && (
+              <div className="space-y-4">
+                <h2 className="px-1 text-3xl font-bold tracking-tight">
+                  Rating
+                </h2>
+                {ticket.rating != null && ticket.rating >= 1 ? (
+                  <Card>
+                    <CardContent className="space-y-2">
+                      <Ratings
+                        value={ticket.rating}
+                        variant="yellow"
+                        size={24}
+                      />
+                      {ticket.ratingComment && (
+                        <p className="text-sm text-muted-foreground">
+                          {ticket.ratingComment}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ) : ticket.rating === -1 ? (
+                  <Card>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        This ticket was automatically closed without a rating.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : sessionState.data?.role === "user" ||
+                  sessionState.data?.role === "superuser" ? (
+                  <Card>
+                    <CardContent>
+                      <form onSubmit={submitRating}>
+                        <div className="grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-x-8 gap-y-4 items-start">
+                          <div className="space-y-3">
+                            <label
+                              id="rating-label"
+                              className="text-base font-semibold"
+                            >
+                              How would you rate the resolution of this ticket?
+                            </label>
+                            <Ratings
+                              value={ratingValue}
+                              onValueChange={setRatingValue}
+                              asInput
+                              variant="yellow"
+                              size={24}
+                              aria-labelledby="rating-label"
+                            />
+                            {ratingState.error && (
+                              <p className="text-sm font-medium text-destructive">
+                                {ratingState.error}
+                              </p>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <label
+                              htmlFor="rating-comment"
+                              className="text-base font-semibold"
+                            >
+                              Optional comment
+                            </label>
+                            <Textarea
+                              id="rating-comment"
+                              value={ratingComment}
+                              onChange={(e) => setRatingComment(e.target.value)}
+                              placeholder="Tell us about your experience..."
+                              maxLength={2000}
+                              rows={3}
+                            />
+                            <div className="flex justify-end">
+                              <Button
+                                type="submit"
+                                disabled={
+                                  ratingState.saving || ratingValue === 0
+                                }
+                              >
+                                {ratingState.saving
+                                  ? "Submitting..."
+                                  : "Submit"}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </form>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card>
+                    <CardContent>
+                      <p className="text-muted-foreground">
+                        This ticket is resolved but has not been rated yet.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
 
             <div className="space-y-4">
               <h2

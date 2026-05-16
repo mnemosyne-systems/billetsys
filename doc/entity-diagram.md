@@ -45,6 +45,7 @@ erDiagram
         STRING headers_color
         STRING buttons_color
         BOOLEAN use_24_hour_clock
+        INT ticket_auto_close_days
         STRING singleton_key
         BIGINT company_id FK
     }
@@ -70,6 +71,9 @@ erDiagram
         STRING name
         STRING title
         STRING status
+        INT rating
+        STRING rating_comment
+        DATETIME resolved_at
         BIGINT company_id FK
         BIGINT requester_id FK
         BIGINT company_entitlement_id FK
