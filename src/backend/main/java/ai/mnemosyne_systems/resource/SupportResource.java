@@ -19,6 +19,7 @@ import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.service.CrossReferenceService;
+import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
@@ -45,11 +46,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
@@ -64,6 +61,8 @@ public class SupportResource {
 
     @Inject
     TicketEmailService ticketEmailService;
+    @Inject
+    EventService eventService;
 
     @GET
     public Response listTickets(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
@@ -296,6 +295,7 @@ public class SupportResource {
         if (!sameStatus(previousStatus, ticket.status)) {
             ticketEmailService.notifyStatusChange(ticket, previousStatus, user);
         }
+        eventService.saveTicketEvent(ticket, user);
         ticketEmailService.notifyMessageChange(ticket, message, user);
         return Response.seeOther(URI.create("/support/tickets/" + id + "?replyAdded=1")).build();
     }
@@ -351,6 +351,7 @@ public class SupportResource {
         ticket.affectsVersion = resolveVersion(entitlement, affectsVersionId, "Affects", true);
         ticket.category = categoryId != null ? Category.findById(categoryId) : Category.findDefault();
         ticket.persist();
+        eventService.saveTicketEvent(ticket, user);
         assignCompanyTams(ticket);
         boolean isPublic = AttachmentHelper.readFormBoolean(input, "isPublic", true);
         Message message = new Message();
@@ -425,6 +426,7 @@ public class SupportResource {
         if (!sameStatus(previousStatus, ticket.status)) {
             ticketEmailService.notifyStatusChange(ticket, previousStatus, user);
         }
+        eventService.saveTicketEvent(ticket, user);
         return createTicketRedirect(client, "/support/tickets/" + id);
     }
 
@@ -449,6 +451,7 @@ public class SupportResource {
         if (!sameStatus(previousStatus, ticket.status)) {
             ticketEmailService.notifyStatusChange(ticket, previousStatus, user);
         }
+        eventService.saveTicketEvent(ticket, user);
         return createTicketRedirect(client, "/support/tickets/" + id);
     }
 

@@ -19,6 +19,7 @@ import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.service.CrossReferenceService;
+import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
@@ -43,8 +44,6 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,6 +59,9 @@ public class UserResource {
 
     @Inject
     TicketEmailService ticketEmailService;
+
+    @Inject
+    EventService eventService;
 
     @GET
     @Path("user")
@@ -245,6 +247,7 @@ public class UserResource {
         ticket.category = categoryId != null ? Category.findById(categoryId) : Category.findDefault();
         ticket.persist();
         boolean isPublic = AttachmentHelper.readFormBoolean(input, "isPublic", true);
+        eventService.saveTicketEvent(ticket, user);
         Message message = new Message();
         message.body = messageBody.trim();
         message.date = java.time.LocalDateTime.now();
@@ -414,6 +417,7 @@ public class UserResource {
         if (User.TYPE_TAM.equalsIgnoreCase(user.type)) {
             ticket.resolvedVersion = resolveOptionalVersionForTicket(ticket, resolvedVersionId, "Resolved");
         }
+        eventService.saveTicketEvent(ticket, user);
         return ReactRedirectSupport.redirect(client, "/user/tickets/" + id);
     }
 

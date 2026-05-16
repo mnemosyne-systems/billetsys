@@ -21,7 +21,6 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -37,6 +36,9 @@ public class IncomingEmailService {
 
     @Inject
     TicketEmailService ticketEmailService;
+
+    @Inject
+    EventService eventService;
 
     @Transactional
     public IncomingEmailResult processIncomingEmail(String from, String subject, String body,
@@ -125,6 +127,7 @@ public class IncomingEmailService {
         ticket.companyEntitlement = entitlement;
         ticket.category = Category.findDefault();
         ticket.persist();
+        eventService.saveTicketEvent(ticket, sender);
         assignCompanyTams(ticket);
         return ticket;
     }
