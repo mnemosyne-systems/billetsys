@@ -112,6 +112,10 @@ The users defined for testing are
 - Support: `support2` / `support2`
 - Admin: `admin` / `admin`
 
+## Sponsors
+
+- [mnemosyne systems](https://www.mnemosyne-systems.ai/)
+
 ## Contributing
 
 Contributions to **billetsys** are managed on [GitHub.com](https://github.com/mnemosyne-systems/billetsys/)
