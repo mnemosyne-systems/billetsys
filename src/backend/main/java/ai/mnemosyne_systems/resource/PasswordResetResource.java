@@ -168,7 +168,7 @@ public class PasswordResetResource {
     }
 
     private void sendResetEmail(User user, String resetLink) {
-        String subject = subjectTemplate.render();
+        String subject = subjectTemplate.render().strip();
         String format = user.emailFormat;
         if ("text".equalsIgnoreCase(format)) {
             String text = bodyTextTemplate.data("username", user.name).data("resetLink", resetLink).render();

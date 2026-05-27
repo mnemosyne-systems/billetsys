@@ -65,7 +65,7 @@ public class TicketEmailService {
         }
         String actorName = actor == null ? "System" : actor.name;
         String currentStatus = computeEffectiveStatus(ticket, ticket.status);
-        String subject = subjectTemplate.data("ticket", ticket).data("eventType", eventType).render();
+        String subject = subjectTemplate.data("ticket", ticket).data("eventType", eventType).render().strip();
         String text = renderText(ticket, message, eventType, previousStatus, currentStatus, actorName);
         String html = renderHtml(ticket, message, eventType, previousStatus, currentStatus, actorName);
         for (User recipient : recipientUsers) {
