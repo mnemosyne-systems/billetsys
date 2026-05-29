@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import LexicalEditor from "../components/editor/LexicalEditor";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
+import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import { postMultipart } from "../utils/api";
 import { toQueryString } from "../utils/formatting";
 import { resolvePostRedirectPath } from "../utils/routing";
@@ -83,6 +84,7 @@ export default function SupportTicketCreatePage({
   const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
   const submissionGuard = useSubmissionGuard();
   const showFixedCompany = sessionState.data?.role === "superuser";
+  useNumberShortcuts({ enableFieldJumps: true });
   useEffect(() => {
     if (!bootstrap) {
       return;
@@ -225,6 +227,7 @@ export default function SupportTicketCreatePage({
                           updateFormState("title", event.target.value)
                         }
                         required
+                        data-shortcut-index="1"
                       />
                     </Field>
 
@@ -303,7 +306,10 @@ export default function SupportTicketCreatePage({
                           }}
                           required
                         >
-                          <SelectTrigger className="w-full">
+                          <SelectTrigger
+                            className="w-full"
+                            data-shortcut-index="3"
+                          >
                             <SelectValue placeholder="Select entitlement" />
                           </SelectTrigger>
                           <SelectContent>
@@ -331,7 +337,10 @@ export default function SupportTicketCreatePage({
                             updateFormState("categoryId", value)
                           }
                         >
-                          <SelectTrigger className="w-full">
+                          <SelectTrigger
+                            className="w-full"
+                            data-shortcut-index="4"
+                          >
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                           <SelectContent>
@@ -356,7 +365,10 @@ export default function SupportTicketCreatePage({
                             updateFormState("affectsVersionId", value)
                           }
                         >
-                          <SelectTrigger className="w-full">
+                          <SelectTrigger
+                            className="w-full"
+                            data-shortcut-index="5"
+                          >
                             <SelectValue placeholder="Select version" />
                           </SelectTrigger>
                           <SelectContent>
@@ -387,6 +399,7 @@ export default function SupportTicketCreatePage({
                         rows={10}
                         required
                         ticketSuggestApiBase={ticketSuggestApiBase}
+                        data-shortcut-index="6"
                       />
                     </Field>
                     <MessageVisibilityField
@@ -447,7 +460,10 @@ export default function SupportTicketCreatePage({
                           }}
                           required
                         >
-                          <SelectTrigger className="w-full">
+                          <SelectTrigger
+                            className="w-full"
+                            data-shortcut-index="2"
+                          >
                             <SelectValue placeholder="Select company" />
                           </SelectTrigger>
                           <SelectContent>

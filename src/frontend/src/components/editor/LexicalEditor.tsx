@@ -8,7 +8,6 @@
 
 import { CodeHighlightNode, CodeNode } from "@lexical/code";
 import {
-  AutoFocusExtension,
   ClearEditorExtension,
   DecoratorTextExtension,
   HorizontalRuleExtension,
@@ -185,6 +184,7 @@ interface LexicalEditorProps {
   required?: boolean;
   ticketSuggestApiBase?: string;
   excludeTicketId?: number | string;
+  "data-shortcut-index"?: string | number;
 }
 
 const SUPERSCRIPT: TextMatchTransformer = {
@@ -337,6 +337,7 @@ export default function LexicalEditor({
   required,
   ticketSuggestApiBase,
   excludeTicketId,
+  "data-shortcut-index": dataShortcutIndex,
 }: LexicalEditorProps) {
   const [floatingAnchorElem, setFloatingAnchorElem] =
     useState<HTMLDivElement | null>(null);
@@ -353,7 +354,6 @@ export default function LexicalEditor({
       defineExtension({
         dependencies: [
           RichTextExtension,
-          AutoFocusExtension,
           SelectionAlwaysOnDisplayExtension,
           HistoryExtension,
           configExtension(LinkExtension, {
@@ -401,7 +401,19 @@ export default function LexicalEditor({
   );
 
   return (
-    <div className="editor-shell bg-background overflow-hidden rounded-lg border shadow w-full">
+    <div
+      className="editor-shell bg-background overflow-hidden rounded-lg border shadow w-full"
+      data-shortcut-index={dataShortcutIndex}
+      tabIndex={dataShortcutIndex ? -1 : undefined}
+      onFocus={(event) => {
+        if (event.target === event.currentTarget) {
+          const editable = event.currentTarget.querySelector<HTMLElement>(
+            '[contenteditable="true"]',
+          );
+          editable?.focus();
+        }
+      }}
+    >
       <LexicalExtensionComposer extension={AppExtension} contentEditable={null}>
         <TooltipProvider>
           <div className="relative">

@@ -12,6 +12,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import LexicalEditor from "../components/editor/LexicalEditor";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
+import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import { toast } from "sonner";
 import DataState from "../components/common/DataState";
 import { postForm } from "../utils/api";
@@ -80,6 +81,8 @@ export default function EntitlementFormPage({
   const [saveState, setSaveState] = useState({ saving: false, error: "" });
   const submissionGuard = useSubmissionGuard();
   const isEdit = mode === "edit";
+
+  useNumberShortcuts({ enableFieldJumps: true });
 
   const updateFormState = <K extends keyof EntitlementFormState>(
     field: K,
@@ -283,6 +286,7 @@ export default function EntitlementFormPage({
                       updateFormState("name", event.target.value)
                     }
                     required
+                    data-shortcut-index="1"
                   />
                 </Field>
                 <Field>
@@ -294,6 +298,7 @@ export default function EntitlementFormPage({
                     onChange={(value) => updateFormState("description", value)}
                     rows={10}
                     required
+                    data-shortcut-index="2"
                   />
                 </Field>
               </CardContent>

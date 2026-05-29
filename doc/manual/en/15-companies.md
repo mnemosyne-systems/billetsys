@@ -56,6 +56,20 @@ From an operational perspective, companies make it easier to answer questions su
 
 That makes the company record one of the key administrative foundations of the system.
 
+## Keyboard shortcuts
+
+Like all paginated list views in the application, the companies list supports keyboard shortcuts for quick navigation. You can use `Alt+1` through `Alt+0` to open items in the currently visible list.
+
+On the company form page, the following shortcuts are available to jump directly to specific fields (and open dropdowns automatically):
+* `Alt+1`: Jump to Name
+* `Alt+2`: Jump to Phone number
+* `Alt+3`: Jump to Address 1
+* `Alt+4`: Jump to City
+* `Alt+5`: Jump to Country
+* `Alt+6`: Jump to Time zone
+
+These shortcuts work universally. See the **Navigation** chapter for more details.
+
 ## Role perspective
 
 Companies are most important for the roles that coordinate or administer broader sets of work, such as admins, superusers, TAMs, and support staff.

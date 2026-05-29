@@ -74,6 +74,17 @@ Articles support richer content than a plain note. They can include structured t
 
 Ticket messages can reference articles using the `$` mention syntax in the message editor. In the rendered message, the mention is displayed as the article title. Each reference is recorded on the ticket and shown in a dedicated Articles section, sorted by title.
 
+## Keyboard shortcuts
+
+Like all paginated list views in the application, the articles list supports keyboard shortcuts for quick navigation. You can use `Alt+1` through `Alt+0` to open items in the currently visible list.
+
+On the article form page, the following shortcuts are available to jump directly to specific fields:
+* `Alt+1`: Jump to Title
+* `Alt+2`: Jump to Tags
+* `Alt+3`: Focus the Editor
+
+These shortcuts work universally. See the **Navigation** chapter for more details.
+
 ## Why it matters
 
 The articles feature turns day-to-day support experience into reusable organizational knowledge. Over time, that helps billetsys serve not only as a ticket system, but also as a knowledge platform for support teams and customers.

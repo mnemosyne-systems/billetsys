@@ -51,9 +51,11 @@ For example, navigation helps users:
 
 ## Keyboard shortcuts and pagination
 
-Keyboard shortcuts such as `Ctrl+1` through `Ctrl+0` always refer to items **on the current page**. When a list spans multiple pages, moving to a different page updates the shortcut targets to match the visible items.
+Keyboard shortcuts such as `Alt+1` through `Alt+0` always refer to items **on the current page** or **the current view**. On paginated lists, moving to a different page updates the shortcut targets to match the visible items.
 
-This means that `Ctrl+1` on page 2 opens the first ticket on page 2 — not the first ticket across the entire dataset. This behavior keeps shortcuts predictable regardless of how many items exist.
+This means that `Alt+1` on page 2 opens the first item on page 2 — not the first item across the entire dataset. This behavior keeps shortcuts predictable regardless of how many items exist. On detail pages, these same shortcuts are context-aware and jump focus between major sections and form fields.
+
+These shortcuts work universally across the application, even if you are currently typing inside a text box or have a dropdown menu open. Using a shortcut will gracefully navigate you out of your current input and directly into the new target field or open the targeted dropdown. If you wish to manually unfocus any active input or dropdown without navigating away, you can press `Escape`.
 
 ## Why it matters
 

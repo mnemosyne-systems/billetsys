@@ -15,6 +15,7 @@ import PageHeader from "../components/layout/PageHeader";
 import useJson from "../hooks/useJson";
 import useClientPagination from "../hooks/useClientPagination";
 import { SmartLink } from "../utils/routing";
+import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import type { SessionPageProps } from "../types/app";
 import type { CollectionResponse, LevelRecord } from "../types/domain";
 import { Card, CardHeader } from "../components/ui/card";
@@ -62,6 +63,11 @@ export default function LevelsPage({ sessionState }: SessionPageProps) {
     defaultPageSize,
     sortConfigs: SORT_CONFIGS,
     defaultSort: "name",
+  });
+
+  useNumberShortcuts({
+    items: pageItems.slice(0, 10),
+    getPath: (level) => `/levels/${level.id}`,
   });
 
   return (

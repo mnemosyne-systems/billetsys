@@ -15,6 +15,7 @@ import DataState from "../components/common/DataState";
 import PageHeader from "../components/layout/PageHeader";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
+import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import { postForm } from "../utils/api";
 import { createDirectoryUserFormState } from "../utils/forms";
 import { toQueryString } from "../utils/formatting";
@@ -103,6 +104,8 @@ export default function DirectoryUserFormPage({
           (option: CountryOption) => String(option.id) === selectedCountryId,
         )?.name,
     )?.alpha2 as ComponentProps<typeof PhoneInput>["defaultCountry"]) || "US";
+
+  useNumberShortcuts({ enableFieldJumps: true });
 
   useEffect(() => {
     if (!bootstrap) {
@@ -318,6 +321,7 @@ export default function DirectoryUserFormPage({
                     }
                     readOnly={isEdit}
                     required
+                    data-shortcut-index="1"
                   />
                 </Field>
                 <Field>
@@ -329,6 +333,7 @@ export default function DirectoryUserFormPage({
                     onChange={(event) =>
                       updateFormState("fullName", event.target.value)
                     }
+                    data-shortcut-index="2"
                   />
                 </Field>
                 <Field>
@@ -342,6 +347,7 @@ export default function DirectoryUserFormPage({
                       updateFormState("email", event.target.value)
                     }
                     required
+                    data-shortcut-index="3"
                   />
                 </Field>
                 <Field>

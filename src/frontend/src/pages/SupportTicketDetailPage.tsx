@@ -21,6 +21,7 @@ import {
 } from "../components/users/UserComponents";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
+import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import { postForm, postMultipart } from "../utils/api";
 import {
   formatFileSize,
@@ -320,6 +321,9 @@ export default function SupportTicketDetailPage({
   const canEditResolvedVersion = ticket?.editableResolvedVersion ?? true;
   const showLevelField =
     apiBase !== "/api/user/tickets" || sessionState.data?.role === "tam";
+
+  useNumberShortcuts({ enableFieldJumps: true });
+
   const ticketHeading = ticket?.name || ticket?.title || titleFallback;
   const showSummaryField =
     Boolean(ticket?.title || formState?.title) &&
@@ -618,6 +622,7 @@ export default function SupportTicketDetailPage({
                       <Input
                         value={formState.title || ticket.title || ""}
                         readOnly
+                        data-shortcut-index="1"
                       />
                     ) : (
                       <Input
@@ -625,6 +630,7 @@ export default function SupportTicketDetailPage({
                         onChange={(event) =>
                           updateFormState("title", event.target.value)
                         }
+                        data-shortcut-index="1"
                         required
                       />
                     )}
@@ -633,7 +639,11 @@ export default function SupportTicketDetailPage({
                 <Field>
                   <FieldLabel>Category</FieldLabel>
                   {isClosed || !canEditCategory ? (
-                    <Input value={ticket.categoryName || "-"} readOnly />
+                    <Input
+                      value={ticket.categoryName || "-"}
+                      readOnly
+                      data-shortcut-index="2"
+                    />
                   ) : (
                     <Select
                       value={formState.categoryId}
@@ -641,7 +651,7 @@ export default function SupportTicketDetailPage({
                         updateFormState("categoryId", value)
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger data-shortcut-index="2">
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                       <SelectContent>
@@ -674,7 +684,11 @@ export default function SupportTicketDetailPage({
                 <Field>
                   <FieldLabel>Status</FieldLabel>
                   {isClosed || !canEditStatus ? (
-                    <Input value={formState.status || "-"} readOnly />
+                    <Input
+                      value={formState.status || "-"}
+                      readOnly
+                      data-shortcut-index="3"
+                    />
                   ) : (
                     <Select
                       value={formState.status}
@@ -682,7 +696,7 @@ export default function SupportTicketDetailPage({
                         updateFormState("status", value)
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger data-shortcut-index="3">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -719,12 +733,13 @@ export default function SupportTicketDetailPage({
                           target="_blank"
                           rel="noreferrer"
                           className="text-sm font-medium text-primary hover:underline truncate"
+                          data-shortcut-index="4"
                         >
                           {formState.externalIssueLink}
                         </a>
                       </div>
                     ) : (
-                      <Input value="-" readOnly />
+                      <Input value="-" readOnly data-shortcut-index="4" />
                     )
                   ) : (
                     <div className="relative flex items-center">
@@ -736,6 +751,7 @@ export default function SupportTicketDetailPage({
                             event.target.value,
                           )
                         }
+                        data-shortcut-index="4"
                         className="pr-14"
                       />
                       {formState.externalIssueLink ? (
@@ -765,6 +781,7 @@ export default function SupportTicketDetailPage({
                         ) || "-"
                       }
                       readOnly
+                      data-shortcut-index="5"
                     />
                   ) : (
                     <Select
@@ -773,7 +790,7 @@ export default function SupportTicketDetailPage({
                         updateFormState("affectsVersionId", value)
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger data-shortcut-index="5">
                         <SelectValue placeholder="Version" />
                       </SelectTrigger>
                       <SelectContent position="popper">
@@ -801,6 +818,7 @@ export default function SupportTicketDetailPage({
                         ) || "-"
                       }
                       readOnly
+                      data-shortcut-index="6"
                     />
                   ) : (
                     <Select
@@ -809,7 +827,7 @@ export default function SupportTicketDetailPage({
                         updateFormState("resolvedVersionId", value)
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger data-shortcut-index="6">
                         <SelectValue placeholder="Version" />
                       </SelectTrigger>
                       <SelectContent position="popper">
@@ -1024,8 +1042,10 @@ export default function SupportTicketDetailPage({
 
             <div className="space-y-4">
               <h2
-                className="px-1 text-3xl font-bold tracking-tight"
+                className="px-1 text-3xl font-bold tracking-tight rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 ref={messagesHeadingRef}
+                tabIndex={-1}
+                data-shortcut-index="7"
               >
                 Messages
               </h2>
@@ -1070,6 +1090,7 @@ export default function SupportTicketDetailPage({
                     required
                     ticketSuggestApiBase={apiBase}
                     excludeTicketId={ticket.id}
+                    data-shortcut-index="8"
                   />
 
                   <div className="space-y-3">

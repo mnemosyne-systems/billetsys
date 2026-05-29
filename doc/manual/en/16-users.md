@@ -65,6 +65,19 @@ This is essential because the quality of the user structure affects almost every
 * Reporting scope
 * Company coordination
 
+## Keyboard shortcuts
+
+Like all paginated list views in the application, the users list supports keyboard shortcuts for quick navigation. You can use `Alt+1` through `Alt+0` to open items in the currently visible list.
+
+On the user form page, the following shortcuts are available to jump directly to specific fields (and open dropdowns automatically):
+* `Alt+1`: Jump to Username
+* `Alt+2`: Jump to Name
+* `Alt+3`: Jump to Email
+
+Only `Alt+1` through `Alt+3` are currently assigned on the user form page.
+
+These shortcuts work universally. See the **Navigation** chapter for more details.
+
 ## Why it matters
 
 Without a strong user model, billetsys would only be a ticket container. With structured user accounts and role assignment, it becomes a coordinated support platform where responsibilities, visibility, and communication all follow the same design.

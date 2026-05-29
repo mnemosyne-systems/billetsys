@@ -14,6 +14,7 @@ import DataState from "../components/common/DataState";
 import PageHeader from "../components/layout/PageHeader";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
+import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import { postForm } from "../utils/api";
 import { toQueryString } from "../utils/formatting";
 import { resolvePostRedirectPath } from "../utils/routing";
@@ -72,6 +73,8 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
     `/api/ticket-workbench/bootstrap${toQueryString({ ticketId: id, companyId: formState?.companyId || requestedCompanyId })}`,
   );
   const bootstrap = bootstrapState.data;
+
+  useNumberShortcuts({ enableFieldJumps: true });
 
   useEffect(() => {
     if (!bootstrap) {
@@ -261,6 +264,7 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
                       updateFormState("title", event.target.value)
                     }
                     required
+                    data-shortcut-index="1"
                   />
                 </Field>
 
@@ -273,7 +277,7 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
                         updateFormState("status", value)
                       }
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full" data-shortcut-index="2">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -305,7 +309,7 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
                         )
                       }
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full" data-shortcut-index="3">
                         <SelectValue placeholder="Select company" />
                       </SelectTrigger>
                       <SelectContent>
@@ -330,7 +334,7 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
                         updateFormState("companyEntitlementId", value)
                       }
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full" data-shortcut-index="4">
                         <SelectValue placeholder="Select entitlement" />
                       </SelectTrigger>
                       <SelectContent>
@@ -355,7 +359,7 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
                         updateFormState("categoryId", value)
                       }
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full" data-shortcut-index="5">
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
@@ -380,7 +384,7 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
                         updateFormState("affectsVersionId", value)
                       }
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full" data-shortcut-index="6">
                         <SelectValue placeholder="Select version" />
                       </SelectTrigger>
                       <SelectContent>
@@ -405,7 +409,7 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
                         updateFormState("resolvedVersionId", value)
                       }
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full" data-shortcut-index="7">
                         <SelectValue placeholder="Select version" />
                       </SelectTrigger>
                       <SelectContent>
@@ -432,6 +436,7 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
                       updateFormState("externalIssueLink", event.target.value)
                     }
                     placeholder="https://github.com/..."
+                    data-shortcut-index="8"
                   />
                 </Field>
               </CardContent>

@@ -12,6 +12,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
+import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import DataState from "../components/common/DataState";
 import PageHeader from "../components/layout/PageHeader";
 import { resolvePostRedirectPath } from "../utils/routing";
@@ -85,6 +86,8 @@ export default function CompanyFormPage({ mode }: CompanyFormPageProps) {
   const [saveState, setSaveState] = useState({ saving: false, error: "" });
   const submissionGuard = useSubmissionGuard();
   const isEdit = mode === "edit";
+
+  useNumberShortcuts({ enableFieldJumps: true });
 
   useEffect(() => {
     if (!company) {
@@ -333,6 +336,7 @@ export default function CompanyFormPage({ mode }: CompanyFormPageProps) {
                     updateFormState("name", event.target.value)
                   }
                   required
+                  data-shortcut-index="1"
                 />
               </Field>
               <Field>
@@ -345,6 +349,7 @@ export default function CompanyFormPage({ mode }: CompanyFormPageProps) {
                   onChange={(value) =>
                     updateFormState("phoneNumber", value || "")
                   }
+                  data-shortcut-index="2"
                 />
               </Field>
               <Field>
@@ -356,6 +361,7 @@ export default function CompanyFormPage({ mode }: CompanyFormPageProps) {
                   onChange={(event) =>
                     updateFormState("address1", event.target.value)
                   }
+                  data-shortcut-index="3"
                 />
               </Field>
               <Field>
@@ -378,6 +384,7 @@ export default function CompanyFormPage({ mode }: CompanyFormPageProps) {
                   onChange={(event) =>
                     updateFormState("city", event.target.value)
                   }
+                  data-shortcut-index="4"
                 />
               </Field>
               <Field>
@@ -438,6 +445,7 @@ export default function CompanyFormPage({ mode }: CompanyFormPageProps) {
                         : current,
                     );
                   }}
+                  data-shortcut-index="5"
                 />
               </Field>
               <Field>
@@ -450,7 +458,7 @@ export default function CompanyFormPage({ mode }: CompanyFormPageProps) {
                     updateFormState("timezoneId", value)
                   }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full" data-shortcut-index="6">
                     <SelectValue placeholder="Select a time zone" />
                   </SelectTrigger>
                   <SelectContent>

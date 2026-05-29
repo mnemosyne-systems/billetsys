@@ -12,6 +12,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
+import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import DataState from "../components/common/DataState";
 import PageHeader from "../components/layout/PageHeader";
 import LexicalEditor from "../components/editor/LexicalEditor";
@@ -49,6 +50,8 @@ export default function ArticleFormPage({ mode }: ArticleFormPageProps) {
   const bodyInputRef = useRef<HTMLTextAreaElement | null>(null);
   const submissionGuard = useSubmissionGuard();
   const isEdit = mode === "edit";
+
+  useNumberShortcuts({ enableFieldJumps: true });
 
   const updateFormState = (field: keyof ArticleFormState, value: string) => {
     if (saveState.error) {
@@ -139,6 +142,7 @@ export default function ArticleFormPage({ mode }: ArticleFormPageProps) {
                       }
                       className="bg-background shadow-sm"
                       required
+                      data-shortcut-index="1"
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
                       Article titles must be unique.
@@ -154,6 +158,7 @@ export default function ArticleFormPage({ mode }: ArticleFormPageProps) {
                         updateFormState("tags", event.target.value)
                       }
                       className="bg-background shadow-sm"
+                      data-shortcut-index="2"
                     />
                   </Field>
                   <Field className="md:col-span-2 mt-2">
@@ -167,6 +172,7 @@ export default function ArticleFormPage({ mode }: ArticleFormPageProps) {
                         inputRef={bodyInputRef}
                         rows={16}
                         required
+                        data-shortcut-index="3"
                       />
                     </div>
                   </Field>

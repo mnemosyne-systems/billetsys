@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import useJson from "../hooks/useJson";
 import DataState from "../components/common/DataState";
 import PageHeader from "../components/layout/PageHeader";
+import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
 import type { CollectionResponse, EntitlementRecord } from "../types/domain";
@@ -37,6 +38,11 @@ export default function EntitlementsListPage(props: SessionPageProps) {
   void props;
   const entitlementsState =
     useJson<CollectionResponse<EntitlementRecord>>("/api/entitlements");
+
+  useNumberShortcuts({
+    items: (entitlementsState.data?.items || []).slice(0, 10),
+    getPath: (entitlement) => `/entitlements/${entitlement.id}`,
+  });
 
   return (
     <section className="w-full mt-4">

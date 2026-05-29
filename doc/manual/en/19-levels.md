@@ -50,3 +50,17 @@ Over time, levels help teams answer questions such as:
 * How service expectations differ across customers
 
 This makes the levels feature an important part of making support handling more structured and transparent.
+
+## Keyboard shortcuts
+
+Like all paginated list views in the application, the levels list supports keyboard shortcuts for quick navigation. You can use `Alt+1` through `Alt+0` to open items in the currently visible list.
+
+On the level form page, the following shortcuts are available to jump directly to specific fields (and open dropdowns automatically):
+* `Alt+1`: Jump to Name
+* `Alt+2`: Jump to Level
+* `Alt+3`: Jump to Color
+* `Alt+4`: Jump to Country
+* `Alt+5`: Jump to From day
+* `Alt+6`: Jump to To day
+
+These shortcuts work universally. See the **Navigation** chapter for more details.

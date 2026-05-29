@@ -13,6 +13,7 @@ import DataState from "../components/common/DataState";
 import PaginationControls from "../components/common/PaginationControls";
 import SortDropdown from "../components/common/SortDropdown";
 import { SmartLink } from "../utils/routing";
+import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import type { SessionPageProps } from "../types/app";
 import type { CollectionResponse, EntitlementRecord } from "../types/domain";
 import { Card, CardHeader } from "../components/ui/card";
@@ -71,6 +72,11 @@ export default function EntitlementsPage({ sessionState }: SessionPageProps) {
     defaultPageSize,
     sortConfigs: SORT_CONFIGS,
     defaultSort: "name",
+  });
+
+  useNumberShortcuts({
+    items: pageItems.slice(0, 10),
+    getPath: (entitlement) => `/entitlements/${entitlement.id}`,
   });
 
   return (

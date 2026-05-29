@@ -48,6 +48,16 @@ That context can help administrators keep the classification system understandab
 
 Categories can include attachments. This makes it possible to keep supporting examples, templates, or reference files directly on the category definition.
 
+## Keyboard shortcuts
+
+Like all paginated list views in the application, the categories list supports keyboard shortcuts for quick navigation. You can use `Alt+1` through `Alt+0` to open items in the currently visible list.
+
+On the category form page, the following shortcuts are available to jump directly to specific fields (and open dropdowns automatically):
+* `Alt+1`: Jump to Name
+* `Alt+2`: Jump to Default
+
+These shortcuts work universally. See the **Navigation** chapter for more details.
+
 ## Role perspective
 
 Categories are mostly maintained by administrative roles, but they affect many other parts of the application. Users, support staff, TAMs, and superusers all benefit from clearer ticket classification even if they are not the ones managing the category definitions directly.

@@ -55,6 +55,7 @@ interface CountryDropdownProps {
   disabled?: boolean;
   placeholder?: string;
   slim?: boolean;
+  "data-shortcut-index"?: string | number;
 }
 
 const CountryDropdownComponent = (

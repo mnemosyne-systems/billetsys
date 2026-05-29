@@ -15,6 +15,7 @@ import PageHeader from "../components/layout/PageHeader";
 import LexicalEditor from "../components/editor/LexicalEditor";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
+import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import { PATHS } from "../routes/paths";
 import { postForm } from "../utils/api";
 import { levelColorMarker } from "../utils/formatting";
@@ -102,6 +103,8 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
   const [saveState, setSaveState] = useState({ saving: false, error: "" });
   const submissionGuard = useSubmissionGuard();
   const isEdit = mode === "edit";
+
+  useNumberShortcuts({ enableFieldJumps: true });
 
   useEffect(() => {
     if (!level) {
@@ -232,6 +235,7 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                         updateFormState("name", event.target.value)
                       }
                       required
+                      data-shortcut-index="1"
                     />
                   </Field>
                   <Field>
@@ -246,6 +250,7 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                         updateFormState("level", event.target.value)
                       }
                       required
+                      data-shortcut-index="2"
                     />
                   </Field>
                   <Field>
@@ -256,7 +261,7 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                       value={formState.color || undefined}
                       onValueChange={(value) => updateFormState("color", value)}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full" data-shortcut-index="3">
                         <SelectValue placeholder="Select color" />
                       </SelectTrigger>
                       <SelectContent>
@@ -309,6 +314,7 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                             : current,
                         );
                       }}
+                      data-shortcut-index="4"
                     />
                   </Field>
                   <Field>
@@ -321,7 +327,7 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                         updateFormState("fromDay", value)
                       }
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full" data-shortcut-index="5">
                         <SelectValue placeholder="Select day" />
                       </SelectTrigger>
                       <SelectContent>
@@ -344,7 +350,7 @@ export default function LevelFormPage({ mode }: LevelFormPageProps) {
                       value={formState.toDay || undefined}
                       onValueChange={(value) => updateFormState("toDay", value)}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full" data-shortcut-index="6">
                         <SelectValue placeholder="Select day" />
                       </SelectTrigger>
                       <SelectContent>

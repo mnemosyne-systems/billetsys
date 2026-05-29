@@ -11,6 +11,7 @@ import PaginationControls from "../components/common/PaginationControls";
 import SortableTableHead from "../components/common/SortableTableHead";
 import PageHeader from "../components/layout/PageHeader";
 import usePaginatedList from "../hooks/usePaginatedList";
+import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
 import type { ArticleRecord, CollectionResponse } from "../types/domain";
@@ -46,6 +47,11 @@ export default function ArticlesPage({ sessionState }: SessionPageProps) {
     defaultSort: "title",
     defaultDir: "asc",
     sortKeys: SORT_KEYS,
+  });
+
+  useNumberShortcuts({
+    items: (articlesState.data?.items || []).slice(0, 10),
+    getPath: (article) => `/articles/${article.id}`,
   });
 
   return (

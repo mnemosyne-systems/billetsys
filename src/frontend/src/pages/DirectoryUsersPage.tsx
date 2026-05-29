@@ -11,6 +11,7 @@ import DataState from "../components/common/DataState";
 import PaginationControls from "../components/common/PaginationControls";
 import SortDropdown from "../components/common/SortDropdown";
 import PageHeader from "../components/layout/PageHeader";
+import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import useJson from "../hooks/useJson";
 import useClientPagination from "../hooks/useClientPagination";
 import { toQueryString } from "../utils/formatting";
@@ -111,6 +112,11 @@ export default function DirectoryUsersPage({
       `${location.pathname}${toQueryString({ companyId: nextCompanyId })}`,
     );
   };
+
+  useNumberShortcuts({
+    items: pageItems.slice(0, 10),
+    getPath: (user) => user.detailPath,
+  });
 
   return (
     <section className="w-full mt-4">

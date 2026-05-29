@@ -13,6 +13,7 @@ import DataState from "../components/common/DataState";
 import PaginationControls from "../components/common/PaginationControls";
 import SortDropdown from "../components/common/SortDropdown";
 import PageHeader from "../components/layout/PageHeader";
+import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
 import type { CategoryRecord, CollectionResponse } from "../types/domain";
@@ -55,6 +56,11 @@ export default function CategoriesPage({ sessionState }: SessionPageProps) {
     defaultPageSize,
     sortConfigs: SORT_CONFIGS,
     defaultSort: "name",
+  });
+
+  useNumberShortcuts({
+    items: pageItems.slice(0, 10),
+    getPath: (category) => `/categories/${category.id}`,
   });
 
   return (

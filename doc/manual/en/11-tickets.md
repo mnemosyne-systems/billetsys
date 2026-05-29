@@ -88,7 +88,20 @@ For roles that use the ticket queues, these keyboard shortcuts are available fro
 * `Ctrl+C` opens **Closed tickets**
 * `Ctrl++` opens **Create ticket**
 
-When a ticket queue view is open, `Ctrl+1` through `Ctrl+9` open the first through ninth ticket in the currently visible list order, and `Ctrl+0` opens the tenth ticket.
+When a ticket queue view is open, `Alt+1` through `Alt+9` open the first through ninth ticket in the currently visible list order, and `Alt+0` opens the tenth ticket. 
+
+On the ticket detail page, the following shortcuts are available to jump directly to specific fields or sections (and will automatically open dropdown menus):
+
+* `Alt+1`: Jump to Summary / Title
+* `Alt+2`: Jump to Category
+* `Alt+3`: Jump to Status
+* `Alt+4`: Jump to External Issue link
+* `Alt+5`: Jump to Affects Version
+* `Alt+6`: Jump to Resolved Version
+* `Alt+7`: Jump to the Messages Thread
+* `Alt+8`: Focus the Reply Editor
+
+These shortcuts work universally, even if you are viewing read-only versions of the fields. If you are actively typing inside a text box (like the Reply Editor) and wish to use a shortcut to jump elsewhere, simply use the `Alt+Number` shortcut directly—they will gracefully navigate you out of the current field.
 
 ## Ticket search
 

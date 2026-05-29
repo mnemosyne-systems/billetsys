@@ -52,6 +52,16 @@ Over time, entitlements help teams answer questions such as:
 
 This makes entitlements one of the key concepts behind consistent service-aware ticket handling.
 
+## Keyboard shortcuts
+
+Like all paginated list views in the application, the entitlements list supports keyboard shortcuts for quick navigation. You can use `Alt+1` through `Alt+0` to open items in the currently visible list.
+
+On the entitlement form page, the following shortcuts are available to jump directly to specific fields:
+* `Alt+1`: Jump to Name
+* `Alt+2`: Jump to Description
+
+These shortcuts work universally. See the **Navigation** chapter for more details.
+
 ## Role perspective
 
 Entitlements are mainly configured and maintained by administrative roles, but their effects are visible throughout the application. Support roles, superusers, TAMs, and ticket creators all benefit from having a clear service context behind the cases they work with.

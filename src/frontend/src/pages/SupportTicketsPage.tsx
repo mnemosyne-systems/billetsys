@@ -6,18 +6,19 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import DataState from "../components/common/DataState";
 import PaginationControls from "../components/common/PaginationControls";
 import SortableTableHead from "../components/common/SortableTableHead";
 import PageHeader from "../components/layout/PageHeader";
 import usePaginatedList from "../hooks/usePaginatedList";
 import { shouldUseLightTextOnColor } from "../utils/formatting";
+import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
 import type { CollectionResponse, TicketListItem } from "../types/domain";
 import { Button } from "../components/ui/button";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -51,20 +52,6 @@ const SORT_KEYS = [
   "affects",
 ] as const;
 
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-  const tagName = target.tagName.toLowerCase();
-  return (
-    target.isContentEditable ||
-    tagName === "input" ||
-    tagName === "textarea" ||
-    tagName === "select" ||
-    Boolean(target.closest("[contenteditable='true']"))
-  );
-}
-
 export default function SupportTicketsPage({
   title,
   view,
@@ -73,7 +60,6 @@ export default function SupportTicketsPage({
   createFallbackPath = "/support/tickets/new",
 }: SupportTicketsPageProps) {
   const location = useLocation();
-  const navigate = useNavigate();
   const locationSearchTerm =
     new URLSearchParams(location.search).get("q") || "";
 
@@ -127,42 +113,10 @@ export default function SupportTicketsPage({
 
   const shortcutTickets = (ticketsState.data?.items || []).slice(0, 10);
 
-  useEffect(() => {
-    if (shortcutTickets.length === 0) {
-      return undefined;
-    }
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (
-        event.defaultPrevented ||
-        !event.ctrlKey ||
-        event.metaKey ||
-        event.altKey ||
-        event.shiftKey ||
-        isEditableTarget(event.target)
-      ) {
-        return;
-      }
-      const shortcutIndex =
-        event.key === "0" ? 10 : Number.parseInt(event.key, 10);
-      if (
-        Number.isNaN(shortcutIndex) ||
-        shortcutIndex < 1 ||
-        shortcutIndex > 10
-      ) {
-        return;
-      }
-      const ticket = shortcutTickets[shortcutIndex - 1];
-      if (!ticket?.detailPath) {
-        return;
-      }
-      event.preventDefault();
-      navigate(ticket.detailPath);
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [navigate, shortcutTickets]);
+  useNumberShortcuts({
+    items: shortcutTickets,
+    getPath: (ticket) => ticket?.detailPath,
+  });
 
   return (
     <div className="w-full mx-auto mt-2">

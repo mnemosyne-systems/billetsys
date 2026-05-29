@@ -12,6 +12,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
+import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import DataState from "../components/common/DataState";
 import PageHeader from "../components/layout/PageHeader";
 import LexicalEditor from "../components/editor/LexicalEditor";
@@ -66,6 +67,8 @@ export default function CategoryFormPage({ mode }: CategoryFormPageProps) {
   const descriptionInputRef = useRef<HTMLTextAreaElement | null>(null);
   const submissionGuard = useSubmissionGuard();
   const isEdit = mode === "edit";
+
+  useNumberShortcuts({ enableFieldJumps: true });
 
   const updateFormState = <K extends keyof CategoryFormState>(
     field: K,
@@ -179,6 +182,7 @@ export default function CategoryFormPage({ mode }: CategoryFormPageProps) {
                         updateFormState("name", event.target.value)
                       }
                       required
+                      data-shortcut-index="1"
                     />
                   </Field>
                   <Field>
@@ -189,7 +193,7 @@ export default function CategoryFormPage({ mode }: CategoryFormPageProps) {
                         updateFormState("isDefault", value === "true")
                       }
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full" data-shortcut-index="2">
                         <SelectValue placeholder="Select option" />
                       </SelectTrigger>
                       <SelectContent>
@@ -207,6 +211,7 @@ export default function CategoryFormPage({ mode }: CategoryFormPageProps) {
                       }
                       inputRef={descriptionInputRef}
                       rows={10}
+                      data-shortcut-index="3"
                     />
                   </Field>
                 </div>
