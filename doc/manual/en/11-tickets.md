@@ -105,24 +105,16 @@ These shortcuts work universally, even if you are viewing read-only versions of 
 
 ## Ticket search
 
-Ticket lists also include a search control in the main application header (`Ctrl+K`). The search is opened from the search icon shown before the RSS feed icon.
+The application header includes a global search field that is always visible for authenticated users. Pressing `Ctrl+K` focuses the search input.
 
-The header search control does not display a keyboard shortcut label. The documented ticket shortcuts are the queue shortcuts listed above.
+The search works across both tickets and articles from any page. As you type, matching results appear in a dropdown below the input field. Clicking a result navigates directly to the ticket or article detail page.
 
-Once the search field is open, users can type a search term and press `Enter` to filter the current ticket queue.
+For tickets, the search matches:
 
-When the entered text matches ticket identifiers or ticket titles, the search also offers autocomplete suggestions. For example, typing `A-` can suggest a ticket such as `A-00001`.
+* Ticket identifier (e.g. typing `A-` suggests `A-00001`)
+* Ticket title
 
-The search currently matches:
-
-* Ticket identifier
-* Visible ticket message content
-
-This makes it possible to find a case either by its ticket number or by text that appeared in the conversation history.
-
-For private messages, search only matches message content that is visible to the current user role.
-
-Search is queue-aware. For example, when a user searches from the open tickets view, the result only includes matches from that open ticket list. The same behavior applies to assigned and closed ticket queues.
+Arrow keys can be used to navigate results, and `Enter` selects the highlighted item.
 
 ## Detail view
 

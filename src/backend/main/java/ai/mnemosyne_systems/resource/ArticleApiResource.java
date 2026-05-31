@@ -37,10 +37,14 @@ public class ArticleApiResource {
     @GET
     @Transactional
     public ArticleListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @QueryParam("page") Integer page,
-            @QueryParam("pageSize") Integer pageSize, @QueryParam("sort") String sort, @QueryParam("dir") String dir) {
+            @QueryParam("pageSize") Integer pageSize, @QueryParam("sort") String sort, @QueryParam("dir") String dir,
+            @QueryParam("q") String q) {
         User user = requireUser(auth);
         ArticleResource.ensureSampleArticle();
+        String needle = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
         List<ArticleSummary> allItems = Article.<Article> list("order by lower(title), id").stream()
+                .filter(article -> needle.isEmpty()
+                        || (article.title != null && article.title.toLowerCase(Locale.ROOT).contains(needle)))
                 .map(article -> new ArticleSummary(article.id, article.title, article.tags)).toList();
         int totalItems = allItems.size();
         java.util.Map<String, PaginationSupport.SortColumn<ArticleSummary>> sortColumns = java.util.Map.of("title",
@@ -74,10 +78,9 @@ public class ArticleApiResource {
             if (article.id == null) {
                 continue;
             }
-            if (needle.isEmpty() || String.valueOf(article.id).contains(needle)
+            if (needle.isEmpty()
                     || (article.title != null && article.title.toLowerCase(Locale.ROOT).contains(needle))) {
-                matches.add(new ArticleSuggestion(article.id, String.valueOf(article.id), article.title,
-                        "/articles/" + article.id));
+                matches.add(new ArticleSuggestion(article.id, article.title, article.title, "/articles/" + article.id));
             }
             if (matches.size() >= 6) {
                 break;

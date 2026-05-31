@@ -6,6 +6,7 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
+import { useLocation } from "react-router-dom";
 import DataState from "../components/common/DataState";
 import PaginationControls from "../components/common/PaginationControls";
 import SortableTableHead from "../components/common/SortableTableHead";
@@ -16,6 +17,7 @@ import { SmartLink } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
 import type { ArticleRecord, CollectionResponse } from "../types/domain";
 import { Button } from "../components/ui/button";
+import { useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -28,6 +30,16 @@ const SORT_KEYS = ["title", "tags"] as const;
 
 export default function ArticlesPage({ sessionState }: SessionPageProps) {
   const defaultPageSize = sessionState.data?.defaultPageSize ?? undefined;
+  const location = useLocation();
+  const locationSearchTerm =
+    new URLSearchParams(location.search).get("q") || "";
+
+  const extraParams = useMemo(
+    () => ({
+      q: locationSearchTerm || undefined,
+    }),
+    [locationSearchTerm],
+  );
 
   const {
     state: articlesState,
@@ -43,6 +55,7 @@ export default function ArticlesPage({ sessionState }: SessionPageProps) {
     pageSizeOptions,
   } = usePaginatedList<CollectionResponse<ArticleRecord>>({
     apiUrl: "/api/articles",
+    extraParams,
     defaultPageSize,
     defaultSort: "title",
     defaultDir: "asc",
@@ -53,6 +66,10 @@ export default function ArticlesPage({ sessionState }: SessionPageProps) {
     items: (articlesState.data?.items || []).slice(0, 10),
     getPath: (article) => `/articles/${article.id}`,
   });
+
+  const emptyMessage = locationSearchTerm
+    ? `No articles matched "${locationSearchTerm}".`
+    : "No articles are available yet.";
 
   return (
     <div className="w-full mx-auto mt-2">
@@ -68,10 +85,7 @@ export default function ArticlesPage({ sessionState }: SessionPageProps) {
       />
 
       <div className="w-full">
-        <DataState
-          state={articlesState}
-          emptyMessage="No articles are available yet."
-        >
+        <DataState state={articlesState} emptyMessage={emptyMessage}>
           <div className="max-w-full overflow-x-auto">
             <Table className="text-base">
               <TableHeader>

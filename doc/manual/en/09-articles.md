@@ -35,6 +35,14 @@ For readers, the article pages provide:
 * Formatted body content
 * Linked attachments when present
 
+## Searching articles
+
+The global search bar in the header searches across both tickets and articles from any page. To find an article:
+
+* Type any part of an article's title in the search field. Matching articles appear in the dropdown below the input.
+* Click a suggestion to navigate directly to that article.
+* Press `Ctrl+K` (or `Cmd+K` on macOS) to quickly focus the search field.
+
 ## Writing articles
 
 Billetsys supports article creation and editing for the roles that contribute directly to solution development and knowledge capture.

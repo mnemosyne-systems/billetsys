@@ -6,7 +6,7 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useJson from "../../hooks/useJson";
 import useText from "../../hooks/useText";
@@ -33,32 +33,22 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
-import {
-  Command,
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "../ui/command";
-import { MoonIcon, SearchIcon, SunIcon, XIcon } from "lucide-react";
+import { MoonIcon, SearchIcon, SunIcon } from "lucide-react";
 
 interface TicketCounts {
   assignedCount?: number;
   openCount?: number;
 }
 
-interface TicketSuggestion {
+interface SearchSuggestion {
   id?: number;
   name?: string;
   title?: string;
   detailPath?: string;
 }
 
-interface TicketSuggestionResponse {
-  items?: TicketSuggestion[];
+interface SuggestionResponse {
+  items?: SearchSuggestion[];
 }
 
 interface AuthenticatedHeaderProps {
@@ -112,96 +102,106 @@ export default function AuthenticatedHeader({
       .toLowerCase() === "true";
   const isTicketRoute = isRoleTicketRoute(role, location.pathname);
   const rssHref = rssPath(role);
-  const ticketSearchContext = resolveTicketSearchContext(
-    role,
-    location.pathname,
+
+  // --- Universal search ---
+  const ticketSuggestApiBase = ticketCountsApiPath(role);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const [searchValue, setSearchValue] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+  const normalizedSearch = searchValue.trim();
+  const shouldFetch = normalizedSearch.length >= 2;
+
+  const ticketSuggestionState = useJson<SuggestionResponse>(
+    shouldFetch && ticketSuggestApiBase
+      ? `${ticketSuggestApiBase}/suggest${toQueryString({ q: normalizedSearch })}`
+      : null,
   );
-  const ticketSearchApiBase = ticketSearchContext?.apiBase;
-  const ticketSearchPath = ticketSearchContext?.searchPath;
-  const ticketSearchBasePath = ticketSearchContext?.basePath;
-  const locationSearchTerm =
-    new URLSearchParams(location.search).get("q") || "";
-  const [ticketSearchOpen, setTicketSearchOpen] = useState(false);
-  const [ticketSearchValue, setTicketSearchValue] = useState("");
-  const ticketSuggestionState = useJson<TicketSuggestionResponse>(
-    ticketSearchOpen &&
-      ticketSearchApiBase &&
-      ticketSearchValue.trim().length >= 2
-      ? `${ticketSearchApiBase}/suggest${toQueryString({ q: ticketSearchValue.trim() })}`
+  const articleSuggestionState = useJson<SuggestionResponse>(
+    shouldFetch
+      ? `/api/articles/suggest${toQueryString({ q: normalizedSearch })}`
       : null,
   );
   const ticketSuggestions = ticketSuggestionState.data?.items || [];
-  const normalizedTicketSearch = ticketSearchValue.trim();
+  const articleSuggestions = articleSuggestionState.data?.items || [];
+  const allSuggestions: SearchSuggestion[] = [
+    ...ticketSuggestions,
+    ...articleSuggestions,
+  ].sort((a, b) =>
+    (a.name || "").localeCompare(b.name || "", undefined, {
+      sensitivity: "base",
+    }),
+  );
+  const hasResults = allSuggestions.length > 0;
+  const showDropdown = searchFocused && shouldFetch;
+  const [activeIndex, setActiveIndex] = useState(-1);
 
-  function openTicketSearch() {
-    setTicketSearchValue("");
-    setTicketSearchOpen(true);
-  }
-
-  function closeTicketSearch() {
-    setTicketSearchOpen(false);
-    setTicketSearchValue("");
-  }
-
-  function submitTicketSearch(searchValue: string) {
-    if (!ticketSearchPath) {
-      return;
+  function selectSuggestion(suggestion: SearchSuggestion) {
+    if (suggestion.detailPath) {
+      navigate(suggestion.detailPath);
+      setSearchValue("");
+      setActiveIndex(-1);
+      searchInputRef.current?.blur();
     }
-    const nextParams = new URLSearchParams(location.search);
-    const normalizedSearch = searchValue.trim();
-    if (normalizedSearch) {
-      nextParams.set("q", normalizedSearch);
-    } else {
-      nextParams.delete("q");
-    }
-    closeTicketSearch();
-    navigate({
-      pathname: ticketSearchPath,
-      search: nextParams.toString() ? `?${nextParams.toString()}` : "",
-    });
   }
 
-  function applyTicketSuggestion(suggestion: TicketSuggestion) {
-    submitTicketSearch((suggestion.name || "").trim());
-  }
-
-  function clearTicketSearch() {
-    if (!ticketSearchBasePath) {
-      return;
-    }
-    const nextParams = new URLSearchParams(location.search);
-    nextParams.delete("q");
-    closeTicketSearch();
-    navigate({
-      pathname: ticketSearchBasePath,
-      search: nextParams.toString() ? `?${nextParams.toString()}` : "",
-    });
-  }
-
-  function handleTicketSearchKeyDown(
-    event: React.KeyboardEvent<HTMLInputElement>,
-  ) {
+  function handleSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Escape") {
       event.preventDefault();
-      closeTicketSearch();
+      setSearchValue("");
+      searchInputRef.current?.blur();
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveIndex((prev) =>
+        prev < allSuggestions.length - 1 ? prev + 1 : 0,
+      );
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveIndex((prev) =>
+        prev > 0 ? prev - 1 : allSuggestions.length - 1,
+      );
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      if (activeIndex >= 0 && activeIndex < allSuggestions.length) {
+        selectSuggestion(allSuggestions[activeIndex]);
+      }
     }
   }
 
   useEffect(() => {
-    if (!ticketSearchApiBase) {
+    if (!session?.authenticated) {
       return undefined;
     }
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        openTicketSearch();
+        searchInputRef.current?.focus();
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [ticketSearchApiBase]);
+  }, [session?.authenticated]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!searchFocused) {
+      return undefined;
+    }
+    const handleMouseDown = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setSearchFocused(false);
+      }
+    };
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => {
+      document.removeEventListener("mousedown", handleMouseDown);
+    };
+  }, [searchFocused]);
 
   useEffect(() => {
     if (!shortcuts) {
@@ -375,118 +375,61 @@ export default function AuthenticatedHeader({
       <div className="flex items-center gap-3 justify-end">
         {session?.authenticated && (
           <>
-            {ticketSearchContext && (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={openTicketSearch}
-                  className="hidden h-10 min-w-72 items-center justify-start rounded-xl px-3 text-left text-sm shadow-none md:flex"
-                >
-                  <SearchIcon className="mr-2 size-4 shrink-0" />
-                  <span className="truncate">Search tickets...</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={openTicketSearch}
-                  className="md:hidden"
-                  aria-label="Search tickets"
-                >
-                  <SearchIcon className="size-5" />
-                </Button>
-                <CommandDialog
-                  open={ticketSearchOpen}
-                  onOpenChange={(open) => {
-                    if (open) {
-                      openTicketSearch();
-                      return;
-                    }
-                    closeTicketSearch();
+            <div ref={searchContainerRef} className="relative">
+              <div className="relative flex items-center">
+                <SearchIcon className="pointer-events-none absolute left-3 size-4 shrink-0 text-muted-foreground" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchValue}
+                  onChange={(e) => {
+                    setSearchValue(e.target.value);
+                    setActiveIndex(-1);
                   }}
-                  title="Search tickets"
-                  description="Search tickets by identifier or message content."
-                  className="max-w-2xl border-white/10 bg-popover/95 p-0 shadow-2xl backdrop-blur"
-                >
-                  <Command shouldFilter={false} className="bg-transparent">
-                    <CommandInput
-                      value={ticketSearchValue}
-                      onValueChange={setTicketSearchValue}
-                      onKeyDown={handleTicketSearchKeyDown}
-                      placeholder="Search ticket number or message text..."
-                    />
-                    <CommandList className="max-h-[22rem]">
-                      <CommandEmpty>
-                        {ticketSearchValue.trim()
-                          ? "No matching tickets."
-                          : "Type at least 2 characters to search tickets."}
-                      </CommandEmpty>
-                      {normalizedTicketSearch && (
-                        <CommandGroup heading="Search">
-                          <CommandItem
-                            value={`search ${normalizedTicketSearch}`}
-                            className="data-selected:bg-neutral-200 data-selected:text-neutral-950"
-                            onSelect={() =>
-                              submitTicketSearch(normalizedTicketSearch)
-                            }
-                          >
-                            <SearchIcon className="size-4 text-[var(--color-header-bg)] opacity-80" />
-                            <span className="truncate">
-                              Search all tickets for {normalizedTicketSearch}
+                  onFocus={() => setSearchFocused(true)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Search..."
+                  className="h-10 w-full min-w-48 rounded-xl border border-input bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring md:min-w-72"
+                  aria-label="Search"
+                />
+              </div>
+              {showDropdown && (
+                <div className="absolute top-full left-0 z-50 mt-1 w-full min-w-72 overflow-hidden rounded-lg bg-popover text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/10">
+                  {!hasResults && (
+                    <div className="px-4 py-3 text-center text-muted-foreground">
+                      No matches.
+                    </div>
+                  )}
+                  {allSuggestions.map((suggestion, index) => (
+                    <button
+                      key={`${suggestion.detailPath}-${suggestion.id}`}
+                      type="button"
+                      className={`flex w-full items-center gap-2 px-3 py-2 text-left cursor-pointer ${
+                        activeIndex === index
+                          ? "bg-accent text-accent-foreground"
+                          : "hover:bg-accent hover:text-accent-foreground"
+                      }`}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => selectSuggestion(suggestion)}
+                      onMouseEnter={() => setActiveIndex(index)}
+                    >
+                      <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
+                      <div className="flex min-w-0 flex-col">
+                        <span className="truncate font-medium">
+                          {suggestion.name}
+                        </span>
+                        {suggestion.title &&
+                          suggestion.title !== suggestion.name && (
+                            <span className="truncate text-xs text-muted-foreground">
+                              {suggestion.title}
                             </span>
-                          </CommandItem>
-                        </CommandGroup>
-                      )}
-                      {locationSearchTerm && (
-                        <>
-                          <CommandSeparator />
-                          <CommandGroup heading="Current filter">
-                            <CommandItem
-                              value={`clear ${locationSearchTerm}`}
-                              className="data-selected:bg-neutral-200 data-selected:text-neutral-950"
-                              onSelect={clearTicketSearch}
-                            >
-                              <XIcon className="size-4 text-destructive opacity-80" />
-                              <div className="flex min-w-0 flex-col">
-                                <span className="truncate font-medium">
-                                  Clear current search
-                                </span>
-                                <span className="truncate text-xs text-muted-foreground">
-                                  Showing results for {locationSearchTerm}
-                                </span>
-                              </div>
-                            </CommandItem>
-                          </CommandGroup>
-                        </>
-                      )}
-                      {ticketSuggestions.length > 0 && (
-                        <CommandGroup heading="Suggestions">
-                          {ticketSuggestions.map((suggestion, index) => (
-                            <CommandItem
-                              key={`${suggestion.id}-${suggestion.name}`}
-                              value={`${index} ${suggestion.name} ${suggestion.title || ""}`}
-                              className="data-selected:bg-neutral-200 data-selected:text-neutral-950"
-                              onSelect={() => applyTicketSuggestion(suggestion)}
-                            >
-                              <SearchIcon className="size-4 text-[var(--color-header-bg)] opacity-80" />
-                              <div className="flex min-w-0 flex-col">
-                                <span className="truncate font-medium">
-                                  {suggestion.name}
-                                </span>
-                                <span className="truncate text-xs text-muted-foreground">
-                                  {suggestion.title || "Ticket"}
-                                </span>
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      )}
-                    </CommandList>
-                  </Command>
-                </CommandDialog>
-              </>
-            )}
+                          )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             {rssHref && (
               <Button variant="ghost" size="icon" asChild className="">
                 <a href={rssHref} title="RSS feed" aria-label="RSS feed">
@@ -581,35 +524,4 @@ export default function AuthenticatedHeader({
       </div>
     </header>
   );
-}
-
-function resolveTicketSearchContext(role: Session["role"], pathname: string) {
-  if (role === "support") {
-    if (pathname.startsWith("/support/tickets")) {
-      return {
-        apiBase: "/api/support/tickets",
-        basePath: "/support/tickets",
-        searchPath: "/support/tickets/search",
-      };
-    }
-  }
-  if (role === "superuser") {
-    if (pathname.startsWith("/superuser/tickets")) {
-      return {
-        apiBase: "/api/superuser/tickets",
-        basePath: "/superuser/tickets",
-        searchPath: "/superuser/tickets/search",
-      };
-    }
-  }
-  if (role === "tam" || role === "user") {
-    if (pathname.startsWith("/user/tickets")) {
-      return {
-        apiBase: "/api/user/tickets",
-        basePath: "/user/tickets",
-        searchPath: "/user/tickets/search",
-      };
-    }
-  }
-  return null;
 }
