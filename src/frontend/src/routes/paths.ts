@@ -40,4 +40,5 @@ export const PATHS = {
   superuserTicketsNew: "/superuser/tickets/new",
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
+  manual: "/manual",
 };

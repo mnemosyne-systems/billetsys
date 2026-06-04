@@ -10,6 +10,7 @@ import { lazy } from "react";
 import { PATHS } from "./paths";
 import type { AppRoute, SessionState } from "../types/app";
 
+const ManualPage = lazy(() => import("../pages/ManualPage"));
 const ArticleDetailPage = lazy(() => import("../pages/ArticleDetailPage"));
 const ArticleFormPage = lazy(() => import("../pages/ArticleFormPage"));
 const ArticlesPage = lazy(() => import("../pages/ArticlesPage"));
@@ -120,6 +121,17 @@ export function getContentRoutes(sessionState: SessionState): AppRoute[] {
     {
       path: `${PATHS.levels}/:id/edit`,
       element: <LevelFormPage sessionState={sessionState} mode="edit" />,
+      requiresAuth: true,
+    },
+
+    {
+      path: PATHS.manual,
+      element: <ManualPage sessionState={sessionState} />,
+      requiresAuth: true,
+    },
+    {
+      path: `${PATHS.manual}/:chapter`,
+      element: <ManualPage sessionState={sessionState} />,
       requiresAuth: true,
     },
   ];

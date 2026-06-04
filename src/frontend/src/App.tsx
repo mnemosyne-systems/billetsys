@@ -10,6 +10,7 @@ import { useEffect, useMemo } from "react";
 import type { CSSProperties } from "react";
 import { useLocation } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
+import { TooltipProvider } from "./components/ui/tooltip";
 import AppFooter from "./components/layout/AppFooter";
 import AuthenticatedHeader from "./components/layout/AuthenticatedHeader";
 import LoginHeader from "./components/layout/LoginHeader";
@@ -120,6 +121,7 @@ function App() {
     ["/login", "/forgot-password", "/reset-password"].includes(
       location.pathname,
     ) && !session?.authenticated;
+  const isManualRoute = location.pathname.startsWith("/manual");
   const brandName = installationCompanyName(branding.installationCompanyName);
   const brandHref = session?.authenticated
     ? normalizeClientPath(session.homePath) || "/"
@@ -179,8 +181,16 @@ function App() {
             </div>
           </main>
         ) : (
-          <main className="flex-1 p-5 bg-background dark:bg-black">
-            <AppRoutes sessionState={sessionState} />
+          <main
+            className={
+              isManualRoute
+                ? "flex min-h-0 flex-1 overflow-hidden bg-background dark:bg-black"
+                : "flex-1 p-5 bg-background dark:bg-black"
+            }
+          >
+            <TooltipProvider>
+              <AppRoutes sessionState={sessionState} />
+            </TooltipProvider>
           </main>
         )}
         <AppFooter />

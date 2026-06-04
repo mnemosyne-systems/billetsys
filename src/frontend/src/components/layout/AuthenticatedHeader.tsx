@@ -33,7 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
-import { MoonIcon, SearchIcon, SunIcon } from "lucide-react";
+import { BookOpenIcon, MoonIcon, SearchIcon, SunIcon } from "lucide-react";
 
 interface TicketCounts {
   assignedCount?: number;
@@ -430,6 +430,15 @@ export default function AuthenticatedHeader({
                 </div>
               )}
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              title="Manual"
+              aria-label="Manual"
+              onClick={() => navigate("/manual")}
+            >
+              <BookOpenIcon className="w-5 h-5" />
+            </Button>
             {rssHref && (
               <Button variant="ghost" size="icon" asChild className="">
                 <a href={rssHref} title="RSS feed" aria-label="RSS feed">
