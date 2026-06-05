@@ -30,6 +30,10 @@ public class User extends PanacheEntityBase {
     public static final String TYPE_USER = "user";
     public static final String TYPE_TAM = "tam";
     public static final String TYPE_SUPERUSER = "superuser";
+    public static final String TYPE_EXTERNAL = "external";
+    public static final String TYPE_PARTICIPANT = "participant";
+
+    public static final String DISABLED_PASSWORD_HASH = "$2a$10$DISABLEDACCOUNTDISABLEDACCOUNTDISABLEDACCOUNTDISABLED";
 
     @Id
     @SequenceGenerator(name = "user_seq", sequenceName = "user_seq", allocationSize = 1)

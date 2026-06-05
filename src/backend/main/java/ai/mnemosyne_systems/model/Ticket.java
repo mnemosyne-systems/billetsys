@@ -10,7 +10,9 @@ package ai.mnemosyne_systems.model;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -89,6 +91,14 @@ public class Ticket extends PanacheEntityBase {
     @ManyToMany
     @JoinTable(name = "ticket_tams", joinColumns = @JoinColumn(name = "ticket_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
     public List<User> tamUsers = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(name = "ticket_externals", joinColumns = @JoinColumn(name = "ticket_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
+    public List<User> externalUsers = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(name = "ticket_participants", joinColumns = @JoinColumn(name = "ticket_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
+    public List<User> userUsers = new ArrayList<>();
 
     public static String formatName(Company company, long sequence) {
         String base = company == null || company.name == null ? "" : company.name.trim();

@@ -119,11 +119,12 @@ public class SuperuserResource {
         if (email == null || email.isBlank()) {
             throw new BadRequestException("Email is required");
         }
-        if (password == null || password.isBlank()) {
+        if (!User.TYPE_EXTERNAL.equalsIgnoreCase(type) && (password == null || password.isBlank())) {
             throw new BadRequestException("Password is required");
         }
         Company company = allowedCompany(user, companyId);
-        String normalized = normalizeType(type, Set.of(User.TYPE_USER), "Type must be user");
+        String normalized = normalizeType(type, Set.of(User.TYPE_USER, User.TYPE_EXTERNAL),
+                "Type must be user or external");
         User newUser = new User();
         newUser.name = name.trim();
         newUser.fullName = trimOrNull(fullName);
@@ -134,7 +135,9 @@ public class SuperuserResource {
         newUser.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
         newUser.country = countryId != null ? Country.findById(countryId) : null;
         newUser.type = normalized;
-        newUser.passwordHash = BcryptUtil.bcryptHash(password);
+        if (password != null && !password.isBlank()) {
+            newUser.passwordHash = BcryptUtil.bcryptHash(password);
+        }
         newUser.persist();
         addUserIfMissing(company, newUser);
         return Response.seeOther(URI.create("/superuser/users/" + company.id)).build();

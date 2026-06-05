@@ -19,6 +19,7 @@ import {
   UserHoverLink,
   UserReferenceInlineList,
 } from "../components/users/UserComponents";
+import { ExternalUserPicker } from "../components/users/ExternalUserPicker";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
 import useNumberShortcuts from "../hooks/useNumberShortcuts";
@@ -321,6 +322,11 @@ export default function SupportTicketDetailPage({
   const canEditResolvedVersion = ticket?.editableResolvedVersion ?? true;
   const showLevelField =
     apiBase !== "/api/user/tickets" || sessionState.data?.role === "tam";
+  const showExternalContributors =
+    sessionState.data?.role === "support" || sessionState.data?.role === "tam";
+  const showUserUsers =
+    sessionState.data?.role === "user" ||
+    sessionState.data?.role === "superuser";
 
   useNumberShortcuts({ enableFieldJumps: true });
 
@@ -925,6 +931,31 @@ export default function SupportTicketDetailPage({
                     users={ticket.secondaryUsers || ticket.tamUsers}
                   />
                 </Field>
+                {showExternalContributors && (
+                  <Field className="md:col-span-2">
+                    <FieldLabel>External Contributors</FieldLabel>
+                    <ExternalUserPicker
+                      ticketId={ticket.id}
+                      role={sessionState.data?.role || ""}
+                      users={ticket.externalUsers || []}
+                      isClosed={isClosed}
+                      onUpdate={() => setRefreshNonce((current) => current + 1)}
+                    />
+                  </Field>
+                )}
+                {showUserUsers && (
+                  <Field className="md:col-span-2">
+                    <FieldLabel>Participants</FieldLabel>
+                    <ExternalUserPicker
+                      ticketId={ticket.id}
+                      role={sessionState.data?.role || ""}
+                      users={ticket.userUsers || []}
+                      isClosed={isClosed}
+                      onUpdate={() => setRefreshNonce((current) => current + 1)}
+                      endpointSuffix="participants"
+                    />
+                  </Field>
+                )}
               </div>
 
               {!isClosed &&

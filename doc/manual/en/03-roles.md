@@ -28,6 +28,10 @@ The **Support** role is used by the support team handling incoming work. Support
 
 The **Admin** role manages the system itself. Admins maintain companies, users, service definitions, categories, entitlements, and other reference data used throughout the application.
 
+## External Contributor
+
+The **External Contributor** is a special stub role. These users cannot sign in to the application and exist solely to track third-party involvement in tickets (e.g., external engineers or contractors). They receive email notifications and can reply to tickets via email.
+
 ## Shared model
 
 All roles work with the same core ticket model:

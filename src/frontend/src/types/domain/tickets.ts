@@ -45,6 +45,8 @@ export interface TicketReference extends NamedEntity {
   exportPath?: string;
   messageActionPath?: string;
   ticketEntitlementExpired?: boolean;
+  externalUsers?: UserReference[];
+  userUsers?: UserReference[];
 }
 
 export interface TicketListItem extends TicketReference {

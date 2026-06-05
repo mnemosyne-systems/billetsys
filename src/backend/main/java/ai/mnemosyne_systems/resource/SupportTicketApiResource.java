@@ -153,6 +153,12 @@ public class SupportTicketApiResource {
                 "select distinct u from Company c join c.users u where c = ?1 and lower(u.type) = ?2 order by u.email",
                 ticket.company, User.TYPE_TAM).list();
         mergeTicketTams(ticket, tamUsers);
+
+        Company ownerCompany = OwnerResource.findOwnerCompany();
+        List<User> externalUsers = ownerCompany == null ? List.of()
+                : User.find(
+                        "select distinct u from Company c join c.users u, Ticket t join t.externalUsers tu where t = ?1 and c = ?2 and u = tu order by u.fullName",
+                        ticket, ownerCompany).list();
         List<Message> messages = SupportTicketViewSupport.loadMessages(ticket, user);
         java.util.Map<Long, Ticket> ticketCache = crossReferenceService
                 .preloadReferencedTickets(messages.stream().map(m -> m.body).toList());
@@ -180,7 +186,8 @@ public class SupportTicketApiResource {
                 tamUsers.stream().map(this::toUserReference).toList(), messageEntries,
                 SupportTicketViewSupport.isEntitlementExpired(ticket), "/support/tickets/" + ticket.id,
                 "/support/tickets/" + ticket.id + "/messages", "/tickets/export/" + ticket.id,
-                List.of("Open", "Assigned", "In Progress", "Resolved", "Closed"));
+                List.of("Open", "Assigned", "In Progress", "Waiting for External Feedback", "Resolved", "Closed"),
+                externalUsers.stream().map(this::toUserReference).toList());
     }
 
     @GET
@@ -433,6 +440,7 @@ public class SupportTicketApiResource {
             Long affectsVersionId, Long resolvedVersionId, Integer rating, String ratingComment,
             List<VersionOption> versions, List<CategoryOption> categories, List<UserReference> supportUsers,
             List<UserReference> tamUsers, List<MessageEntry> messages, boolean ticketEntitlementExpired,
-            String actionPath, String messageActionPath, String exportPath, List<String> statusOptions) {
+            String actionPath, String messageActionPath, String exportPath, List<String> statusOptions,
+            List<UserReference> externalUsers) {
     }
 }

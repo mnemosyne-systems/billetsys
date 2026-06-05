@@ -147,8 +147,8 @@ public class MailboxPollingService {
         String prefix = "mail." + normalizedProtocol;
         properties.setProperty(prefix + ".host", mailboxHost);
         properties.setProperty(prefix + ".port", Integer.toString(port));
-        properties.setProperty(prefix + ".connectiontimeout", "10000");
-        properties.setProperty(prefix + ".timeout", "10000");
+        properties.setProperty(prefix + ".connectiontimeout", "60000");
+        properties.setProperty(prefix + ".timeout", "60000");
         if (ssl) {
             properties.setProperty(prefix + ".ssl.enable", "true");
         }

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -32,11 +32,16 @@ export function headerNavigation(
   }
 
   if (role === "superuser" || role === "tam") {
-    return filterNavigation(navigation, ["Tickets", "Articles", "Reports"]);
+    return filterNavigation(navigation, [
+      "Tickets",
+      "Articles",
+      "Reports",
+      "Users",
+    ]);
   }
 
   if (role === "user") {
-    return filterNavigation(navigation, ["Tickets", "Articles"]);
+    return filterNavigation(navigation, ["Tickets", "Articles", "External"]);
   }
 
   return navigation.filter((link) => link.label !== "Profile");

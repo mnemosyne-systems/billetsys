@@ -263,44 +263,7 @@ export default function DirectoryUserFormPage({
 
   return (
     <section className="w-full mt-4">
-      <PageHeader
-        title={pageTitle}
-        actions={
-          !isAdminCreate &&
-          !isEdit &&
-          bootstrap?.submitPath?.startsWith("/user/") ? (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  disabled={saveState.saving}
-                >
-                  Delete user
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete
-                    this user.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={deleteUser}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          ) : null
-        }
-      />
+      <PageHeader title={pageTitle} actions={null} />
 
       <DataState
         state={bootstrapState}
@@ -523,46 +486,65 @@ export default function DirectoryUserFormPage({
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field
-                  className={
-                    bootstrap.passwordRequired ? undefined : "sm:col-span-2"
-                  }
-                >
-                  <FieldLabel className="text-[var(--color-header-bg)]">
-                    Password{" "}
-                    {bootstrap.passwordRequired && (
-                      <span className="text-destructive">*</span>
-                    )}
-                  </FieldLabel>
-                  <Input
-                    type="password"
-                    value={formState.password}
-                    onChange={(event) =>
-                      updateFormState("password", event.target.value)
-                    }
-                    required={bootstrap.passwordRequired}
-                  />
-                  {!bootstrap.passwordRequired && (
-                    <FieldDescription>
-                      Leave blank to keep current password.
-                    </FieldDescription>
-                  )}
-                </Field>
-                {bootstrap.passwordRequired && (
-                  <Field>
-                    <FieldLabel className="text-[var(--color-header-bg)]">
-                      Verify password{" "}
-                      <span className="text-destructive">*</span>
-                    </FieldLabel>
-                    <Input
-                      type="password"
-                      value={formState.verifyPassword}
-                      onChange={(event) =>
-                        updateFormState("verifyPassword", event.target.value)
+                {formState.type === "external" && (
+                  <div className="sm:col-span-2">
+                    <p className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-md border border-border">
+                      <strong className="text-foreground font-medium">
+                        Note:
+                      </strong>{" "}
+                      External Contributors do not require passwords because
+                      they authenticate exclusively via email when interacting
+                      with tickets.
+                    </p>
+                  </div>
+                )}
+                {formState.type !== "external" && (
+                  <>
+                    <Field
+                      className={
+                        bootstrap.passwordRequired ? undefined : "sm:col-span-2"
                       }
-                      required
-                    />
-                  </Field>
+                    >
+                      <FieldLabel className="text-[var(--color-header-bg)]">
+                        Password{" "}
+                        {bootstrap.passwordRequired && (
+                          <span className="text-destructive">*</span>
+                        )}
+                      </FieldLabel>
+                      <Input
+                        type="password"
+                        value={formState.password}
+                        onChange={(event) =>
+                          updateFormState("password", event.target.value)
+                        }
+                        required={bootstrap.passwordRequired}
+                      />
+                      {!bootstrap.passwordRequired && (
+                        <FieldDescription>
+                          Leave blank to keep current password.
+                        </FieldDescription>
+                      )}
+                    </Field>
+                    {bootstrap.passwordRequired && (
+                      <Field>
+                        <FieldLabel className="text-[var(--color-header-bg)]">
+                          Verify password{" "}
+                          <span className="text-destructive">*</span>
+                        </FieldLabel>
+                        <Input
+                          type="password"
+                          value={formState.verifyPassword}
+                          onChange={(event) =>
+                            updateFormState(
+                              "verifyPassword",
+                              event.target.value,
+                            )
+                          }
+                          required
+                        />
+                      </Field>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -575,38 +557,40 @@ export default function DirectoryUserFormPage({
                       : "flex items-center space-x-3 justify-end bg-muted/20 px-6 py-4"
                 }
               >
-                {isEdit && bootstrap.submitPath?.startsWith("/user/") && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        disabled={saveState.saving}
-                        className="mr-auto"
-                      >
-                        Delete
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently
-                          delete this user.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={deleteUser}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                {isEdit &&
+                  bootstrap.submitPath &&
+                  bootstrap.submitPath !== "/user/profile" && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          disabled={saveState.saving}
+                          className="mr-auto"
                         >
                           Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently
+                            delete this user.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={deleteUser}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 <Button type="submit" disabled={saveState.saving}>
                   {saveState.saving
                     ? "Saving..."

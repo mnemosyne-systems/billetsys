@@ -90,6 +90,16 @@ public class TicketEmailService {
                 addUser(seen, result, user, audience);
             }
         }
+        if (ticket.userUsers != null) {
+            for (User user : ticket.userUsers) {
+                addUser(seen, result, user, audience);
+            }
+        }
+        if (ticket.externalUsers != null) {
+            for (User user : ticket.externalUsers) {
+                addUser(seen, result, user, audience);
+            }
+        }
         if (audience == MessageAudienceSupport.Audience.USER_SUPERUSER && ticket.company != null
                 && ticket.company.users != null) {
             for (User user : ticket.company.users) {

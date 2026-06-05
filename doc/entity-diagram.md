@@ -81,6 +81,7 @@ erDiagram
         BIGINT resolved_version_id FK
         BIGINT category_id FK
         STRING external_issue_link
+        ARRAY external_contributors
     }
 
     MESSAGE {

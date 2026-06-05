@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -157,6 +157,56 @@ export function getDirectoryRoutes(sessionState: SessionState): AppRoute[] {
       requiresAuth: true,
       allowedRoles: ["support"],
     },
+    {
+      path: "/support/externals",
+      element: (
+        <DirectoryUsersPageRoute
+          sessionState={sessionState}
+          apiBase="/api/support/externals"
+          basePath="/support/externals"
+          titleFallback="External Contributors"
+          description=""
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["support"],
+    },
+    {
+      path: "/support/externals/new",
+      element: (
+        <DirectoryUserFormPageRoute
+          sessionState={sessionState}
+          bootstrapBase="/api/support/externals/bootstrap"
+          navigateFallback="/support/externals"
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["support"],
+    },
+    {
+      path: "/support/externals/:id/edit",
+      element: (
+        <DirectoryUserFormPageRoute
+          sessionState={sessionState}
+          bootstrapBase="/api/support/externals/bootstrap"
+          navigateFallback="/support/externals"
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["support"],
+    },
+    {
+      path: "/support/externals/:id",
+      element: (
+        <DirectoryUserDetailPageRoute
+          sessionState={sessionState}
+          apiBase="/api/support/externals"
+          backFallback="/support/externals"
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["support"],
+    },
 
     {
       path: "/tam/users",
@@ -179,6 +229,56 @@ export function getDirectoryRoutes(sessionState: SessionState): AppRoute[] {
           sessionState={sessionState}
           bootstrapBase="/api/tam/users/bootstrap"
           navigateFallback="/tam/users"
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["tam"],
+    },
+    {
+      path: "/tam/externals",
+      element: (
+        <DirectoryUsersPageRoute
+          sessionState={sessionState}
+          apiBase="/api/tam/externals"
+          basePath="/tam/externals"
+          titleFallback="External Contributors"
+          description=""
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["tam"],
+    },
+    {
+      path: "/tam/externals/new",
+      element: (
+        <DirectoryUserFormPageRoute
+          sessionState={sessionState}
+          bootstrapBase="/api/tam/externals/bootstrap"
+          navigateFallback="/tam/externals"
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["tam"],
+    },
+    {
+      path: "/tam/externals/:id/edit",
+      element: (
+        <DirectoryUserFormPageRoute
+          sessionState={sessionState}
+          bootstrapBase="/api/tam/externals/bootstrap"
+          navigateFallback="/tam/externals"
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["tam"],
+    },
+    {
+      path: "/tam/externals/:id",
+      element: (
+        <DirectoryUserDetailPageRoute
+          sessionState={sessionState}
+          apiBase="/api/tam/externals"
+          backFallback="/tam/externals"
         />
       ),
       requiresAuth: true,
@@ -244,6 +344,56 @@ export function getDirectoryRoutes(sessionState: SessionState): AppRoute[] {
       ),
       requiresAuth: true,
       allowedRoles: ["user", "tam"],
+    },
+    {
+      path: "/user/externals",
+      element: (
+        <DirectoryUsersPageRoute
+          sessionState={sessionState}
+          apiBase="/api/user/externals"
+          basePath="/user/externals"
+          titleFallback="External Contributors"
+          description=""
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["user"],
+    },
+    {
+      path: "/user/externals/new",
+      element: (
+        <DirectoryUserFormPageRoute
+          sessionState={sessionState}
+          bootstrapBase="/api/user/externals/bootstrap"
+          navigateFallback="/user/externals"
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["user"],
+    },
+    {
+      path: "/user/externals/:id/edit",
+      element: (
+        <DirectoryUserFormPageRoute
+          sessionState={sessionState}
+          bootstrapBase="/api/user/externals/bootstrap"
+          navigateFallback="/user/externals"
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["user"],
+    },
+    {
+      path: "/user/externals/:id",
+      element: (
+        <DirectoryUserDetailPageRoute
+          sessionState={sessionState}
+          apiBase="/api/user/externals"
+          backFallback="/user/externals"
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["user"],
     },
 
     {
@@ -315,6 +465,56 @@ export function getDirectoryRoutes(sessionState: SessionState): AppRoute[] {
           sessionState={sessionState}
           apiBase="/api/superuser/companies"
           backFallback="/superuser/users"
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["superuser"],
+    },
+    {
+      path: "/superuser/externals",
+      element: (
+        <DirectoryUsersPageRoute
+          sessionState={sessionState}
+          apiBase="/api/superuser/externals"
+          basePath="/superuser/externals"
+          titleFallback="External Contributors"
+          description=""
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["superuser"],
+    },
+    {
+      path: "/superuser/externals/new",
+      element: (
+        <DirectoryUserFormPageRoute
+          sessionState={sessionState}
+          bootstrapBase="/api/superuser/externals/bootstrap"
+          navigateFallback="/superuser/externals"
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["superuser"],
+    },
+    {
+      path: "/superuser/externals/:id/edit",
+      element: (
+        <DirectoryUserFormPageRoute
+          sessionState={sessionState}
+          bootstrapBase="/api/superuser/externals/bootstrap"
+          navigateFallback="/superuser/externals"
+        />
+      ),
+      requiresAuth: true,
+      allowedRoles: ["superuser"],
+    },
+    {
+      path: "/superuser/externals/:id",
+      element: (
+        <DirectoryUserDetailPageRoute
+          sessionState={sessionState}
+          apiBase="/api/superuser/externals"
+          backFallback="/superuser/externals"
         />
       ),
       requiresAuth: true,

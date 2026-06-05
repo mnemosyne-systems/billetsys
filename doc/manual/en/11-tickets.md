@@ -23,6 +23,7 @@ A ticket can hold the main context for a support issue, including:
 * Entitlement
 * Affected and resolved versions
 * Support and TAM assignments
+* External contributors
 * External issue reference
 * Ticket rating and feedback
 * Message history
@@ -49,9 +50,9 @@ This lifecycle gives both customer-facing roles and operational roles a shared v
 
 ## Status and ownership
 
-Status is one of the most important parts of the ticket workflow. It helps users understand whether a case is waiting for action, already assigned, actively being worked on, or completed.
+Status is one of the most important parts of the ticket workflow. It helps users understand whether a case is waiting for action, already assigned, actively being worked on, or completed. A special hidden status, "Waiting for External Feedback", is available to Support and TAM roles to indicate they are waiting on an external contributor; this status is automatically masked as "In Progress" for regular Users and Superusers to keep internal workflows private.
 
-Ownership matters just as much. Support assignments and TAM involvement make it clear who is currently responsible for handling the case and who is following the customer relationship.
+Ownership matters just as much. Support assignments and TAM involvement make it clear who is currently responsible for handling the case and who is following the customer relationship. Users, Superusers, TAMs, and Support roles can also add "External Contributors" by their email addresses. This allows tracking the involvement of external engineers or documentation staff who don't need a formal account in billetsys. Standard Users, Superusers, and TAMs can manage external contributors for their assigned companies, while Support can manage them globally.
 
 ## Ticket lists
 
