@@ -138,6 +138,10 @@ final class SupportTicketViewSupport {
                 slaColors.put(ticket.id, "Black");
                 continue;
             }
+            if ("Waiting for External Feedback".equalsIgnoreCase(ticket.status)) {
+                slaColors.put(ticket.id, "#a855f7");
+                continue;
+            }
             LocalDateTime messageDate = messageDates.get(ticket.id);
             if (messageDate == null || ticket.companyEntitlement == null
                     || ticket.companyEntitlement.supportLevel == null) {
@@ -296,7 +300,7 @@ final class SupportTicketViewSupport {
 
     private static int slaColorRank(String color) {
         if (color == null) {
-            return 3;
+            return 4;
         }
         String normalized = color.trim().toLowerCase(Locale.ENGLISH);
         if ("red".equals(normalized)) {
@@ -308,7 +312,10 @@ final class SupportTicketViewSupport {
         if ("white".equals(normalized)) {
             return 2;
         }
-        return 3;
+        if ("#a855f7".equals(normalized)) {
+            return 3;
+        }
+        return 4;
     }
 
     record SupportTicketCounts(int assignedCount, int openCount) {

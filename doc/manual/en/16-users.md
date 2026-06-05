@@ -32,6 +32,7 @@ Users are central to the role model of billetsys. Role assignment determines whe
 * TAM
 * Support
 * Admin
+* External Contributor
 
 This is one of the most important distinctions in the system because it changes what that person can see and do throughout the application.
 

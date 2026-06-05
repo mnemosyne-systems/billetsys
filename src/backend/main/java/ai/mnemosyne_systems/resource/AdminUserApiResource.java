@@ -94,7 +94,8 @@ public class AdminUserApiResource {
                         new UserDirectoryApiModels.TypeOption(User.TYPE_SUPPORT, "Support"),
                         new UserDirectoryApiModels.TypeOption(User.TYPE_USER, "User"),
                         new UserDirectoryApiModels.TypeOption(User.TYPE_TAM, "TAM"),
-                        new UserDirectoryApiModels.TypeOption(User.TYPE_SUPERUSER, "Superuser")),
+                        new UserDirectoryApiModels.TypeOption(User.TYPE_SUPERUSER, "Superuser"),
+                        new UserDirectoryApiModels.TypeOption(User.TYPE_EXTERNAL, "External")),
                 UserDirectoryApiModels.userFormData(user, selectedCompany == null ? null : selectedCompany.id));
     }
 

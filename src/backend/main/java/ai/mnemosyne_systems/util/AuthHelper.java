@@ -42,6 +42,7 @@ public final class AuthHelper {
         User user = User.findById(sessionCookie.userId());
         if (user == null) {
             ACTIVE_TOKENS.remove(sessionCookie.userId(), activeSession);
+            return null;
         }
         return user;
     }
@@ -96,6 +97,14 @@ public final class AuthHelper {
     public static boolean isUser(User user) {
         return user != null
                 && (User.TYPE_USER.equalsIgnoreCase(user.type) || User.TYPE_TAM.equalsIgnoreCase(user.type));
+    }
+
+    public static boolean isExternal(User user) {
+        return user != null && User.TYPE_EXTERNAL.equalsIgnoreCase(user.type);
+    }
+
+    public static boolean isParticipant(User user) {
+        return user != null && User.TYPE_PARTICIPANT.equalsIgnoreCase(user.type);
     }
 
     private static SessionCookie parseSessionCookie(String cookieValue) {

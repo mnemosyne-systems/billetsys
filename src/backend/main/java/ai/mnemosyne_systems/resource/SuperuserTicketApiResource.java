@@ -160,11 +160,22 @@ public class SuperuserTicketApiResource {
                 : User.find(
                         "select distinct u from Company c join c.users u where c = ?1 and lower(u.type) = ?2 order by u.email",
                         ticket.company, User.TYPE_SUPERUSER).list();
+
+        Company ownerCompany = OwnerResource.findOwnerCompany();
+        List<User> externalUsers = ownerCompany == null ? List.of()
+                : User.find(
+                        "select distinct u from Company c join c.users u, Ticket t join t.externalUsers tu where t = ?1 and c = ?2 and u = tu order by u.fullName",
+                        ticket, ownerCompany).list();
+
+        List<User> userUsers = ticket.company == null ? List.of()
+                : User.find(
+                        "select distinct u from Company c join c.users u, Ticket t join t.userUsers tu where t = ?1 and c = ?2 and u = tu order by u.fullName",
+                        ticket, ticket.company).list();
+
         java.util.Map<Long, Ticket> ticketCache = crossReferenceService
                 .preloadReferencedTickets(messages.stream().map(m -> m.body).toList());
         return new UserTicketApiResource.RoleTicketDetailResponse(ticket.id, ticket.name, ticket.displayTitle(),
-                ticket.status == null || ticket.status.isBlank() ? "Open" : ticket.status,
-                data.assignedTickets == null ? 0 : data.assignedTickets.size(),
+                normalizeDisplayStatus(ticket.status), data.assignedTickets == null ? 0 : data.assignedTickets.size(),
                 data.openTickets == null ? 0 : data.openTickets.size(),
                 ticket.company == null ? null : ticket.company.id, ticket.company == null ? null : ticket.company.name,
                 ticket.category == null ? null : ticket.category.id,
@@ -185,7 +196,9 @@ public class SuperuserTicketApiResource {
                 messages.stream().map(m -> toMessageEntry(m, ticketCache)).toList(),
                 superuserResource.isEntitlementExpired(ticket), "/superuser/tickets/" + ticket.id,
                 "/superuser/tickets/" + ticket.id + "/messages", "/tickets/export/" + ticket.id,
-                List.of("Open", "Assigned", "In Progress", "Resolved", "Closed"), false, false, false, true, true);
+                List.of("Open", "Assigned", "In Progress", "Resolved", "Closed"), false, false, false, true, true,
+                externalUsers.stream().map(this::toUserReference).toList(),
+                userUsers.stream().map(this::toUserReference).toList());
     }
 
     @GET
@@ -205,7 +218,7 @@ public class SuperuserTicketApiResource {
             SuperuserResource.SupportTicketData data) {
         User assignedSupport = data.supportAssignmentUsers.get(ticket.id);
         return new SupportTicketApiResource.SupportTicketSummary(ticket.id, ticket.name, ticket.displayTitle(),
-                ticket.status, data.messageDateLabels.get(ticket.id),
+                normalizeDisplayStatus(ticket.status), data.messageDateLabels.get(ticket.id),
                 data.messageDates.get(ticket.id) == null ? null : data.messageDates.get(ticket.id).toString(),
                 data.messageDirectionArrows.get(ticket.id), data.slaColors.get(ticket.id),
                 ticket.category == null ? null : ticket.category.name,
@@ -260,6 +273,16 @@ public class SuperuserTicketApiResource {
             return "closed";
         }
         return "assigned";
+    }
+
+    private String normalizeDisplayStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return "Open";
+        }
+        if ("Waiting for External Feedback".equalsIgnoreCase(status.trim())) {
+            return "In Progress";
+        }
+        return status;
     }
 
     private Company selectCompany(List<Company> companies, Long companyId) {

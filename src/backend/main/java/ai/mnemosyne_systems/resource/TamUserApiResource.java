@@ -78,7 +78,8 @@ public class TamUserApiResource {
                 companies.stream().map(UserDirectoryApiModels::companyOption).toList(),
                 countries.stream().map(UserDirectoryApiModels::countryOption).toList(),
                 timezones.stream().map(UserDirectoryApiModels::timezoneOption).toList(),
-                List.of(new UserDirectoryApiModels.TypeOption(User.TYPE_USER, "User")),
+                List.of(new UserDirectoryApiModels.TypeOption(User.TYPE_USER, "User"),
+                        new UserDirectoryApiModels.TypeOption(User.TYPE_EXTERNAL, "External")),
                 UserDirectoryApiModels.userFormData(newUser, selectedCompany.id));
     }
 

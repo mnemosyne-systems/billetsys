@@ -144,7 +144,7 @@ public class UserResource {
         if (email == null || email.isBlank()) {
             throw new BadRequestException("Email is required");
         }
-        if (password == null || password.isBlank()) {
+        if (!User.TYPE_EXTERNAL.equalsIgnoreCase(type) && (password == null || password.isBlank())) {
             throw new BadRequestException("Password is required");
         }
         if (companyId == null) {
@@ -159,7 +159,8 @@ public class UserResource {
         if (!allowed) {
             throw new BadRequestException("Company is required");
         }
-        String normalized = normalizeType(type, Set.of(User.TYPE_USER), "Type must be user");
+        String normalized = normalizeType(type, Set.of(User.TYPE_USER, User.TYPE_EXTERNAL),
+                "Type must be user or external");
         User newUser = new User();
         newUser.name = name.trim();
         newUser.fullName = trimOrNull(fullName);
@@ -170,7 +171,9 @@ public class UserResource {
         newUser.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
         newUser.country = countryId != null ? Country.findById(countryId) : null;
         newUser.type = normalized;
-        newUser.passwordHash = BcryptUtil.bcryptHash(password);
+        if (password != null && !password.isBlank()) {
+            newUser.passwordHash = BcryptUtil.bcryptHash(password);
+        }
         newUser.persist();
         boolean exists = company.users.stream()
                 .anyMatch(existing -> existing.id != null && existing.id.equals(newUser.id));
@@ -490,10 +493,12 @@ public class UserResource {
         newUser.phoneExtension = trimOrNull(phoneExtension);
         newUser.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
         newUser.country = countryId != null ? Country.findById(countryId) : null;
-        newUser.type = normalizeType(type,
-                Set.of(User.TYPE_ADMIN, User.TYPE_SUPPORT, User.TYPE_USER, User.TYPE_TAM, User.TYPE_SUPERUSER),
-                "Type must be admin, support, user, tam, or superuser");
-        newUser.passwordHash = BcryptUtil.bcryptHash(password);
+        newUser.type = normalizeType(type, Set.of(User.TYPE_ADMIN, User.TYPE_SUPPORT, User.TYPE_USER, User.TYPE_TAM,
+                User.TYPE_SUPERUSER, User.TYPE_EXTERNAL),
+                "Type must be admin, support, user, tam, superuser, or external");
+        if (password != null && !password.isBlank()) {
+            newUser.passwordHash = BcryptUtil.bcryptHash(password);
+        }
         newUser.persist();
         if (companyId != null) {
             Company company = Company.findById(companyId);
@@ -530,9 +535,9 @@ public class UserResource {
         editUser.phoneExtension = trimOrNull(phoneExtension);
         editUser.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
         editUser.country = countryId != null ? Country.findById(countryId) : null;
-        editUser.type = normalizeType(type,
-                Set.of(User.TYPE_ADMIN, User.TYPE_SUPPORT, User.TYPE_USER, User.TYPE_TAM, User.TYPE_SUPERUSER),
-                "Type must be admin, support, user, tam, or superuser");
+        editUser.type = normalizeType(type, Set.of(User.TYPE_ADMIN, User.TYPE_SUPPORT, User.TYPE_USER, User.TYPE_TAM,
+                User.TYPE_SUPERUSER, User.TYPE_EXTERNAL),
+                "Type must be admin, support, user, tam, superuser, or external");
         if (password != null && !password.isBlank()) {
             editUser.passwordHash = BcryptUtil.bcryptHash(password);
         }
@@ -619,7 +624,7 @@ public class UserResource {
         if (email == null || email.isBlank()) {
             throw new BadRequestException("Email is required");
         }
-        if (requirePassword && (password == null || password.isBlank())) {
+        if (requirePassword && !User.TYPE_EXTERNAL.equalsIgnoreCase(type) && (password == null || password.isBlank())) {
             throw new BadRequestException("Password is required");
         }
         if (type == null || type.isBlank()) {
@@ -638,7 +643,7 @@ public class UserResource {
         if (email == null || email.isBlank()) {
             throw new BadRequestException("Email is required");
         }
-        if (requirePassword && (password == null || password.isBlank())) {
+        if (requirePassword && !User.TYPE_EXTERNAL.equalsIgnoreCase(type) && (password == null || password.isBlank())) {
             throw new BadRequestException("Password is required");
         }
         if (type == null || type.isBlank()) {

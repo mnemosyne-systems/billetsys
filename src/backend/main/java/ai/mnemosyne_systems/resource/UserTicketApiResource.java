@@ -164,11 +164,22 @@ public class UserTicketApiResource {
                 .find("select u from Ticket t join t.tamUsers u where t = ?1 order by u.email", ticket).list();
         mergeMissingUsers(secondaryUsers, ticketTams);
         boolean tamView = User.TYPE_TAM.equalsIgnoreCase(user.type);
+
+        Company ownerCompany = OwnerResource.findOwnerCompany();
+        List<User> externalUsers = ownerCompany == null ? List.of()
+                : User.find(
+                        "select distinct u from Company c join c.users u, Ticket t join t.externalUsers tu where t = ?1 and c = ?2 and u = tu order by u.fullName",
+                        ticket, ownerCompany).list();
+
+        List<User> userUsers = ticket.company == null ? List.of()
+                : User.find(
+                        "select distinct u from Company c join c.users u, Ticket t join t.userUsers tu where t = ?1 and c = ?2 and u = tu order by u.fullName",
+                        ticket, ticket.company).list();
+
         java.util.Map<Long, Ticket> ticketCache = crossReferenceService
                 .preloadReferencedTickets(messages.stream().map(m -> m.body).toList());
         return new RoleTicketDetailResponse(ticket.id, ticket.name, ticket.displayTitle(),
-                ticket.status == null || ticket.status.isBlank() ? "Open" : ticket.status,
-                data.assignedTickets == null ? 0 : data.assignedTickets.size(),
+                normalizeDisplayStatus(ticket.status), data.assignedTickets == null ? 0 : data.assignedTickets.size(),
                 data.openTickets == null ? 0 : data.openTickets.size(),
                 ticket.company == null ? null : ticket.company.id, ticket.company == null ? null : ticket.company.name,
                 ticket.category == null ? null : ticket.category.id,
@@ -189,7 +200,9 @@ public class UserTicketApiResource {
                 messages.stream().map(m -> toMessageEntry(m, ticketCache)).toList(),
                 userResource.isEntitlementExpired(ticket), "/user/tickets/" + ticket.id,
                 "/user/tickets/" + ticket.id + "/messages", "/tickets/export/" + ticket.id,
-                List.of("Open", "Assigned", "In Progress", "Resolved", "Closed"), false, false, false, true, tamView);
+                List.of("Open", "Assigned", "In Progress", "Resolved", "Closed"), false, false, false, true, tamView,
+                externalUsers.stream().map(this::toUserReference).toList(),
+                userUsers.stream().map(this::toUserReference).toList());
     }
 
     @GET
@@ -213,7 +226,7 @@ public class UserTicketApiResource {
             User currentUser) {
         User assignedSupport = data.supportAssignmentUsers.get(ticket.id);
         return new SupportTicketApiResource.SupportTicketSummary(ticket.id, ticket.name, ticket.displayTitle(),
-                ticket.status, data.messageDateLabels.get(ticket.id),
+                normalizeDisplayStatus(ticket.status), data.messageDateLabels.get(ticket.id),
                 data.messageDates.get(ticket.id) == null ? null : data.messageDates.get(ticket.id).toString(),
                 data.messageDirectionArrows.get(ticket.id), data.slaColors.get(ticket.id),
                 ticket.category == null ? null : ticket.category.name,
@@ -269,6 +282,16 @@ public class UserTicketApiResource {
             return "closed";
         }
         return "assigned";
+    }
+
+    private String normalizeDisplayStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return "Open";
+        }
+        if ("Waiting for External Feedback".equalsIgnoreCase(status.trim())) {
+            return "In Progress";
+        }
+        return status;
     }
 
     private Company selectCompany(List<Company> companies, Long companyId) {
@@ -354,6 +377,7 @@ public class UserTicketApiResource {
             List<SupportTicketApiResource.MessageEntry> messages, boolean ticketEntitlementExpired, String actionPath,
             String messageActionPath, String exportPath, List<String> statusOptions, boolean editableStatus,
             boolean editableCategory, boolean editableExternalIssue, boolean editableAffectsVersion,
-            boolean editableResolvedVersion) {
+            boolean editableResolvedVersion, List<SupportTicketApiResource.UserReference> externalUsers,
+            List<SupportTicketApiResource.UserReference> userUsers) {
     }
 }

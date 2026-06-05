@@ -110,6 +110,7 @@ public final class UserDirectoryApiModels {
             case User.TYPE_SUPPORT -> "Support";
             case User.TYPE_TAM -> "TAM";
             case User.TYPE_SUPERUSER -> "Superuser";
+            case User.TYPE_EXTERNAL -> "External";
             default -> "User";
         };
     }

@@ -8,3 +8,6 @@ Previous status: {previousStatus}
 Message:
 {message.body}
 {/if}
+
+---
+To add a comment or reply to this ticket, simply reply directly to this email.
