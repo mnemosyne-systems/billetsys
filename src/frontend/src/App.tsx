@@ -153,7 +153,9 @@ function App() {
         className={
           isLoginRoute
             ? "min-h-screen flex flex-col"
-            : "min-h-screen flex flex-col bg-background dark:bg-black"
+            : isManualRoute
+              ? "h-svh flex flex-col overflow-hidden bg-background dark:bg-black"
+              : "min-h-screen flex flex-col bg-background dark:bg-black"
         }
       >
         {!isLoginRoute && <AuthenticatedHeader session={shellSession} />}

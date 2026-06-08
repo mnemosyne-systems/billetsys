@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -9,7 +9,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import "highlight.js/styles/github.css";
 import App from "./App";
 import "./app.css";
 

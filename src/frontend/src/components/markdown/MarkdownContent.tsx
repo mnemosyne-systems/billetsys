@@ -11,9 +11,14 @@ import {
   useMemo,
   useRef,
   useState,
+  useEffect,
+  useCallback,
+  Children,
+  isValidElement,
   type ComponentPropsWithoutRef,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -47,6 +52,103 @@ type MarkdownBlock =
       rows: string[][];
       type: "table";
     };
+
+function ZoomableImage({
+  src,
+  alt,
+  className,
+  ...props
+}: ComponentPropsWithoutRef<"img">) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const openZoom = useCallback(() => {
+    if (!isOpen) {
+      setIsOpen(true);
+      setIsClosing(false);
+
+      // Allow DOM to render before triggering transition
+      requestAnimationFrame(() => {
+        setIsVisible(true);
+      });
+    }
+  }, [isOpen]);
+
+  const closeZoom = useCallback(() => {
+    if (isOpen && !isClosing) {
+      setIsVisible(false);
+      setIsClosing(true);
+
+      setTimeout(() => {
+        setIsOpen(false);
+        setIsClosing(false);
+      }, 300); // match transition duration
+    }
+  }, [isOpen, isClosing]);
+
+  useEffect(() => {
+    if (!isOpen || isClosing) return;
+
+    const handleScroll = () => {
+      closeZoom();
+    };
+
+    window.addEventListener("scroll", handleScroll, {
+      capture: true,
+      passive: true,
+    });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll, { capture: true });
+    };
+  }, [isOpen, isClosing, closeZoom]);
+
+  const portalContent = isOpen
+    ? createPortal(
+        <div
+          className="fixed inset-0 z-[999999] m-0 flex h-screen w-screen items-center justify-center border-none p-0"
+          onClick={closeZoom}
+        >
+          <div
+            className={cn(
+              "fixed inset-0 bg-background transition-opacity duration-300 ease-out",
+              isVisible ? "opacity-100" : "opacity-0",
+            )}
+          />
+          <div
+            className={cn(
+              "relative z-10 flex max-h-[70vh] max-w-[70vw] items-center justify-center transition-all duration-300 ease-out transform pointer-events-none",
+              isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95",
+            )}
+          >
+            <img
+              src={src}
+              alt={alt}
+              className="max-h-[70vh] max-w-[70vw] cursor-zoom-out object-contain rounded-md shadow-2xl ring-1 ring-border pointer-events-auto"
+            />
+          </div>
+        </div>,
+        document.body,
+      )
+    : null;
+
+  return (
+    <>
+      <img
+        src={src}
+        alt={alt}
+        className={cn(
+          "my-4 max-w-full cursor-zoom-in rounded-md border border-border shadow-sm transition-transform hover:opacity-90",
+          className,
+        )}
+        onClick={openZoom}
+        {...props}
+      />
+      {portalContent}
+    </>
+  );
+}
 
 function MarkdownCodeBlock({
   children,
@@ -160,6 +262,27 @@ function buildLinkComponent(
   return MarkdownLink;
 }
 
+export function generateSlug(children: ReactNode): string {
+  let text = "";
+  Children.forEach(children, (child) => {
+    if (typeof child === "string") {
+      text += child;
+    } else if (isValidElement(child)) {
+      const nestedChildren = (child.props as Record<string, unknown>).children;
+      if (nestedChildren) {
+        text += generateSlug(nestedChildren as ReactNode);
+      }
+    }
+  });
+  return text
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w-]+/g, "")
+    .replace(/--+/g, "-")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
+}
+
 const markdownComponents: Components = {
   a: buildLinkComponent(),
   blockquote: ({
@@ -192,26 +315,35 @@ const markdownComponents: Components = {
       {...props}
     />
   ),
-  h2: ({ className, ...props }: ComponentPropsWithoutRef<"h2">) => (
+  h2: ({ className, children, ...props }: ComponentPropsWithoutRef<"h2">) => (
     <h2
+      id={generateSlug(children)}
       className={cn(
         "mb-3 mt-5 text-2xl font-semibold leading-tight text-foreground first:mt-0",
         className,
       )}
       {...props}
-    />
+    >
+      {children}
+    </h2>
   ),
-  h3: ({ className, ...props }: ComponentPropsWithoutRef<"h3">) => (
+  h3: ({ className, children, ...props }: ComponentPropsWithoutRef<"h3">) => (
     <h3
+      id={generateSlug(children)}
       className={cn(
         "mb-3 mt-4 text-xl font-semibold leading-snug text-foreground first:mt-0",
         className,
       )}
       {...props}
-    />
+    >
+      {children}
+    </h3>
   ),
   hr: ({ className, ...props }: ComponentPropsWithoutRef<"hr">) => (
     <hr className={cn("my-6 border-border", className)} {...props} />
+  ),
+  img: ({ className, alt, ...props }: ComponentPropsWithoutRef<"img">) => (
+    <ZoomableImage className={className} alt={alt} {...props} />
   ),
   li: ({ className, ...props }: ComponentPropsWithoutRef<"li">) => (
     <li className={cn("my-1 pl-1", className)} {...props} />
@@ -353,9 +485,12 @@ export default function MarkdownContent({
 
   // Auto-correct common markdown formatting mistakes (e.g. spaces inside asterisks `** bold **`)
   if (content) {
-    content = content.replace(/\*\*([ \t]+)?([^*]+?)([ \t]+)?\*\*/g, "**$2**");
     content = content.replace(
-      /(^|[^A-Za-z0-9_*])\*([ \t]+)?([^*]+?)([ \t]+)?\*/g,
+      /\*\*([ \t]+)?([^*\r\n]+?)([ \t]+)?\*\*/g,
+      "**$2**",
+    );
+    content = content.replace(
+      /(^|[^A-Za-z0-9_*])\*([ \t]+)?([^*\r\n]+?)([ \t]+)?\*/g,
       "$1*$3*",
     );
   }
