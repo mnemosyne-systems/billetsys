@@ -34,7 +34,7 @@ Users are central to the role model of billetsys. Role assignment determines whe
 * Admin
 * External Contributor
 
-This is one of the most important distinctions in the system because it changes what that person can see and do throughout the application.
+This is one of the most important distinctions in the system because it changes what that person can see and do throughout the application. To help quickly identify a user's responsibilities, their assigned role is represented by a dedicated, customizable role badge next to their name.
 
 ## Company relationship
 

@@ -36,6 +36,18 @@ export interface Session {
   installationHeadersColor?: string;
   installationButtonsColor?: string;
   installationUse24HourClock?: boolean;
+  installationAdminRoleIcon?: string;
+  installationSupportRoleIcon?: string;
+  installationSuperuserRoleIcon?: string;
+  installationTamRoleIcon?: string;
+  installationUserRoleIcon?: string;
+  installationExternalRoleIcon?: string;
+  installationAdminRoleColor?: string;
+  installationSupportRoleColor?: string;
+  installationSuperuserRoleColor?: string;
+  installationTamRoleColor?: string;
+  installationUserRoleColor?: string;
+  installationExternalRoleColor?: string;
   inactivityTimeoutSeconds?: number;
   inactivityWarningSeconds?: number;
   defaultPageSize?: number;

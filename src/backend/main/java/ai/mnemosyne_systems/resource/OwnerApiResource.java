@@ -72,6 +72,18 @@ public class OwnerApiResource {
         installation.buttonsColor = normalizedButtonsColor;
         installation.use24HourClock = Boolean.TRUE.equals(request.use24HourClock());
         installation.ticketAutoCloseDays = OwnerResource.clampAutoCloseDays(request.ticketAutoCloseDays());
+        installation.adminRoleIcon = trimToNull(request.adminRoleIcon());
+        installation.supportRoleIcon = trimToNull(request.supportRoleIcon());
+        installation.superuserRoleIcon = trimToNull(request.superuserRoleIcon());
+        installation.tamRoleIcon = trimToNull(request.tamRoleIcon());
+        installation.userRoleIcon = trimToNull(request.userRoleIcon());
+        installation.externalRoleIcon = trimToNull(request.externalRoleIcon());
+        installation.adminRoleColor = BrandingProvider.normalizeRoleColor(request.adminRoleColor());
+        installation.supportRoleColor = BrandingProvider.normalizeRoleColor(request.supportRoleColor());
+        installation.superuserRoleColor = BrandingProvider.normalizeRoleColor(request.superuserRoleColor());
+        installation.tamRoleColor = BrandingProvider.normalizeRoleColor(request.tamRoleColor());
+        installation.userRoleColor = BrandingProvider.normalizeRoleColor(request.userRoleColor());
+        installation.externalRoleColor = BrandingProvider.normalizeRoleColor(request.externalRoleColor());
         installation.logoBase64 = trimToNull(request.logoBase64());
         installation.backgroundBase64 = trimToNull(request.backgroundBase64());
         return toResponse(company);
@@ -112,7 +124,15 @@ public class OwnerApiResource {
                 BrandingProvider.normalizeInstallationColor(installation.buttonsColor),
                 Boolean.TRUE.equals(installation.use24HourClock), company.timezone == null ? null : company.timezone.id,
                 company.timezone == null ? null : company.timezone.name,
-                installation.ticketAutoCloseDays != null ? installation.ticketAutoCloseDays : 7, supportUsers, tamUsers,
+                installation.ticketAutoCloseDays != null ? installation.ticketAutoCloseDays : 7,
+                installation.adminRoleIcon, installation.supportRoleIcon, installation.superuserRoleIcon,
+                installation.tamRoleIcon, installation.userRoleIcon, installation.externalRoleIcon,
+                BrandingProvider.normalizeRoleColor(installation.adminRoleColor),
+                BrandingProvider.normalizeRoleColor(installation.supportRoleColor),
+                BrandingProvider.normalizeRoleColor(installation.superuserRoleColor),
+                BrandingProvider.normalizeRoleColor(installation.tamRoleColor),
+                BrandingProvider.normalizeRoleColor(installation.userRoleColor),
+                BrandingProvider.normalizeRoleColor(installation.externalRoleColor), supportUsers, tamUsers,
                 supportOptions, tamOptions, countries, timezones);
     }
 
@@ -130,9 +150,12 @@ public class OwnerApiResource {
     public record OwnerResponse(Long id, String name, String address1, String address2, String city, String state,
             String zip, String phoneNumber, Long countryId, String countryName, String logoBase64,
             String backgroundBase64, String headerFooterColor, String headersColor, String buttonsColor,
-            boolean use24HourClock, Long timezoneId, String timezoneName, int ticketAutoCloseDays,
-            List<UserSummary> supportUsers, List<UserSummary> tamUsers, List<UserSummary> supportOptions,
-            List<UserSummary> tamOptions, List<CountryOption> countries, List<TimezoneOption> timezones) {
+            boolean use24HourClock, Long timezoneId, String timezoneName, int ticketAutoCloseDays, String adminRoleIcon,
+            String supportRoleIcon, String superuserRoleIcon, String tamRoleIcon, String userRoleIcon,
+            String externalRoleIcon, String adminRoleColor, String supportRoleColor, String superuserRoleColor,
+            String tamRoleColor, String userRoleColor, String externalRoleColor, List<UserSummary> supportUsers,
+            List<UserSummary> tamUsers, List<UserSummary> supportOptions, List<UserSummary> tamOptions,
+            List<CountryOption> countries, List<TimezoneOption> timezones) {
     }
 
     public record UserSummary(Long id, String username, String displayName, String email, String profilePath) {
@@ -147,6 +170,9 @@ public class OwnerApiResource {
     public record OwnerUpdateRequest(String name, String address1, String address2, String city, String state,
             String zip, String phoneNumber, Long countryId, Long timezoneId, List<Long> supportIds, List<Long> tamIds,
             String headerFooterColor, String headersColor, String buttonsColor, Boolean use24HourClock,
-            Integer ticketAutoCloseDays, String logoBase64, String backgroundBase64) {
+            Integer ticketAutoCloseDays, String adminRoleIcon, String supportRoleIcon, String superuserRoleIcon,
+            String tamRoleIcon, String userRoleIcon, String externalRoleIcon, String adminRoleColor,
+            String supportRoleColor, String superuserRoleColor, String tamRoleColor, String userRoleColor,
+            String externalRoleColor, String logoBase64, String backgroundBase64) {
     }
 }

@@ -11,6 +11,7 @@ import DataState from "../components/common/DataState";
 import PageHeader from "../components/layout/PageHeader";
 import { toast } from "sonner";
 import { UserDetailCard } from "../components/users/UserProfileSections";
+import { UserRoleBadge } from "../components/users/UserComponents";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
 import { postForm } from "../utils/api";
@@ -78,7 +79,18 @@ export default function DirectoryUserDetailPage({
     <section className="w-full mt-4">
       <PageHeader
         title={
-          detail?.displayName || detail?.fullName || detail?.username || "User"
+          <span className="flex items-center gap-2">
+            {detail?.displayName ||
+              detail?.fullName ||
+              detail?.username ||
+              "User"}
+            {detail?.type && (
+              <UserRoleBadge
+                type={detail.type}
+                className="text-[var(--color-section-header)]"
+              />
+            )}
+          </span>
         }
       />
 

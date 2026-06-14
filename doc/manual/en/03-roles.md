@@ -6,7 +6,7 @@
 
 ![Role overview](images/03-roles-overview.png){ width=100% }
 
-The role model separates customer-facing work from operational support work and system administration. This helps keep each screen focused on the information and actions that matter for that role.
+The role model separates customer-facing work from operational support work and system administration. This helps keep each screen focused on the information and actions that matter for that role. To make this easy to navigate, each role is visually distinguished by its own unique, customizable role badge (icon and color) throughout the application.
 
 ## User
 

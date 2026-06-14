@@ -8,7 +8,8 @@
 
 import type { MouseEvent, ReactNode } from "react";
 import { useState } from "react";
-import type { Id } from "../../types/app";
+import useJson from "../../hooks/useJson";
+import type { Id, Session } from "../../types/app";
 import type { UserReference } from "../../types/domain";
 
 interface TooltipState {
@@ -32,6 +33,47 @@ interface SelectableUsersProps {
   selectedIds: Id[];
   onToggle: (userId: Id) => void;
   selectionMode?: "multiple" | "single";
+}
+
+export function UserRoleBadge({
+  type,
+  className = "",
+}: {
+  type?: string;
+  className?: string;
+}) {
+  const { data: session } = useJson<Session>("/api/app/session");
+  if (!type || !session) return null;
+
+  let icon = session.installationUserRoleIcon || "user";
+  let color = session.installationUserRoleColor;
+  let title = "User";
+  if (type === "admin") {
+    icon = session.installationAdminRoleIcon || "shield-check";
+    color = session.installationAdminRoleColor;
+    title = "Admin";
+  } else if (type === "support") {
+    icon = session.installationSupportRoleIcon || "headset";
+    color = session.installationSupportRoleColor;
+    title = "Support";
+  } else if (type === "superuser") {
+    icon = session.installationSuperuserRoleIcon || "crown";
+    color = session.installationSuperuserRoleColor;
+    title = "Superuser";
+  } else if (type === "tam") {
+    icon = session.installationTamRoleIcon || "briefcase";
+    color = session.installationTamRoleColor;
+    title = "TAM";
+  } else if (type === "external") {
+    icon = session.installationExternalRoleIcon || "user-star";
+    color = session.installationExternalRoleColor;
+    title = "External";
+  }
+
+  const style = color ? { color } : undefined;
+  return (
+    <i className={`ti ti-${icon} ${className}`} title={title} style={style} />
+  );
 }
 
 export function UserHoverLink({
@@ -69,14 +111,20 @@ export function UserHoverLink({
   return (
     <>
       <a
-        className={`text-primary hover:underline font-medium ${className || ""}`}
+        className={`text-primary hover:underline font-medium inline-flex items-center gap-1 align-bottom ${className || ""}`}
         href={user.detailPath}
         onMouseEnter={updateTooltip}
         onMouseMove={updateTooltip}
         onMouseLeave={() => setTooltipState(null)}
         onBlur={() => setTooltipState(null)}
       >
-        {children}
+        <span>{children}</span>
+        {user.type && (
+          <UserRoleBadge
+            type={user.type}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          />
+        )}
       </a>
       {tooltipState && (
         <div
@@ -106,8 +154,14 @@ export function UserHoverLink({
                 )}
               </div>
               <div className="flex flex-col min-w-0">
-                <div className="text-sm font-semibold truncate">
+                <div className="text-sm font-semibold truncate flex items-center gap-1.5">
                   {tooltipName}
+                  {user.type && (
+                    <UserRoleBadge
+                      type={user.type}
+                      className="text-primary text-base"
+                    />
+                  )}
                 </div>
               </div>
             </div>

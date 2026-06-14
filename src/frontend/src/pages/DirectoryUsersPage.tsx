@@ -25,6 +25,7 @@ import type {
 import { Card, CardHeader } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { UserRoleBadge } from "../components/users/UserComponents";
 import {
   Select,
   SelectContent,
@@ -183,7 +184,7 @@ export default function DirectoryUsersPage({
               <Card key={user.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold leading-none tracking-tight text-[var(--color-header-bg)]">
+                    <h3 className="font-semibold leading-none tracking-tight text-[var(--color-header-bg)] flex items-center gap-1.5">
                       {user.detailPath ? (
                         <SmartLink
                           className="text-[var(--color-header-bg)] hover:underline hover:opacity-80"
@@ -195,10 +196,18 @@ export default function DirectoryUsersPage({
                             "User"}
                         </SmartLink>
                       ) : (
-                        user.displayName ||
-                        user.fullName ||
-                        user.username ||
-                        "User"
+                        <span>
+                          {user.displayName ||
+                            user.fullName ||
+                            user.username ||
+                            "User"}
+                        </span>
+                      )}
+                      {user.type && (
+                        <UserRoleBadge
+                          type={user.type}
+                          className="text-muted-foreground text-sm"
+                        />
                       )}
                     </h3>
                     <Badge

@@ -56,6 +56,42 @@ public class Installation extends PanacheEntityBase {
     @Column(name = "singleton_key", nullable = false, unique = true, updatable = false)
     public String singletonKey = "installation";
 
+    @Column(name = "admin_role_icon")
+    public String adminRoleIcon;
+
+    @Column(name = "support_role_icon")
+    public String supportRoleIcon;
+
+    @Column(name = "superuser_role_icon")
+    public String superuserRoleIcon;
+
+    @Column(name = "tam_role_icon")
+    public String tamRoleIcon;
+
+    @Column(name = "user_role_icon")
+    public String userRoleIcon;
+
+    @Column(name = "external_role_icon")
+    public String externalRoleIcon;
+
+    @Column(name = "admin_role_color")
+    public String adminRoleColor;
+
+    @Column(name = "support_role_color")
+    public String supportRoleColor;
+
+    @Column(name = "superuser_role_color")
+    public String superuserRoleColor;
+
+    @Column(name = "tam_role_color")
+    public String tamRoleColor;
+
+    @Column(name = "user_role_color")
+    public String userRoleColor;
+
+    @Column(name = "external_role_color")
+    public String externalRoleColor;
+
     @OneToOne(optional = false)
     @JoinColumn(name = "company_id", nullable = false, unique = true)
     public Company company;

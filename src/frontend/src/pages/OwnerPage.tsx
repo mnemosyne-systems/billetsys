@@ -14,9 +14,10 @@ import { SmartLink } from "../utils/routing";
 import {
   OwnerUserList,
   OwnerSelector,
+  UserRoleBadge,
 } from "../components/users/UserComponents";
 import { UserLogoPreview } from "../components/users/UserProfileSections";
-import type { SessionPageProps } from "../types/app";
+import type { Id, SessionPageProps } from "../types/app";
 import type { OwnerCompany } from "../types/domain";
 import PageHeader from "../components/layout/PageHeader";
 import { Button } from "../components/ui/button";
@@ -64,6 +65,18 @@ interface OwnerFormState {
   buttonsColor: string;
   use24HourClock: boolean;
   ticketAutoCloseDays: number;
+  adminRoleIcon: string;
+  supportRoleIcon: string;
+  superuserRoleIcon: string;
+  tamRoleIcon: string;
+  userRoleIcon: string;
+  externalRoleIcon: string;
+  adminRoleColor: string;
+  supportRoleColor: string;
+  superuserRoleColor: string;
+  tamRoleColor: string;
+  userRoleColor: string;
+  externalRoleColor: string;
   supportIds: Array<string | number>;
   tamIds: Array<string | number>;
 }
@@ -241,6 +254,145 @@ function BrandingColorPickerTable({
   );
 }
 
+function RoleIconsDisplay({
+  icons,
+  colors,
+}: {
+  icons: Record<string, string>;
+  colors: Record<string, string>;
+}) {
+  const keys = ["admin", "support", "tam", "superuser", "user", "external"];
+  const labels: Record<string, string> = {
+    admin: "Admin",
+    support: "Support",
+    tam: "TAM",
+    superuser: "Superuser",
+    user: "User",
+    external: "External",
+  };
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+      {keys.map((key) => (
+        <div
+          key={key}
+          className="flex items-center gap-2 p-3 border rounded-xl bg-muted/10"
+        >
+          <i
+            className={`ti ti-${icons[key]} text-2xl`}
+            style={{ color: colors[key] || "var(--color-primary)" }}
+          />
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs text-muted-foreground">{labels[key]}</span>
+            <span className="text-sm font-medium truncate" title={icons[key]}>
+              {icons[key]}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const COMMON_TABLER_ICONS = [
+  "shield-check",
+  "headset",
+  "briefcase",
+  "crown",
+  "user",
+  "user-star",
+  "star",
+  "users",
+  "user-check",
+  "user-cog",
+  "user-exclamation",
+  "user-plus",
+  "building",
+  "id-badge",
+  "tie",
+  "tool",
+  "settings",
+  "lifebuoy",
+  "help",
+  "rocket",
+  "alien",
+  "robot",
+  "ghost",
+  "spy",
+  "code",
+  "brand-github",
+];
+
+function RoleIconsPicker({
+  icons,
+  colors,
+  onChange,
+}: {
+  icons: Record<string, string>;
+  colors: Record<string, string>;
+  onChange: (field: keyof OwnerFormState, value: string) => void;
+}) {
+  const keys = ["admin", "support", "tam", "superuser", "user", "external"];
+  const labels: Record<string, string> = {
+    admin: "Admin",
+    support: "Support",
+    tam: "TAM",
+    superuser: "Superuser",
+    user: "User",
+    external: "External",
+  };
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {keys.map((key) => (
+        <div key={key} className="flex items-center gap-3">
+          <div className="h-10 w-10 shrink-0 border rounded-md flex items-center justify-center bg-muted/20">
+            <i
+              className={`ti ti-${icons[key]} text-xl`}
+              style={{ color: colors[key] || "var(--color-primary)" }}
+            />
+          </div>
+          <div className="flex-1 space-y-1 min-w-0">
+            <span className="text-xs text-muted-foreground">{labels[key]}</span>
+            <div className="flex items-center gap-2">
+              <Select
+                value={icons[key]}
+                onValueChange={(val) =>
+                  onChange(`${key}RoleIcon` as keyof OwnerFormState, val)
+                }
+              >
+                <SelectTrigger className="flex-1 min-w-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent position="popper">
+                  {COMMON_TABLER_ICONS.map((i) => (
+                    <SelectItem key={i} value={i}>
+                      <div className="flex items-center gap-2">
+                        <i className={`ti ti-${i}`} />
+                        <span>{i}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="color"
+                value={colors[key] || "#000000"}
+                onChange={(e) =>
+                  onChange(
+                    `${key}RoleColor` as keyof OwnerFormState,
+                    e.target.value,
+                  )
+                }
+                className="h-10 w-12 cursor-pointer rounded-md p-1 shrink-0"
+                title={`${labels[key]} Color`}
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function OwnerPage(props: SessionPageProps) {
   void props;
   const ownerState = useJson<OwnerCompany>("/api/owner");
@@ -381,6 +533,29 @@ export function OwnerPage(props: SessionPageProps) {
                   }}
                 />
               </Field>
+              <Field className="md:col-span-2">
+                <FieldLabel className="text-[var(--color-header-bg)]">
+                  Role Badges (Tabler Icons)
+                </FieldLabel>
+                <RoleIconsDisplay
+                  icons={{
+                    admin: owner.adminRoleIcon || "shield-check",
+                    support: owner.supportRoleIcon || "headset",
+                    superuser: owner.superuserRoleIcon || "crown",
+                    tam: owner.tamRoleIcon || "briefcase",
+                    user: owner.userRoleIcon || "user",
+                    external: owner.externalRoleIcon || "user-star",
+                  }}
+                  colors={{
+                    admin: owner.adminRoleColor || "",
+                    support: owner.supportRoleColor || "",
+                    superuser: owner.superuserRoleColor || "",
+                    tam: owner.tamRoleColor || "",
+                    user: owner.userRoleColor || "",
+                    external: owner.externalRoleColor || "",
+                  }}
+                />
+              </Field>
             </div>
 
             <div className="flex items-center justify-end space-x-3 pt-4">
@@ -424,7 +599,19 @@ export function OwnerEditPage(props: SessionPageProps) {
         buttonsColor: owner.buttonsColor || DEFAULT_INSTALLATION_COLOR,
         use24HourClock: Boolean(owner.use24HourClock),
         ticketAutoCloseDays: owner.ticketAutoCloseDays ?? 7,
-        supportIds: owner.supportUsers.map((user) => user.id),
+        adminRoleIcon: owner.adminRoleIcon || "shield-check",
+        supportRoleIcon: owner.supportRoleIcon || "headset",
+        superuserRoleIcon: owner.superuserRoleIcon || "crown",
+        tamRoleIcon: owner.tamRoleIcon || "briefcase",
+        userRoleIcon: owner.userRoleIcon || "user",
+        externalRoleIcon: owner.externalRoleIcon || "user-star",
+        adminRoleColor: owner.adminRoleColor || "",
+        supportRoleColor: owner.supportRoleColor || "",
+        superuserRoleColor: owner.superuserRoleColor || "",
+        tamRoleColor: owner.tamRoleColor || "",
+        userRoleColor: owner.userRoleColor || "",
+        externalRoleColor: owner.externalRoleColor || "",
+        supportIds: owner.supportUsers.map((u) => u.id).filter(Boolean) as Id[],
         tamIds: owner.tamUsers.map((user) => user.id),
       });
     }
@@ -539,6 +726,18 @@ export function OwnerEditPage(props: SessionPageProps) {
           ...formState,
           use24HourClock: formState.use24HourClock,
           ticketAutoCloseDays: formState.ticketAutoCloseDays,
+          adminRoleIcon: formState.adminRoleIcon,
+          supportRoleIcon: formState.supportRoleIcon,
+          superuserRoleIcon: formState.superuserRoleIcon,
+          tamRoleIcon: formState.tamRoleIcon,
+          userRoleIcon: formState.userRoleIcon,
+          externalRoleIcon: formState.externalRoleIcon,
+          adminRoleColor: formState.adminRoleColor,
+          supportRoleColor: formState.supportRoleColor,
+          superuserRoleColor: formState.superuserRoleColor,
+          tamRoleColor: formState.tamRoleColor,
+          userRoleColor: formState.userRoleColor,
+          externalRoleColor: formState.externalRoleColor,
           countryId: formState.countryId ? Number(formState.countryId) : null,
           timezoneId: formState.timezoneId
             ? Number(formState.timezoneId)
@@ -708,7 +907,8 @@ export function OwnerEditPage(props: SessionPageProps) {
 
               <div className="md:col-span-2 grid gap-6 md:grid-cols-2 pt-6 border-t mt-2">
                 <div className="space-y-4">
-                  <FieldLabel className="mb-4 text-base text-[var(--color-header-bg)]">
+                  <FieldLabel className="mb-4 text-base text-[var(--color-header-bg)] flex items-center gap-2">
+                    <UserRoleBadge type="support" className="text-xl" />
                     Support
                   </FieldLabel>
                   <div className="mt-2">
@@ -723,7 +923,8 @@ export function OwnerEditPage(props: SessionPageProps) {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <FieldLabel className="mb-4 text-base text-[var(--color-header-bg)]">
+                  <FieldLabel className="mb-4 text-base text-[var(--color-header-bg)] flex items-center gap-2">
+                    <UserRoleBadge type="tam" className="text-xl" />
                     TAMs
                   </FieldLabel>
                   <div className="mt-2">
@@ -840,6 +1041,30 @@ export function OwnerEditPage(props: SessionPageProps) {
                     headerFooterColor: formState.headerFooterColor,
                     headersColor: formState.headersColor,
                     buttonsColor: formState.buttonsColor,
+                  }}
+                  onChange={updateField}
+                />
+              </Field>
+              <Field className="md:col-span-2">
+                <FieldLabel className="text-[var(--color-header-bg)]">
+                  Role Badges (Tabler Icons)
+                </FieldLabel>
+                <RoleIconsPicker
+                  icons={{
+                    admin: formState.adminRoleIcon,
+                    support: formState.supportRoleIcon,
+                    tam: formState.tamRoleIcon,
+                    superuser: formState.superuserRoleIcon,
+                    user: formState.userRoleIcon,
+                    external: formState.externalRoleIcon,
+                  }}
+                  colors={{
+                    admin: formState.adminRoleColor,
+                    support: formState.supportRoleColor,
+                    tam: formState.tamRoleColor,
+                    superuser: formState.superuserRoleColor,
+                    user: formState.userRoleColor,
+                    external: formState.externalRoleColor,
                   }}
                   onChange={updateField}
                 />

@@ -95,6 +95,76 @@ public class BrandingProvider {
         }
     }
 
+    public String installationAdminRoleIcon() {
+        Installation installation = installation();
+        return (installation != null && installation.adminRoleIcon != null && !installation.adminRoleIcon.isBlank())
+                ? installation.adminRoleIcon
+                : "shield-check";
+    }
+
+    public String installationSupportRoleIcon() {
+        Installation installation = installation();
+        return (installation != null && installation.supportRoleIcon != null && !installation.supportRoleIcon.isBlank())
+                ? installation.supportRoleIcon
+                : "headset";
+    }
+
+    public String installationSuperuserRoleIcon() {
+        Installation installation = installation();
+        return (installation != null && installation.superuserRoleIcon != null
+                && !installation.superuserRoleIcon.isBlank()) ? installation.superuserRoleIcon : "crown";
+    }
+
+    public String installationTamRoleIcon() {
+        Installation installation = installation();
+        return (installation != null && installation.tamRoleIcon != null && !installation.tamRoleIcon.isBlank())
+                ? installation.tamRoleIcon
+                : "briefcase";
+    }
+
+    public String installationUserRoleIcon() {
+        Installation installation = installation();
+        return (installation != null && installation.userRoleIcon != null && !installation.userRoleIcon.isBlank())
+                ? installation.userRoleIcon
+                : "user";
+    }
+
+    public String installationExternalRoleIcon() {
+        Installation installation = installation();
+        return (installation != null && installation.externalRoleIcon != null
+                && !installation.externalRoleIcon.isBlank()) ? installation.externalRoleIcon : "user-star";
+    }
+
+    public String installationAdminRoleColor() {
+        Installation installation = installation();
+        return normalizeRoleColor(installation == null ? null : installation.adminRoleColor);
+    }
+
+    public String installationSupportRoleColor() {
+        Installation installation = installation();
+        return normalizeRoleColor(installation == null ? null : installation.supportRoleColor);
+    }
+
+    public String installationSuperuserRoleColor() {
+        Installation installation = installation();
+        return normalizeRoleColor(installation == null ? null : installation.superuserRoleColor);
+    }
+
+    public String installationTamRoleColor() {
+        Installation installation = installation();
+        return normalizeRoleColor(installation == null ? null : installation.tamRoleColor);
+    }
+
+    public String installationUserRoleColor() {
+        Installation installation = installation();
+        return normalizeRoleColor(installation == null ? null : installation.userRoleColor);
+    }
+
+    public String installationExternalRoleColor() {
+        Installation installation = installation();
+        return normalizeRoleColor(installation == null ? null : installation.externalRoleColor);
+    }
+
     private Installation installation() {
         return Installation.find("singletonKey", "installation").firstResult();
     }
@@ -106,6 +176,17 @@ public class BrandingProvider {
         String normalized = color.trim();
         if (!HEX_COLOR_PATTERN.matcher(normalized).matches()) {
             return DEFAULT_INSTALLATION_COLOR;
+        }
+        return normalized.toLowerCase(Locale.ROOT);
+    }
+
+    public static String normalizeRoleColor(String color) {
+        if (color == null || color.isBlank()) {
+            return null;
+        }
+        String normalized = color.trim();
+        if (!HEX_COLOR_PATTERN.matcher(normalized).matches()) {
+            return null;
         }
         return normalized.toLowerCase(Locale.ROOT);
     }

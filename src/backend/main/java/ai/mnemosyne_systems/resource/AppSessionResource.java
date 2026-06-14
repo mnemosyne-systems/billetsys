@@ -35,11 +35,27 @@ public class AppSessionResource {
         String installationHeadersColor = brandingProvider.installationHeadersColor();
         String installationButtonsColor = brandingProvider.installationButtonsColor();
         boolean installationUse24HourClock = brandingProvider.installationUse24HourClock();
+        String installationAdminRoleIcon = brandingProvider.installationAdminRoleIcon();
+        String installationSupportRoleIcon = brandingProvider.installationSupportRoleIcon();
+        String installationSuperuserRoleIcon = brandingProvider.installationSuperuserRoleIcon();
+        String installationTamRoleIcon = brandingProvider.installationTamRoleIcon();
+        String installationUserRoleIcon = brandingProvider.installationUserRoleIcon();
+        String installationExternalRoleIcon = brandingProvider.installationExternalRoleIcon();
+        String installationAdminRoleColor = brandingProvider.installationAdminRoleColor();
+        String installationSupportRoleColor = brandingProvider.installationSupportRoleColor();
+        String installationSuperuserRoleColor = brandingProvider.installationSuperuserRoleColor();
+        String installationTamRoleColor = brandingProvider.installationTamRoleColor();
+        String installationUserRoleColor = brandingProvider.installationUserRoleColor();
+        String installationExternalRoleColor = brandingProvider.installationExternalRoleColor();
         User user = AuthHelper.findUser(auth);
         if (user == null) {
             return new SessionResponse(false, null, null, null, null, null, installationCompanyName,
                     installationLogoBase64, installationBackgroundBase64, installationHeaderFooterColor,
                     installationHeadersColor, installationButtonsColor, installationUse24HourClock,
+                    installationAdminRoleIcon, installationSupportRoleIcon, installationSuperuserRoleIcon,
+                    installationTamRoleIcon, installationUserRoleIcon, installationExternalRoleIcon,
+                    installationAdminRoleColor, installationSupportRoleColor, installationSuperuserRoleColor,
+                    installationTamRoleColor, installationUserRoleColor, installationExternalRoleColor,
                     AuthHelper.INACTIVITY_TIMEOUT_SECONDS, AuthHelper.WARNING_LEAD_SECONDS, null, "/login", List.of(),
                     List.of("The React shell now uses clean URLs for login, tickets, and admin pages.",
                             "Sign in to see role-aware navigation."));
@@ -47,7 +63,11 @@ public class AppSessionResource {
         return new SessionResponse(true, user.name, user.getDisplayName(), user.email, user.type, user.logoBase64,
                 installationCompanyName, installationLogoBase64, installationBackgroundBase64,
                 installationHeaderFooterColor, installationHeadersColor, installationButtonsColor,
-                installationUse24HourClock, AuthHelper.INACTIVITY_TIMEOUT_SECONDS, AuthHelper.WARNING_LEAD_SECONDS,
+                installationUse24HourClock, installationAdminRoleIcon, installationSupportRoleIcon,
+                installationSuperuserRoleIcon, installationTamRoleIcon, installationUserRoleIcon,
+                installationExternalRoleIcon, installationAdminRoleColor, installationSupportRoleColor,
+                installationSuperuserRoleColor, installationTamRoleColor, installationUserRoleColor,
+                installationExternalRoleColor, AuthHelper.INACTIVITY_TIMEOUT_SECONDS, AuthHelper.WARNING_LEAD_SECONDS,
                 user.pageSize, homePath(user), navigation(user),
                 List.of("The React shell now covers tickets, admin management, profile, and reports.",
                         "Legacy page routes now redirect into the React screens for the same workflows."));
@@ -100,7 +120,11 @@ public class AppSessionResource {
     public record SessionResponse(boolean authenticated, String username, String displayName, String email, String role,
             String logoBase64, String installationCompanyName, String installationLogoBase64,
             String installationBackgroundBase64, String installationHeaderFooterColor, String installationHeadersColor,
-            String installationButtonsColor, boolean installationUse24HourClock, int inactivityTimeoutSeconds,
+            String installationButtonsColor, boolean installationUse24HourClock, String installationAdminRoleIcon,
+            String installationSupportRoleIcon, String installationSuperuserRoleIcon, String installationTamRoleIcon,
+            String installationUserRoleIcon, String installationExternalRoleIcon, String installationAdminRoleColor,
+            String installationSupportRoleColor, String installationSuperuserRoleColor, String installationTamRoleColor,
+            String installationUserRoleColor, String installationExternalRoleColor, int inactivityTimeoutSeconds,
             int inactivityWarningSeconds, Integer defaultPageSize, String homePath, List<NavLink> navigation,
             List<String> notices) {
     }

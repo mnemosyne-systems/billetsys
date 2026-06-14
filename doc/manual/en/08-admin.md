@@ -38,6 +38,10 @@ Admins also maintain installation branding. The Installation entity stores the s
 
 The branding controls are available on the Owner edit screen. Between the Background and Colors sections, admins can use the slider-style clock toggle to decide whether the header clock is shown as `2:43pm` or `14:43` throughout the application.
 
+### Role Badges and Colors
+
+Admins can also customize the visual appearance of each user role across the application via the Owner edit screen. For each role (Admin, Support, TAM, Superuser, User, and External), admins can select a specific Tabler icon from a predefined dropdown and assign a distinct color using the color picker. These role badges appear next to user names in directories, hover cards, and ticket conversations to instantly identify a user's role.
+
 ## Oversight and reporting
 
 The admin role has the broadest reporting perspective. Admin users can review the system at a global level and use that visibility to understand overall workload, trends, and organizational activity.

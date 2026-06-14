@@ -53,6 +53,18 @@ export interface OwnerCompany extends NamedEntity {
   buttonsColor?: string;
   use24HourClock?: boolean;
   ticketAutoCloseDays?: number;
+  adminRoleIcon?: string;
+  supportRoleIcon?: string;
+  superuserRoleIcon?: string;
+  tamRoleIcon?: string;
+  userRoleIcon?: string;
+  externalRoleIcon?: string;
+  adminRoleColor?: string;
+  supportRoleColor?: string;
+  superuserRoleColor?: string;
+  tamRoleColor?: string;
+  userRoleColor?: string;
+  externalRoleColor?: string;
   supportUsers: UserReference[];
   tamUsers: UserReference[];
   supportOptions: UserReference[];
