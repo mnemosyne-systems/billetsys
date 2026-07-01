@@ -22,14 +22,16 @@ import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
@@ -58,7 +60,12 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 @Produces(MediaType.TEXT_HTML)
 @Blocking
+@RolesAllowed("support")
 public class SupportResource {
+
+    @Inject
+    CurrentUser currentUser;
+
     @Inject
     CrossReferenceService crossReferenceService;
 
@@ -66,29 +73,25 @@ public class SupportResource {
     TicketEmailService ticketEmailService;
 
     @GET
-    public Response listTickets(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireSupport(auth);
+    public Response listTickets() {
         return Response.seeOther(URI.create("/support/tickets")).build();
     }
 
     @GET
     @Path("/open")
-    public Response listOpenTickets(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireSupport(auth);
+    public Response listOpenTickets() {
         return Response.seeOther(URI.create("/support/tickets/open")).build();
     }
 
     @GET
     @Path("/closed")
-    public Response listClosedTickets(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireSupport(auth);
+    public Response listClosedTickets() {
         return Response.seeOther(URI.create("/support/tickets/closed")).build();
     }
 
     @GET
     @Path("/support-users/{id}")
-    public Response viewSupportUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireSupport(auth);
+    public Response viewSupportUser(@PathParam("id") Long id) {
         User supportUser = User.findById(id);
         if (supportUser == null || !User.TYPE_SUPPORT.equalsIgnoreCase(supportUser.type)) {
             throw new NotFoundException();
@@ -98,8 +101,7 @@ public class SupportResource {
 
     @GET
     @Path("/tam-users/{id}")
-    public Response viewTamUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireSupport(auth);
+    public Response viewTamUser(@PathParam("id") Long id) {
         User tamUser = User.findById(id);
         if (tamUser == null || !User.TYPE_TAM.equalsIgnoreCase(tamUser.type)) {
             throw new NotFoundException();
@@ -109,8 +111,7 @@ public class SupportResource {
 
     @GET
     @Path("/superuser-users/{id}")
-    public Response viewSuperuser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireSupport(auth);
+    public Response viewSuperuser(@PathParam("id") Long id) {
         User superuser = User.findById(id);
         if (superuser == null || !User.TYPE_SUPERUSER.equalsIgnoreCase(superuser.type)) {
             throw new NotFoundException();
@@ -120,8 +121,7 @@ public class SupportResource {
 
     @GET
     @Path("/user-profiles/{id}")
-    public Response viewUserProfile(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireSupport(auth);
+    public Response viewUserProfile(@PathParam("id") Long id) {
         User viewedUser = User.findById(id);
         if (viewedUser == null) {
             throw new NotFoundException();
@@ -131,8 +131,7 @@ public class SupportResource {
 
     @GET
     @Path("/companies/{id}")
-    public Response viewCompany(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireSupport(auth);
+    public Response viewCompany(@PathParam("id") Long id) {
         Company company = Company.findById(id);
         if (company == null) {
             throw new NotFoundException();
@@ -142,16 +141,13 @@ public class SupportResource {
 
     @GET
     @Path("/users")
-    public Response supportUsersRoot(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireSupport(auth);
+    public Response supportUsersRoot() {
         return Response.seeOther(URI.create("/support/users")).build();
     }
 
     @GET
     @Path("/users/{companyId}")
-    public Response listSupportUsers(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("companyId") Long companyId) {
-        requireSupport(auth);
+    public Response listSupportUsers(@PathParam("companyId") Long companyId) {
         List<Company> companies = Company.list("order by name");
         Company selectedCompany = null;
         if (companyId != null) {
@@ -168,9 +164,7 @@ public class SupportResource {
 
     @GET
     @Path("/users/{companyId}/create")
-    public Response createSupportUserForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("companyId") Long companyId) {
-        requireSupport(auth);
+    public Response createSupportUserForm(@PathParam("companyId") Long companyId) {
         Company selectedCompany = Company.findById(companyId);
         if (selectedCompany == null) {
             throw new NotFoundException();
@@ -181,14 +175,12 @@ public class SupportResource {
     @POST
     @Path("/users")
     @Transactional
-    public Response createSupportUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
-            @FormParam("fullName") String fullName, @FormParam("email") String email,
-            @FormParam("social") String social, @FormParam("phoneNumber") String phoneNumber,
-            @FormParam("phoneExtension") String phoneExtension, @FormParam("timezoneId") Long timezoneId,
-            @FormParam("countryId") Long countryId, @FormParam("password") String password,
-            @FormParam("type") String type, @FormParam("companyId") Long companyId,
-            @Context HttpServletRequest request) {
-        requireSupport(auth);
+    public Response createSupportUser(@FormParam("name") String name, @FormParam("fullName") String fullName,
+            @FormParam("email") String email, @FormParam("social") String social,
+            @FormParam("phoneNumber") String phoneNumber, @FormParam("phoneExtension") String phoneExtension,
+            @FormParam("timezoneId") Long timezoneId, @FormParam("countryId") Long countryId,
+            @FormParam("password") String password, @FormParam("type") String type,
+            @FormParam("companyId") Long companyId, @Context HttpServletRequest request) {
         if (name == null || name.isBlank()) {
             throw new BadRequestException("Username is required");
         }
@@ -241,20 +233,17 @@ public class SupportResource {
 
     @GET
     @Path("/tickets/create")
-    public Response createForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireSupport(auth);
+    public Response createForm() {
         return Response.seeOther(URI.create("/support/tickets/new")).build();
     }
 
     @GET
     @Path("/tickets/{id}")
-    public Response ticketDetail(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @jakarta.ws.rs.PathParam("id") Long id) {
+    public Response ticketDetail(@jakarta.ws.rs.PathParam("id") Long id) {
         Ticket ticket = Ticket.findById(id);
         if (ticket == null) {
             throw new NotFoundException();
         }
-        requireSupport(auth);
         return Response.seeOther(URI.create("/support/tickets/" + id)).build();
     }
 
@@ -266,9 +255,8 @@ public class SupportResource {
     @Path("/tickets/{id}/messages")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
-    public Response addMessage(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @jakarta.ws.rs.PathParam("id") Long id,
-            MultipartFormDataInput input) {
-        User user = requireSupport(auth);
+    public Response addMessage(@jakarta.ws.rs.PathParam("id") Long id, MultipartFormDataInput input) {
+        User user = currentUser.get();
         String body = AttachmentHelper.readFormValue(input, "body");
         if (body == null || body.isBlank()) {
             throw new BadRequestException("Message is required");
@@ -307,9 +295,8 @@ public class SupportResource {
     @Path("/tickets")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
-    public Response createTicket(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
-        User user = requireSupport(auth);
+    public Response createTicket(@HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
+        User user = currentUser.get();
         String status = AttachmentHelper.readFormValue(input, "status");
         String title = Ticket.normalizeTitle(AttachmentHelper.readFormValue(input, "title"));
         String messageBody = AttachmentHelper.readFormValue(input, "message");
@@ -373,14 +360,14 @@ public class SupportResource {
     @POST
     @Path("/tickets/{id}")
     @Transactional
-    public Response updateTicket(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, @jakarta.ws.rs.PathParam("id") Long id,
-            @FormParam("title") String title, @FormParam("status") String status,
-            @FormParam("companyId") Long companyId, @FormParam("companyEntitlementId") Long companyEntitlementId,
-            @FormParam("categoryId") Long categoryId, @FormParam("externalIssueLink") String externalIssueLink,
+    public Response updateTicket(@HeaderParam("X-Billetsys-Client") String client,
+            @jakarta.ws.rs.PathParam("id") Long id, @FormParam("title") String title,
+            @FormParam("status") String status, @FormParam("companyId") Long companyId,
+            @FormParam("companyEntitlementId") Long companyEntitlementId, @FormParam("categoryId") Long categoryId,
+            @FormParam("externalIssueLink") String externalIssueLink,
             @FormParam("affectsVersionId") Long affectsVersionId,
             @FormParam("resolvedVersionId") Long resolvedVersionId) {
-        User user = requireSupport(auth);
+        User user = currentUser.get();
         String normalizedTitle = Ticket.normalizeTitle(title);
         Ticket ticket = Ticket.findById(id);
         if (ticket == null) {
@@ -441,9 +428,9 @@ public class SupportResource {
     @POST
     @Path("/tickets/{id}/assign")
     @Transactional
-    public Response assignTicket(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, @jakarta.ws.rs.PathParam("id") Long id) {
-        User user = requireSupport(auth);
+    public Response assignTicket(@HeaderParam("X-Billetsys-Client") String client,
+            @jakarta.ws.rs.PathParam("id") Long id) {
+        User user = currentUser.get();
         Ticket ticket = Ticket.findById(id);
         if (ticket == null) {
             throw new NotFoundException();
@@ -489,9 +476,7 @@ public class SupportResource {
 
     @GET
     @Path("/tickets/company/{id}/entitlements")
-    public Response companyEntitlements(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @jakarta.ws.rs.PathParam("id") Long id, @QueryParam("message") String message) {
-        requireSupport(auth);
+    public Response companyEntitlements(@jakarta.ws.rs.PathParam("id") Long id, @QueryParam("message") String message) {
         Company company = Company.findById(id);
         if (company == null) {
             throw new NotFoundException();
@@ -583,11 +568,4 @@ public class SupportResource {
         }
     }
 
-    private User requireSupport(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isSupport(user)) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
-        }
-        return user;
-    }
 }

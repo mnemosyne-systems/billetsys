@@ -12,8 +12,11 @@ import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
-import jakarta.ws.rs.CookieParam;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
+
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -37,19 +40,17 @@ import java.util.Set;
 @Blocking
 public class RssResource {
 
+    @Inject
+    CurrentUser currentUser;
+
     private static final DateTimeFormatter RFC_1123 = DateTimeFormatter.RFC_1123_DATE_TIME;
 
     @GET
     @Path("/support")
     @Produces("application/rss+xml")
-    public Response support(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @Context UriInfo uriInfo) {
-        User user = AuthHelper.findUser(auth);
-        if (user == null) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
-        }
-        if (!AuthHelper.isSupport(user)) {
-            throw new ForbiddenException();
-        }
+    @RolesAllowed("support")
+    public Response support(@Context UriInfo uriInfo) {
+        User user = currentUser.get();
         List<Ticket> assigned = Ticket.find(
                 "select distinct t from Ticket t join t.supportUsers u where u = ?1 and (t.status is null or lower(t.status) <> 'closed')",
                 user).list();
@@ -65,14 +66,9 @@ public class RssResource {
     @GET
     @Path("/tam")
     @Produces("application/rss+xml")
-    public Response tam(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @Context UriInfo uriInfo) {
-        User user = AuthHelper.findUser(auth);
-        if (user == null) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
-        }
-        if (!User.TYPE_TAM.equalsIgnoreCase(user.type)) {
-            throw new ForbiddenException();
-        }
+    @RolesAllowed("tam")
+    public Response tam(@Context UriInfo uriInfo) {
+        User user = currentUser.get();
         List<Ticket> scoped = Ticket.list(
                 "select distinct t from Ticket t left join t.tamUsers tu left join t.company c left join c.users cu where tu = ?1 or cu = ?1",
                 user);
@@ -95,14 +91,9 @@ public class RssResource {
     @GET
     @Path("/superuser")
     @Produces("application/rss+xml")
-    public Response superuser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @Context UriInfo uriInfo) {
-        User user = AuthHelper.findUser(auth);
-        if (user == null) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
-        }
-        if (!User.TYPE_SUPERUSER.equalsIgnoreCase(user.type)) {
-            throw new ForbiddenException();
-        }
+    @RolesAllowed("superuser")
+    public Response superuser(@Context UriInfo uriInfo) {
+        User user = currentUser.get();
         List<Ticket> scoped = SuperuserResource.loadScopedTickets(user);
         LinkedHashMap<Long, Ticket> merged = new LinkedHashMap<>();
         for (Ticket ticket : scoped) {

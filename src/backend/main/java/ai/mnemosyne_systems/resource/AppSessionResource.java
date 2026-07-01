@@ -11,23 +11,29 @@ package ai.mnemosyne_systems.resource;
 import ai.mnemosyne_systems.infra.BrandingProvider;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import java.util.List;
+import jakarta.annotation.security.PermitAll;
 
 @Path("/api/app/session")
 @Produces(MediaType.APPLICATION_JSON)
+@PermitAll
 public class AppSessionResource {
 
     @Inject
     BrandingProvider brandingProvider;
 
+    @Inject
+    CurrentUser currentUser;
+
     @GET
-    public SessionResponse session(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
+    public SessionResponse session() {
+
         String installationCompanyName = brandingProvider.installationCompanyName();
         String installationLogoBase64 = brandingProvider.installationLogoBase64();
         String installationBackgroundBase64 = brandingProvider.installationBackgroundBase64();
@@ -47,7 +53,10 @@ public class AppSessionResource {
         String installationTamRoleColor = brandingProvider.installationTamRoleColor();
         String installationUserRoleColor = brandingProvider.installationUserRoleColor();
         String installationExternalRoleColor = brandingProvider.installationExternalRoleColor();
-        User user = AuthHelper.findUser(auth);
+
+        // resolve user from Keycloak
+        User user = currentUser.getOrNull();
+
         if (user == null) {
             return new SessionResponse(false, null, null, null, null, null, installationCompanyName,
                     installationLogoBase64, installationBackgroundBase64, installationHeaderFooterColor,

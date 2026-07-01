@@ -13,8 +13,11 @@ import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
@@ -27,13 +30,16 @@ import java.util.List;
 
 @Path("/api/tam/users")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("tam")
 public class TamUserApiResource {
+
+    @Inject
+    CurrentUser cUser;
 
     @GET
     @Transactional
-    public UserDirectoryApiModels.DirectoryListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId) {
-        User currentUser = requireTam(auth);
+    public UserDirectoryApiModels.DirectoryListResponse list(@QueryParam("companyId") Long companyId) {
+        User currentUser = cUser.get();
         List<Company> companies = Company
                 .find("select distinct c from Company c join c.users u where u = ?1 order by c.name", currentUser)
                 .list();
@@ -54,9 +60,9 @@ public class TamUserApiResource {
     @GET
     @Path("/bootstrap")
     @Transactional
-    public UserDirectoryApiModels.UserFormResponse bootstrap(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId, @QueryParam("countryId") Long countryId) {
-        User currentUser = requireTam(auth);
+    public UserDirectoryApiModels.UserFormResponse bootstrap(@QueryParam("companyId") Long companyId,
+            @QueryParam("countryId") Long countryId) {
+        User currentUser = cUser.get();
         List<Company> companies = Company
                 .find("select distinct c from Company c join c.users u where u = ?1 order by c.name", currentUser)
                 .list();
@@ -102,13 +108,5 @@ public class TamUserApiResource {
             }
         }
         return Country.find("code", "US").firstResult();
-    }
-
-    private User requireTam(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isUser(user) || !User.TYPE_TAM.equalsIgnoreCase(user.type)) {
-            throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-        return user;
     }
 }

@@ -11,9 +11,10 @@ package ai.mnemosyne_systems.resource;
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
-import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
-import jakarta.ws.rs.CookieParam;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -25,14 +26,16 @@ import java.util.List;
 @Path("/timezones")
 @Produces(MediaType.APPLICATION_JSON)
 @Blocking
+@RolesAllowed({ "admin", "support", "superuser", "tam", "user" })
 public class TimezoneResource {
 
+    @Inject
+    CurrentUser currentUser;
+
     @GET
-    public Response list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @QueryParam("countryId") Long countryId) {
-        User user = AuthHelper.findUser(auth);
-        if (user == null) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
-        }
+    public Response list(@QueryParam("countryId") Long countryId) {
+        User user = currentUser.get();
+
         if (countryId == null) {
             return Response.ok("[]").build();
         }

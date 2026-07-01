@@ -18,9 +18,11 @@ import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotAuthorizedException;
@@ -40,18 +42,21 @@ import java.util.Set;
 
 @Path("/api/support/tickets")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("support")
 public class SupportTicketApiResource {
+
+    @Inject
+    CurrentUser currentUser;
 
     @Inject
     CrossReferenceService crossReferenceService;
 
     @GET
     @Transactional
-    public SupportTicketListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q,
-            @QueryParam("page") Integer page, @QueryParam("pageSize") Integer pageSize, @QueryParam("sort") String sort,
-            @QueryParam("dir") String dir) {
-        User user = requireSupport(auth);
+    public SupportTicketListResponse list(@QueryParam("view") @DefaultValue("assigned") String view,
+            @QueryParam("q") String q, @QueryParam("page") Integer page, @QueryParam("pageSize") Integer pageSize,
+            @QueryParam("sort") String sort, @QueryParam("dir") String dir) {
+        User user = currentUser.get();
         SupportTicketViewSupport.SupportTicketData data = SupportTicketViewSupport.buildTicketData(user);
         SupportTicketViewSupport.SupportTicketCounts counts = SupportTicketViewSupport.loadTicketCounts(user);
         String normalizedView = normalizeView(view);
@@ -84,10 +89,9 @@ public class SupportTicketApiResource {
     @GET
     @Path("/suggest")
     @Transactional
-    public TicketSuggestionResponse suggest(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q,
-            @QueryParam("exclude") Long exclude) {
-        User user = requireSupport(auth);
+    public TicketSuggestionResponse suggest(@QueryParam("view") @DefaultValue("assigned") String view,
+            @QueryParam("q") String q, @QueryParam("exclude") Long exclude) {
+        User user = currentUser.get();
         SupportTicketViewSupport.SupportTicketData data = SupportTicketViewSupport.buildTicketData(user);
         String normalizedView = normalizeView(view);
         List<Ticket> tickets = TicketSearchSupport.combineTickets(data.assignedTickets(), data.openTickets(),
@@ -103,9 +107,9 @@ public class SupportTicketApiResource {
     @GET
     @Path("/bootstrap")
     @Transactional
-    public SupportTicketBootstrapResponse bootstrap(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId, @QueryParam("companyEntitlementId") Long companyEntitlementId) {
-        User user = requireSupport(auth);
+    public SupportTicketBootstrapResponse bootstrap(@QueryParam("companyId") Long companyId,
+            @QueryParam("companyEntitlementId") Long companyEntitlementId) {
+        User user = currentUser.get();
         SupportTicketViewSupport.SupportTicketCounts counts = SupportTicketViewSupport.loadTicketCounts(user);
         List<Company> companies = Company.list("order by name");
         Company selectedCompany = selectCompany(companies, companyId);
@@ -137,9 +141,8 @@ public class SupportTicketApiResource {
     @GET
     @Path("/{id}")
     @Transactional
-    public SupportTicketDetailResponse detail(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        User user = requireSupport(auth);
+    public SupportTicketDetailResponse detail(@PathParam("id") Long id) {
+        User user = currentUser.get();
         SupportTicketViewSupport.SupportTicketCounts counts = SupportTicketViewSupport.loadTicketCounts(user);
         Ticket ticket = Ticket.findById(id);
         if (ticket == null) {
@@ -193,9 +196,7 @@ public class SupportTicketApiResource {
     @GET
     @Path("/{id}/references")
     @Transactional
-    public CrossReferenceService.CrossReferencesResponse references(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        requireSupport(auth);
+    public CrossReferenceService.CrossReferencesResponse references(@PathParam("id") Long id) {
         Ticket ticket = Ticket.findById(id);
         if (ticket == null) {
             throw new NotFoundException();
@@ -375,14 +376,6 @@ public class SupportTicketApiResource {
             case User.TYPE_TAM -> "/support/tam-users/" + user.id;
             default -> "/support/user-profiles/" + user.id;
         };
-    }
-
-    private User requireSupport(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isSupport(user)) {
-            throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-        return user;
     }
 
     public record SupportTicketListResponse(String view, String title, int assignedCount, int openCount,

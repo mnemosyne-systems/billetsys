@@ -1,0 +1,128 @@
+{
+  "realm": "${KEYCLOAK_REALM_NAME}",
+  "enabled": true,
+  "sslRequired": "external",
+  "defaultRoles": ["user"],
+  "verifyEmail": "${KEYCLOAK_ENABLE_VERIFYE_EMAIL}",
+  "registrationAllowed": "${KEYCLOAK_ENABLE_REGISTRATION}",
+  "resetPasswordAllowed": "${KEYCLOAK_ENABLE_RESET_PASSWORD}",
+  "smtpServer": {
+    "host": "${KEYCLOAK_MAIL_HOST}",
+    "port": "${KEYCLOAK_MAIL_PORT}",
+    "from": "${KEYCLOAK_MAIL_FROM}",
+    "fromDisplayName": "${KEYCLOAK_MAIL_FROM_NAME}",
+    "auth": "true",
+    "user": "${KEYCLOAK_MAIL_USERNAME}",
+    "password": "${KEYCLOAK_MAIL_PASSWORD}",
+    "starttls": "${KEYCLOAK_MAIL_START_TLS}",
+    "ssl": "${KEYCLOAK_MAIL_SSL}"
+  },
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "Regular user role"
+      },
+      {
+        "name": "support",
+        "description": "Support role"
+      },
+      {
+        "name": "superuser",
+        "description": "superuser role"
+      },
+      {
+        "name": "tam",
+        "description": "tam role"
+      },
+      {
+        "name": "admin",
+        "description": "Administrator role"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "${KEYCLOAK_BACKEND_CLIENT_ID}",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": false,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${KEYCLOAK_BACKEND_CLIENT_SECRET}",
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "redirectUris": [
+        "${BACKEND_URL}/*"
+      ],
+      "webOrigins": [
+        "${BACKEND_URL}"
+      ]
+    },
+    {
+      "clientId": "${KEYCLOAK_FRONTEND_CLIENT_ID}",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "bearerOnly": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "${FRONTEND_URL}/*"
+      ],
+      "webOrigins": [
+        "${FRONTEND_URL}"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "${KEYCLOAK_ADMIN_USER}",
+      "enabled": true,
+      "email": "${KEYCLOAK_ADMIN_EMAIL}",
+      "firstName": "${KEYCLOAK_ADMIN_FIRSTNAME}",
+      "lastName": "${KEYCLOAK_ADMIN_LASTNAME}",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${KEYCLOAK_ADMIN_PASSWORD}"
+        }
+      ],
+      "realmRoles": ["admin"]
+    },
+    {
+      "username": "support1",
+      "enabled": true,
+      "email": "support@support.com",
+      "firstName": "Sarah",
+      "lastName": "Johnson",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "support1"
+        }
+      ],
+      "realmRoles": ["support"]
+    },
+    {
+      "username": "user1",
+      "enabled": true,
+      "email": "user@user.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "user1"
+        }
+      ],
+      "realmRoles": ["user"]
+    }
+  ]
+}

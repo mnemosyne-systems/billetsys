@@ -15,8 +15,11 @@ import ai.mnemosyne_systems.model.ReportData;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.Path;
@@ -36,6 +39,7 @@ import java.util.TreeMap;
 
 @Path("/api/reports")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed({ "admin", "tam", "superuser" })
 public class ReportApiResource {
     private static final String BUCKET_UNDER_1H = "< 1h";
     private static final String BUCKET_1_TO_8H = "1–8h";
@@ -43,11 +47,13 @@ public class ReportApiResource {
     private static final String BUCKET_1_TO_7D = "1–7 days";
     private static final String BUCKET_OVER_7D = "> 7 days";
 
+    @Inject
+    CurrentUser currentUser;
+
     @GET
     @Transactional
-    public ReportResponse reports(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId, @QueryParam("period") String period) {
-        User user = requireReporter(auth);
+    public ReportResponse reports(@QueryParam("companyId") Long companyId, @QueryParam("period") String period) {
+        User user = currentUser.get();
         String safePeriod = period == null || period.isBlank() ? "all" : period.toLowerCase();
         if (AuthHelper.isAdmin(user)) {
             List<Company> companies = Company.list(
@@ -110,18 +116,6 @@ public class ReportApiResource {
                                         ticket.category == null ? null : ticket.category.name))
                                 .toList()))
                 .toList();
-    }
-
-    private User requireReporter(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (user == null) {
-            throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-        if (AuthHelper.isAdmin(user) || User.TYPE_TAM.equalsIgnoreCase(user.type)
-                || User.TYPE_SUPERUSER.equalsIgnoreCase(user.type)) {
-            return user;
-        }
-        throw new WebApplicationException(Response.status(Response.Status.FORBIDDEN).location(URI.create("/")).build());
     }
 
     private ReportData buildReportData(List<Company> filterCompanies, String period) {

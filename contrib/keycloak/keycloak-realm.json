@@ -1,0 +1,128 @@
+{
+  "realm": "billetsys",
+  "enabled": true,
+  "sslRequired": "external",
+  "defaultRoles": ["user"],
+  "verifyEmail": "true",
+  "registrationAllowed": "true",
+  "resetPasswordAllowed": "true",
+  "smtpServer": {
+    "host": "smtp.example.com",
+    "port": "587",
+    "from": "example@example.com",
+    "fromDisplayName": "example",
+    "auth": "true",
+    "user": "example@example.com",
+    "password": "**** **** **** ****",
+    "starttls": "true",
+    "ssl": "false"
+  },
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "Regular user role"
+      },
+      {
+        "name": "support",
+        "description": "Support role"
+      },
+      {
+        "name": "superuser",
+        "description": "superuser role"
+      },
+      {
+        "name": "tam",
+        "description": "tam role"
+      },
+      {
+        "name": "admin",
+        "description": "Administrator role"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "billetsys-backend",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": false,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "123456",
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "redirectUris": [
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080"
+      ]
+    },
+    {
+      "clientId": "billetsys-frontend",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "bearerOnly": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "Admin",
+      "enabled": true,
+      "email": "admin@admin.com",
+      "firstName": "admin",
+      "lastName": "admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin"
+        }
+      ],
+      "realmRoles": ["admin"]
+    },
+    {
+      "username": "support1",
+      "enabled": true,
+      "email": "support@support.com",
+      "firstName": "Sarah",
+      "lastName": "Johnson",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "support1"
+        }
+      ],
+      "realmRoles": ["support"]
+    },
+    {
+      "username": "user1",
+      "enabled": true,
+      "email": "user@user.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "user1"
+        }
+      ],
+      "realmRoles": ["user"]
+    }
+  ]
+}

@@ -40,6 +40,9 @@ public class User extends PanacheEntityBase {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
     public Long id;
 
+    @Column(name = "keycloak_id", unique = true, nullable = true)
+    public String keycloakId;
+
     @Column(nullable = false)
     public String name;
 
@@ -69,7 +72,7 @@ public class User extends PanacheEntityBase {
     @Column(name = "user_type", nullable = false)
     public String type;
 
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password_hash")
     public String passwordHash;
 
     @Column(name = "logo_base64", columnDefinition = "text")
