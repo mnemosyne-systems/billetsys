@@ -11,7 +11,9 @@ package ai.mnemosyne_systems.resource;
 import ai.mnemosyne_systems.model.*;
 import ai.mnemosyne_systems.service.PdfService;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -28,6 +30,7 @@ import java.util.TreeMap;
 @Path("/reports")
 @Produces(MediaType.TEXT_HTML)
 @Blocking
+@RolesAllowed({ "admin", "tam", "superuser" })
 public class ReportResource {
     private static final String BUCKET_UNDER_1H = "< 1h";
     private static final String BUCKET_1_TO_8H = "1–8h";
@@ -38,26 +41,26 @@ public class ReportResource {
     @Inject
     PdfService pdfService;
 
+    @Inject
+    CurrentUser currentUser;
+
     @GET
-    public Object adminReports(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId, @QueryParam("period") String period) {
-        requireAdmin(auth);
+    @RolesAllowed("admin")
+    public Object adminReports(@QueryParam("companyId") Long companyId, @QueryParam("period") String period) {
         return Response.seeOther(URI.create("/reports" + reportQuery(companyId, period))).build();
     }
 
     @GET
     @Path("/tam")
-    public Object tamReports(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @QueryParam("companyId") Long companyId,
-            @QueryParam("period") String period) {
-        requireTam(auth);
+    @RolesAllowed("tam")
+    public Object tamReports(@QueryParam("companyId") Long companyId, @QueryParam("period") String period) {
         return Response.seeOther(URI.create("/reports" + reportQuery(companyId, period))).build();
     }
 
     @GET
     @Path("/superuser")
-    public Object superuserReports(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId, @QueryParam("period") String period) {
-        requireSuperuser(auth);
+    @RolesAllowed("superuser")
+    public Object superuserReports(@QueryParam("companyId") Long companyId, @QueryParam("period") String period) {
         return Response.seeOther(URI.create("/reports" + reportQuery(companyId, period))).build();
     }
 
@@ -76,14 +79,13 @@ public class ReportResource {
     @Path("/export")
     @Produces("application/pdf")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response exportAdminReport(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId, @QueryParam("period") String period,
+    @RolesAllowed("admin")
+    public Response exportAdminReport(@QueryParam("companyId") Long companyId, @QueryParam("period") String period,
             @FormParam("statusChart") String statusChart, @FormParam("categoryChart") String categoryChart,
             @FormParam("companyChart") String companyChart, @FormParam("timeChart") String timeChart,
             @FormParam("responseTimeChart") String responseTimeChart,
             @FormParam("resolutionTimeChart") String resolutionTimeChart,
             @FormParam("histogramChart") String histogramChart) {
-        requireAdmin(auth);
         Company selectedCompany = companyId != null ? Company.findById(companyId) : null;
         String safePeriod = period == null || period.isBlank() ? "all" : period.toLowerCase();
         ReportData data = buildReportData(selectedCompany != null ? List.of(selectedCompany) : null, safePeriod);
@@ -99,14 +101,14 @@ public class ReportResource {
     @Path("/tam/export")
     @Produces("application/pdf")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response exportTamReport(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId, @QueryParam("period") String period,
+    @RolesAllowed("tam")
+    public Response exportTamReport(@QueryParam("companyId") Long companyId, @QueryParam("period") String period,
             @FormParam("statusChart") String statusChart, @FormParam("categoryChart") String categoryChart,
             @FormParam("companyChart") String companyChart, @FormParam("timeChart") String timeChart,
             @FormParam("responseTimeChart") String responseTimeChart,
             @FormParam("resolutionTimeChart") String resolutionTimeChart,
             @FormParam("histogramChart") String histogramChart) {
-        User user = requireTam(auth);
+        User user = currentUser.get();
         List<Company> tamCompanies = Company.list(
                 "select distinct c from Company c join c.users u where u = ?1 and exists (select t from Ticket t where t.company = c) order by c.name",
                 user);
@@ -129,14 +131,14 @@ public class ReportResource {
     @Path("/superuser/export")
     @Produces("application/pdf")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response exportSuperuserReport(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId, @QueryParam("period") String period,
+    @RolesAllowed("superuser")
+    public Response exportSuperuserReport(@QueryParam("companyId") Long companyId, @QueryParam("period") String period,
             @FormParam("statusChart") String statusChart, @FormParam("categoryChart") String categoryChart,
             @FormParam("companyChart") String companyChart, @FormParam("timeChart") String timeChart,
             @FormParam("responseTimeChart") String responseTimeChart,
             @FormParam("resolutionTimeChart") String resolutionTimeChart,
             @FormParam("histogramChart") String histogramChart) {
-        User user = requireSuperuser(auth);
+        User user = currentUser.get();
         List<Company> superuserCompanies = Company.list(
                 "select distinct c from Company c join c.users u where u = ?1 and exists (select t from Ticket t where t.company = c) order by c.name",
                 user);
@@ -382,27 +384,4 @@ public class ReportResource {
         return images;
     }
 
-    private User requireAdmin(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isAdmin(user)) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
-        }
-        return user;
-    }
-
-    private User requireTam(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (user == null || !User.TYPE_TAM.equalsIgnoreCase(user.type)) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
-        }
-        return user;
-    }
-
-    private User requireSuperuser(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (user == null || !User.TYPE_SUPERUSER.equalsIgnoreCase(user.type)) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
-        }
-        return user;
-    }
 }

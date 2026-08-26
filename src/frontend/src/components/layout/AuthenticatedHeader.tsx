@@ -15,6 +15,7 @@ import { installationCompanyName } from "../../utils/installationBranding";
 import { formatInstallationClock, toQueryString } from "../../utils/formatting";
 import { SmartLink, normalizeClientPath } from "../../utils/routing";
 import { isEditableTarget } from "../../utils/keyboard";
+import { useAuth } from "../../auth/useAuth";
 import {
   ticketCountsApiPath,
   ticketLabelForRole,
@@ -60,6 +61,7 @@ export default function AuthenticatedHeader({
 }: AuthenticatedHeaderProps) {
   const [now, setNow] = useState(() => new Date());
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const { keycloak } = useAuth();
   const { darkModeToggleRef, toggleDarkMode } = useDarkModeToggle();
   const location = useLocation();
   const navigate = useNavigate();
@@ -519,9 +521,15 @@ export default function AuthenticatedHeader({
                   </SmartLink>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <a href="/logout" onClick={() => setUserMenuOpen(false)}>
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      keycloak.logout({ redirectUri: window.location.origin });
+                    }}
+                    className="w-full text-left cursor-pointer"
+                  >
                     Sign out
-                  </a>
+                  </button>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

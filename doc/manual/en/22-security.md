@@ -10,44 +10,62 @@ The **Security** model in billetsys controls who can sign in, what they can acce
 
 Billetsys is built around differentiated roles and scoped access. Security is what makes that possible. It ensures that users reach the right parts of the system and that ticket, company, and administrative data are not treated as universally available.
 
-## Authentication
+## Keycloak
 
-Authentication is the starting point of access control. A user signs in with account credentials, and the application uses that identity to establish an active session.
+Billetsys uses **Keycloak** as its centralized identity provider.
 
-This allows billetsys to recognize the user across requests and present the correct role-specific experience.
+### Key Benefits:
+* **Centralized Credentials**: Manage your credentials securely through Keycloak.
+* **Automatic Session Renewal**: Your session stays active while you work without interrupting your tasks.
+* **Role-Based Access Control**: Capabilities and navigation are automatically tailored based on your assigned Keycloak realm roles.
+* **Self-Service Security**: Update passwords securely using Keycloak's self-service workflows.
 
-## Authorization
+---
 
-After sign-in, authorization determines what the user is allowed to do. This is where the role model becomes active.
+## How to Sign In
 
-In practice, authorization defines access across areas such as:
+1. **Access Billetsys**: Open the application URL in your browser.
+2. **Automatic SSO Redirection**: If you are not signed in, visiting protected areas will automatically redirect you to the official Keycloak SSO portal.
+3. **Enter Credentials**: Enter your username and password on the Keycloak login screen and click **Sign In**.
 
-* User-facing ticket views
-* Company-scoped coordination views
-* Support work areas
-* Administrative configuration
-* Reporting and oversight pages
+![Keycloak Login Screen](images/keycloak-login.png){ width=100% }
 
-This is one of the core design principles of billetsys because different roles are intentionally meant to see different scopes of work.
+4. **Role Dashboard Routing**: After successful authentication, Keycloak redirects you back to your role-specific home area (e.g., Support Workbench, Admin Dashboard, or Customer Ticket Portal).
 
-## Session behavior
+---
 
-Security in billetsys also depends on session handling. Once a user is authenticated, the session keeps the application connected to that identity until the user signs out or the session ends.
+## Account Provisioning & First-Time Sign-In
 
-This makes the system usable in day-to-day work while still preserving the idea of authenticated access.
+You do not need to manually pre-register inside Billetsys. On your first sign-in, Keycloak passes your authenticated profile (name, email, unique ID, and assigned roles) to Billetsys, which automatically provisions your account via **Just-In-Time (JIT) provisioning**.
 
-## Logout and account boundaries
+Subsequent logins dynamically sync any updated profile details and role assignments from Keycloak.
 
-Signing out is an important part of the same model. It closes the active session and ensures that the next interaction requires authentication again.
+---
 
-This is especially important in environments where multiple people may use the same device or shared workstation patterns exist.
+## Active Sessions & Inactivity Timeout
 
-## Password protection
+* **Silent Token Renewal**: While actively working in Billetsys, background processes automatically renew your security tokens every 15 seconds.
 
-Passwords are part of the security foundation of the system, but billetsys treats them as part of a broader access-control model rather than a standalone feature.
+---
 
-Together with session handling and role enforcement, password protection helps keep the application aligned with the responsibilities assigned to each user type.
+## Self-Service Password Updates
 
-## Why it matters
+To change your password:
+1. Click your profile name/avatar in the top navigation bar.
+2. Select **Change Password** (or navigate to `profile/password`).
+3. You will be redirected to Keycloak's secure **Update Password** page.
+4. Enter your new password, confirm it, and submit.
 
-Without security controls, billetsys would lose the structure that makes its role model and customer scoping useful. With authentication, authorization, and session control in place, the platform can support collaboration while still preserving boundaries between users, roles, and organizations.
+![Keycloak Password Update Screen](images/keycloak-password-update.png){ width=100% }
+
+Upon completion, Keycloak safely redirects you back to Billetsys with a success confirmation toast.
+
+---
+
+## Signing Out (Logout)
+
+To end your session securely:
+1. Click your profile avatar in the top navigation bar.
+2. Click **Sign out**.
+
+Signing out invalidates your Keycloak session tokens across the application.

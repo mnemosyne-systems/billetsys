@@ -12,9 +12,11 @@ import ai.mnemosyne_systems.model.Article;
 import ai.mnemosyne_systems.model.Attachment;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
@@ -22,9 +24,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -32,14 +32,18 @@ import java.util.Locale;
 @Path("/api/articles")
 @Produces(MediaType.APPLICATION_JSON)
 @Blocking
+@RolesAllowed({ "admin", "support", "superuser", "tam", "user" })
 public class ArticleApiResource {
+
+    @Inject
+    CurrentUser currentUser;
 
     @GET
     @Transactional
-    public ArticleListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @QueryParam("page") Integer page,
-            @QueryParam("pageSize") Integer pageSize, @QueryParam("sort") String sort, @QueryParam("dir") String dir,
-            @QueryParam("q") String q) {
-        User user = requireUser(auth);
+    public ArticleListResponse list(@QueryParam("page") Integer page, @QueryParam("pageSize") Integer pageSize,
+            @QueryParam("sort") String sort, @QueryParam("dir") String dir, @QueryParam("q") String q) {
+        User user = currentUser.get();
+
         ArticleResource.ensureSampleArticle();
         String needle = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
         List<ArticleSummary> allItems = Article.<Article> list("order by lower(title), id").stream()
@@ -59,17 +63,15 @@ public class ArticleApiResource {
 
     @GET
     @Path("/bootstrap")
-    public ArticleBootstrapResponse bootstrap(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        User user = requireUser(auth);
+    public ArticleBootstrapResponse bootstrap() {
+        User user = currentUser.get();
         return new ArticleBootstrapResponse(ArticleResource.canEdit(user), AuthHelper.isAdmin(user));
     }
 
     @GET
     @Path("/suggest")
     @Transactional
-    public ArticleSuggestionResponse suggest(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("q") @DefaultValue("") String q) {
-        requireUser(auth);
+    public ArticleSuggestionResponse suggest(@QueryParam("q") @DefaultValue("") String q) {
         ArticleResource.ensureSampleArticle();
         String needle = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
         List<Article> all = Article.<Article> list("order by id desc");
@@ -92,8 +94,8 @@ public class ArticleApiResource {
     @GET
     @Path("/{id}")
     @Transactional
-    public ArticleDetailResponse detail(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = requireUser(auth);
+    public ArticleDetailResponse detail(@PathParam("id") Long id) {
+        User user = currentUser.get();
         ArticleResource.ensureSampleArticle();
         Article article = ArticleResource.findArticleWithAttachments(id);
         if (article == null) {
@@ -103,14 +105,6 @@ public class ArticleApiResource {
         return new ArticleDetailResponse(article.id, article.title, article.tags, article.body,
                 ArticleResource.canEdit(user), AuthHelper.isAdmin(user),
                 ArticleResource.canEdit(user) ? "/articles/" + article.id + "/edit" : null, attachments);
-    }
-
-    private User requireUser(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (user == null) {
-            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-        return user;
     }
 
     private ArticleAttachment toAttachmentResponse(Attachment attachment) {

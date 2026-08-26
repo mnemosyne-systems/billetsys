@@ -6,6 +6,7 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
+// We don't need it anymore.
 package ai.mnemosyne_systems.resource;
 
 import ai.mnemosyne_systems.model.User;

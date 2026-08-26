@@ -16,9 +16,12 @@ import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
@@ -39,15 +42,19 @@ import java.util.Map;
 @Path("/api/ticket-workbench")
 @Produces(MediaType.APPLICATION_JSON)
 @Blocking
+@RolesAllowed("support")
 public class TicketWorkbenchApiResource {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMMM d yyyy, h.mma",
             Locale.ENGLISH);
 
+    @Inject
+    CurrentUser currentUser;
+
     @GET
     @Transactional
-    public TicketListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        User user = requireSupport(auth);
+    public TicketListResponse list() {
+        User user = currentUser.get();
         List<Ticket> tickets = Ticket.listAll();
         Map<Long, String> lastMessageLabels = new LinkedHashMap<>();
         for (Message message : MessageVisibilitySupport
@@ -69,9 +76,9 @@ public class TicketWorkbenchApiResource {
     @GET
     @Path("/bootstrap")
     @Transactional
-    public TicketFormResponse bootstrap(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("ticketId") Long ticketId, @QueryParam("companyId") Long companyId) {
-        User user = requireSupport(auth);
+    public TicketFormResponse bootstrap(@QueryParam("ticketId") Long ticketId,
+            @QueryParam("companyId") Long companyId) {
+        User user = currentUser.get();
         Ticket ticket = ticketId == null ? new Ticket()
                 : Ticket.find(
                         "select t from Ticket t left join fetch t.companyEntitlement ce left join fetch ce.entitlement left join fetch ce.supportLevel where t.id = ?1",
@@ -117,8 +124,8 @@ public class TicketWorkbenchApiResource {
     @GET
     @Path("/{id}")
     @Transactional
-    public TicketFormResponse detail(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        return bootstrap(auth, id, null);
+    public TicketFormResponse detail(@PathParam("id") Long id) {
+        return bootstrap(id, null);
     }
 
     private MessageSummary toMessageSummary(Message message) {
@@ -182,14 +189,6 @@ public class TicketWorkbenchApiResource {
 
     private String formatDate(LocalDateTime date) {
         return date == null ? "-" : DATE_FORMATTER.format(date);
-    }
-
-    private User requireSupport(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isSupport(user)) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
-        }
-        return user;
     }
 
     public record TicketListResponse(String title, String createPath, List<TicketListItem> items) {
