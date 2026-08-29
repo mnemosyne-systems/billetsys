@@ -13,12 +13,15 @@ import ai.mnemosyne_systems.model.Attachment;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.quarkus.hibernate.orm.panache.Panache;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
@@ -39,27 +42,28 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 @Produces(MediaType.TEXT_HTML)
 @Blocking
+@RolesAllowed("admin")
 public class CategoryResource {
     @jakarta.inject.Inject
     ai.mnemosyne_systems.service.EventService eventService;
 
+    @Inject
+    CurrentUser currentUser;
+
     @GET
-    public Response list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public Response list() {
         return Response.seeOther(URI.create("/categories")).build();
     }
 
     @GET
     @Path("/create")
-    public Response createForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public Response createForm() {
         return Response.seeOther(URI.create("/categories/new")).build();
     }
 
     @GET
     @Path("/{id}/edit")
-    public Response editForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public Response editForm(@PathParam("id") Long id) {
         if (findCategoryWithAttachments(id) == null) {
             throw new NotFoundException();
         }
@@ -68,8 +72,7 @@ public class CategoryResource {
 
     @GET
     @Path("/{id}")
-    public Response view(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public Response view(@PathParam("id") Long id) {
         if (findCategoryWithAttachments(id) == null) {
             throw new NotFoundException();
         }
@@ -79,9 +82,7 @@ public class CategoryResource {
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
-    public Response create(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
-        requireAdmin(auth);
+    public Response create(@HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
         String name = AttachmentHelper.readFormValue(input, "name");
         String description = AttachmentHelper.readFormValue(input, "description");
         String isDefault = AttachmentHelper.readFormValue(input, "isDefault");
@@ -97,8 +98,9 @@ public class CategoryResource {
         category.description = description == null ? "" : description.trim();
         category.isDefault = makeDefault;
         category.persist();
+        User user = currentUser.get();
         eventService.record(category.id, ai.mnemosyne_systems.model.event.EventConstants.CATEGORY_CREATED, null,
-                AuthHelper.findUser(auth).id, "Category created");
+                user.id, "Category created");
         List<Attachment> attachments = storeAttachments(category,
                 AttachmentHelper.readAttachments(input, "attachments"));
         category.description = resolveInlineAttachmentUrls(category.description, attachments);
@@ -109,9 +111,8 @@ public class CategoryResource {
     @Path("/{id}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
-    public Response update(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
-        requireAdmin(auth);
+    public Response update(@PathParam("id") Long id, @HeaderParam("X-Billetsys-Client") String client,
+            MultipartFormDataInput input) {
         Category category = Category
                 .find("select distinct c from Category c left join fetch c.attachments where c.id = ?1", id)
                 .firstResult();
@@ -158,16 +159,15 @@ public class CategoryResource {
     @POST
     @Path("/{id}/delete")
     @Transactional
-    public Response delete(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public Response delete(@HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
         Category category = Category.findById(id);
         if (category == null) {
             throw new NotFoundException();
         }
         Attachment.delete("category", category);
+        User user = currentUser.get();
         eventService.record(category.id, ai.mnemosyne_systems.model.event.EventConstants.CATEGORY_DELETED, null,
-                AuthHelper.findUser(auth).id, "Category deleted");
+                user.id, "Category deleted");
         category.delete();
         return ReactRedirectSupport.redirect(client, "/categories");
     }
@@ -210,11 +210,4 @@ public class CategoryResource {
         }
     }
 
-    private User requireAdmin(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isAdmin(user)) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
-        }
-        return user;
-    }
 }

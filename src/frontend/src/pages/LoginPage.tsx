@@ -6,7 +6,7 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import type { SessionPageProps } from "../types/app";
 import {
@@ -19,12 +19,20 @@ import { Button } from "../components/ui/button";
 import { Field, FieldLabel } from "../components/ui/field";
 import { Input } from "../components/ui/input";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { useAuth } from "../auth/useAuth";
 
 export default function LoginPage({ sessionState }: SessionPageProps) {
+  const { keycloak, authenticated } = useAuth();
   const session = sessionState.data;
   const location = useLocation();
   const error = new URLSearchParams(location.search).get("error");
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (!authenticated) {
+      keycloak.login();
+    }
+  }, [authenticated, keycloak]);
 
   const branding = {
     ...readCachedInstallationBranding(),
@@ -35,6 +43,28 @@ export default function LoginPage({ sessionState }: SessionPageProps) {
 
   if (session?.authenticated) {
     return <Navigate replace to="/" />;
+  }
+
+  if (!authenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 bg-background/95 backdrop-blur shadow-2xl rounded-2xl border border-border/50 max-w-sm mx-auto text-center space-y-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto"></div>
+        <p className="text-muted-foreground font-medium text-sm">
+          Redirecting to authentication service...
+        </p>
+      </div>
+    );
+  }
+
+  if (sessionState.loading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 bg-background/95 backdrop-blur shadow-2xl rounded-2xl border border-border/50 max-w-sm mx-auto text-center space-y-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto"></div>
+        <p className="text-muted-foreground font-medium text-sm">
+          Loading user session...
+        </p>
+      </div>
+    );
   }
 
   return (

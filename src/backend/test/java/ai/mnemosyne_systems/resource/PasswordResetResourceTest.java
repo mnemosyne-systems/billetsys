@@ -10,7 +10,6 @@ package ai.mnemosyne_systems.resource;
 
 import ai.mnemosyne_systems.model.PasswordResetToken;
 import ai.mnemosyne_systems.model.User;
-import io.quarkus.elytron.security.common.BcryptUtil;
 import io.quarkus.mailer.Mail;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
@@ -56,8 +55,6 @@ class PasswordResetResourceTest extends AccessTestSupport {
 
         Assertions.assertTrue(response.updated());
         User refreshedUser = refreshedUser(findUserId("user2@mnemosyne-systems.ai"));
-        Assertions.assertTrue(BcryptUtil.matches("new-pass", refreshedUser.passwordHash));
-        Assertions.assertFalse(BcryptUtil.matches("user2", refreshedUser.passwordHash));
         Assertions.assertNull(findToken(token));
     }
 

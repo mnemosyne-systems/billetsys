@@ -24,8 +24,6 @@ import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.service.MailboxPollingService;
 import ai.mnemosyne_systems.service.TicketEmailService;
-import ai.mnemosyne_systems.util.AuthHelper;
-import io.quarkus.elytron.security.common.BcryptUtil;
 import io.quarkus.hibernate.orm.panache.Panache;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.MockMailbox;
@@ -59,20 +57,18 @@ abstract class AccessTestSupport {
     TicketEmailService ticketEmailService;
 
     @Transactional
-    void ensureUser(String name, String email, String type, String password) {
+    void ensureUser(String name, String email, String type) {
         User user = User.find("email", email).firstResult();
         if (user == null) {
             user = new User();
             user.name = name;
             user.email = email;
             user.type = type;
-            user.passwordHash = BcryptUtil.bcryptHash(password);
             user.persist();
             return;
         }
         user.name = name;
         user.type = type;
-        user.passwordHash = BcryptUtil.bcryptHash(password);
     }
 
     @Transactional
@@ -273,11 +269,11 @@ abstract class AccessTestSupport {
         question.persist();
     }
 
-    String login(String username, String password) {
-        return RestAssured.given().redirects().follow(false).contentType(ContentType.URLENC)
-                .formParam("username", username).formParam("password", password).post("/login").then().statusCode(303)
-                .extract().cookie(AuthHelper.AUTH_COOKIE);
-    }
+    // String login(String username, String password) {
+    // return RestAssured.given().redirects().follow(false).contentType(ContentType.URLENC)
+    // .formParam("username", username).formParam("password", password).post("/login").then().statusCode(303)
+    // .extract().cookie(AuthHelper.AUTH_COOKIE);
+    // }
 
     @Transactional
     Entitlement ensureEntitlement(String name, String description) {
@@ -519,7 +515,7 @@ abstract class AccessTestSupport {
         Assertions.assertTrue(mail.getHtml().contains(body));
     }
 
-    Long createCompany(String cookie, String name) {
+    Long createCompany(String name) {
         String normalized = name == null ? "company"
                 : name.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
         if (normalized.isBlank()) {
@@ -527,11 +523,10 @@ abstract class AccessTestSupport {
         }
         String superuserUsername = normalized + "-superuser";
         String superuserEmail = normalized + "-superuser@testing.com";
-        ensureUser(superuserUsername, superuserEmail, User.TYPE_SUPERUSER, "pass");
+        ensureUser(superuserUsername, superuserEmail, User.TYPE_SUPERUSER);
         User superuser = User.find("email", superuserEmail).firstResult();
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .contentType(ContentType.URLENC).formParam("name", name).formParam("userIds", superuser.id)
-                .post("/companies").then().statusCode(303);
+        RestAssured.given().redirects().follow(false).contentType(ContentType.URLENC).formParam("name", name)
+                .formParam("userIds", superuser.id).post("/companies").then().statusCode(303);
         ai.mnemosyne_systems.model.Company company = ai.mnemosyne_systems.model.Company.find("name", name)
                 .firstResult();
         return company == null ? null : company.id;
@@ -547,9 +542,9 @@ abstract class AccessTestSupport {
     }
 
     @Transactional
-    void deleteCompany(String cookie, Long companyId) {
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .post("/companies/" + companyId + "/delete").then().statusCode(303);
+    void deleteCompany(Long companyId) {
+        RestAssured.given().redirects().follow(false).post("/companies/" + companyId + "/delete").then()
+                .statusCode(303);
     }
 
     @Transactional

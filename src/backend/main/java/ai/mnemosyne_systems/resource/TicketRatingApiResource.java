@@ -10,12 +10,13 @@ package ai.mnemosyne_systems.resource;
 
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
-import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
@@ -36,17 +37,17 @@ public class TicketRatingApiResource {
 
     private static final int MAX_COMMENT_LENGTH = 2000;
 
+    @Inject
+    CurrentUser currentUser;
+
     @POST
     @Path("/{id}/rating")
     @Transactional
-    public Response submitRating(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id,
+    @RolesAllowed({ "user", "superuser" })
+    public Response submitRating(@HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id,
             @FormParam("rating") Integer rating, @FormParam("ratingComment") String ratingComment) {
 
-        User user = AuthHelper.findUser(auth);
-        if (user == null || (!User.TYPE_USER.equalsIgnoreCase(user.type) && !AuthHelper.isSuperuser(user))) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/login")).build());
-        }
+        User user = currentUser.get();
 
         Ticket ticket = Ticket.findById(id);
         if (ticket == null) {

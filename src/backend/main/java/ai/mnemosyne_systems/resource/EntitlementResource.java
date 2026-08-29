@@ -13,11 +13,14 @@ import ai.mnemosyne_systems.model.Level;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
@@ -41,27 +44,28 @@ import java.util.Map;
 @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 @Produces(MediaType.TEXT_HTML)
 @Blocking
+@RolesAllowed("admin")
 public class EntitlementResource {
+    @Inject
+    CurrentUser currentUser;
+
     @jakarta.inject.Inject
     ai.mnemosyne_systems.service.EventService eventService;
 
     @GET
-    public Response listEntitlements(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public Response listEntitlements() {
         return Response.seeOther(URI.create("/entitlements")).build();
     }
 
     @GET
     @Path("create")
-    public Response createForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public Response createForm() {
         return Response.seeOther(URI.create("/entitlements/new")).build();
     }
 
     @GET
     @Path("{id}")
-    public Response viewEntitlement(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public Response viewEntitlement(@PathParam("id") Long id) {
         if (Entitlement.findById(id) == null) {
             throw new NotFoundException();
         }
@@ -70,8 +74,7 @@ public class EntitlementResource {
 
     @GET
     @Path("{id}/edit")
-    public Response editForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public Response editForm(@PathParam("id") Long id) {
         if (Entitlement.findById(id) == null) {
             throw new NotFoundException();
         }
@@ -81,12 +84,10 @@ public class EntitlementResource {
     @POST
     @Path("")
     @Transactional
-    public Response createEntitlement(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
+    public Response createEntitlement(@HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
             @FormParam("description") String description, @FormParam("levelIds") List<Long> levelIds,
             @FormParam("versionIds") List<String> versionIds, @FormParam("versionNames") List<String> versionNames,
             @FormParam("versionDates") List<String> versionDates) {
-        requireAdmin(auth);
         validate(name, description);
         Entitlement entitlement = new Entitlement();
         entitlement.name = name.trim();
@@ -95,20 +96,20 @@ public class EntitlementResource {
         entitlement.versions.clear();
         entitlement.versions.addAll(resolveVersions(entitlement, null, versionIds, versionNames, versionDates));
         entitlement.persist();
+        User user = currentUser.get();
         eventService.record(entitlement.id, ai.mnemosyne_systems.model.event.EventConstants.ENTITLEMENT_CREATED, null,
-                AuthHelper.findUser(auth).id, "Entitlement created");
+                user.id, "Entitlement created");
         return ReactRedirectSupport.redirect(client, "/entitlements");
     }
 
     @POST
     @Path("{id}")
     @Transactional
-    public Response updateEntitlement(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
-            @FormParam("description") String description, @FormParam("levelIds") List<Long> levelIds,
-            @FormParam("versionIds") List<String> versionIds, @FormParam("versionNames") List<String> versionNames,
+    public Response updateEntitlement(@PathParam("id") Long id, @HeaderParam("X-Billetsys-Client") String client,
+            @FormParam("name") String name, @FormParam("description") String description,
+            @FormParam("levelIds") List<Long> levelIds, @FormParam("versionIds") List<String> versionIds,
+            @FormParam("versionNames") List<String> versionNames,
             @FormParam("versionDates") List<String> versionDates) {
-        requireAdmin(auth);
         Entitlement entitlement = Entitlement
                 .find("select e from Entitlement e left join fetch e.supportLevels where e.id = ?1", id).firstResult();
         if (entitlement == null) {
@@ -129,15 +130,14 @@ public class EntitlementResource {
     @POST
     @Path("{id}/delete")
     @Transactional
-    public Response deleteEntitlement(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public Response deleteEntitlement(@HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
         Entitlement entitlement = Entitlement.findById(id);
         if (entitlement == null) {
             throw new NotFoundException();
         }
+        User user = currentUser.get();
         eventService.record(entitlement.id, ai.mnemosyne_systems.model.event.EventConstants.ENTITLEMENT_DELETED, null,
-                AuthHelper.findUser(auth).id, "Entitlement deleted");
+                user.id, "Entitlement deleted");
         entitlement.delete();
         return ReactRedirectSupport.redirect(client, "/entitlements");
     }
@@ -217,13 +217,5 @@ public class EntitlementResource {
         } catch (NumberFormatException e) {
             throw new BadRequestException("Version id is invalid");
         }
-    }
-
-    private User requireAdmin(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isAdmin(user)) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
-        }
-        return user;
     }
 }

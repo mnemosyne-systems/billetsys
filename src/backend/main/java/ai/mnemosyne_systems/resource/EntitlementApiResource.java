@@ -13,8 +13,9 @@ import ai.mnemosyne_systems.model.Level;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.util.AuthHelper;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.Path;
@@ -27,12 +28,12 @@ import java.util.List;
 
 @Path("/api/entitlements")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("admin")
 public class EntitlementApiResource {
 
     @GET
     @Transactional
-    public EntitlementListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public EntitlementListResponse list() {
         List<Entitlement> entitlements = Entitlement
                 .find("select distinct e from Entitlement e left join fetch e.supportLevels").list();
         return new EntitlementListResponse("/entitlements/new", entitlements.stream().map(this::toListItem).toList());
@@ -41,17 +42,14 @@ public class EntitlementApiResource {
     @GET
     @Path("/bootstrap")
     @Transactional
-    public EntitlementBootstrapResponse bootstrap(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public EntitlementBootstrapResponse bootstrap() {
         return bootstrapResponse();
     }
 
     @GET
     @Path("/{id}")
     @Transactional
-    public EntitlementDetailResponse detail(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public EntitlementDetailResponse detail(@PathParam("id") Long id) {
         Entitlement entitlement = Entitlement
                 .find("select e from Entitlement e left join fetch e.supportLevels where e.id = ?1", id).firstResult();
         if (entitlement == null) {
@@ -125,14 +123,6 @@ public class EntitlementApiResource {
             }
         }
         return "";
-    }
-
-    private User requireAdmin(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isAdmin(user)) {
-            throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-        return user;
     }
 
     public record EntitlementListResponse(String createPath, List<EntitlementListItem> items) {

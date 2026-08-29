@@ -12,9 +12,12 @@ import ai.mnemosyne_systems.model.Attachment;
 import ai.mnemosyne_systems.model.Category;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
@@ -28,12 +31,15 @@ import java.util.List;
 @Path("/api/categories")
 @Produces(MediaType.APPLICATION_JSON)
 @Blocking
+@RolesAllowed("admin")
 public class CategoryApiResource {
+
+    @Inject
+    CurrentUser currentUser;
 
     @GET
     @Transactional
-    public CategoryListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public CategoryListResponse list() {
         List<CategorySummary> items = Category
                 .<Category> list("order by name asc").stream().map(category -> new CategorySummary(category.id,
                         category.name, CategoryResource.firstLinePlainText(category.description), category.isDefault))
@@ -43,16 +49,14 @@ public class CategoryApiResource {
 
     @GET
     @Path("/bootstrap")
-    public CategoryBootstrapResponse bootstrap(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public CategoryBootstrapResponse bootstrap() {
         return new CategoryBootstrapResponse(true);
     }
 
     @GET
     @Path("/{id}")
     @Transactional
-    public CategoryDetailResponse detail(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public CategoryDetailResponse detail(@PathParam("id") Long id) {
         Category category = CategoryResource.findCategoryWithAttachments(id);
         if (category == null) {
             throw new NotFoundException();
@@ -60,14 +64,6 @@ public class CategoryApiResource {
         List<CategoryAttachment> attachments = category.attachments.stream().map(this::toAttachmentResponse).toList();
         return new CategoryDetailResponse(category.id, category.name, category.description, category.isDefault,
                 "/categories/" + category.id + "/edit", attachments);
-    }
-
-    private User requireAdmin(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isAdmin(user)) {
-            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-        return user;
     }
 
     private CategoryAttachment toAttachmentResponse(Attachment attachment) {
