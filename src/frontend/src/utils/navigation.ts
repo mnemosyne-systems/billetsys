@@ -28,7 +28,12 @@ export function headerNavigation(
   }
 
   if (role === "support") {
-    return filterNavigation(navigation, ["Tickets", "Articles", "Users"]);
+    return filterNavigation(navigation, [
+      "Tickets",
+      "Articles",
+      "Users",
+      "Availability",
+    ]);
   }
 
   if (role === "superuser" || role === "tam") {
@@ -37,11 +42,17 @@ export function headerNavigation(
       "Articles",
       "Reports",
       "Users",
+      "Availability",
     ]);
   }
 
   if (role === "user") {
-    return filterNavigation(navigation, ["Tickets", "Articles", "External"]);
+    return filterNavigation(navigation, [
+      "Tickets",
+      "Articles",
+      "External",
+      "Availability",
+    ]);
   }
 
   return navigation.filter((link) => link.label !== "Profile");

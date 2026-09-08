@@ -12,3 +12,4 @@ export * from "./domain/attachments";
 export * from "./domain/content";
 export * from "./domain/companies";
 export * from "./domain/tickets";
+export * from "./domain/availability";
