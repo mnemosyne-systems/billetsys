@@ -311,6 +311,9 @@ public final class AttachmentHelper {
         if (extension.endsWith(".gif")) {
             return "image/gif";
         }
+        if (extension.endsWith(".cast")) {
+            return "application/x-asciinema";
+        }
         return "text/plain";
     }
 

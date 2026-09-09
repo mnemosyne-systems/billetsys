@@ -47,6 +47,7 @@
     "@radix-ui/react-scroll-area": "^1.2.10",
     "@tailwindcss/vite": "^4.2.2",
     "@untools/logger": "^0.1.0",
+    "asciinema-player": "^3.17.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
