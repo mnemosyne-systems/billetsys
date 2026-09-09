@@ -12,6 +12,7 @@ Ahmed Mordi <ahmed.m.hamada2003@gmail.com>
 Hamza Azeem <hamzaalsherif9@gmail.com>
 Shashank Singh <shashanksgh3@gmail.com>
 Mohamed Hamed <alkmohamed40@gmail.com>
+Ahmed Maarouf <ahmedwael5775@gmail.com>
 ```
 
 ## Committers

@@ -122,11 +122,19 @@ export default function AuthenticatedHeader({
       ? `/api/articles/suggest${toQueryString({ q: normalizedSearch })}`
       : null,
   );
+
+  const userSuggestionState = useJson<SuggestionResponse>(
+    shouldFetch
+      ? `/api/users/suggest${toQueryString({ q: normalizedSearch })}`
+      : null,
+  );
   const ticketSuggestions = ticketSuggestionState.data?.items || [];
   const articleSuggestions = articleSuggestionState.data?.items || [];
+  const userSuggestions = userSuggestionState.data?.items || [];
   const allSuggestions: SearchSuggestion[] = [
     ...ticketSuggestions,
     ...articleSuggestions,
+    ...userSuggestions,
   ].sort((a, b) =>
     (a.name || "").localeCompare(b.name || "", undefined, {
       sensitivity: "base",

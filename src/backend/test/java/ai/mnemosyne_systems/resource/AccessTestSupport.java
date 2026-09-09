@@ -83,6 +83,13 @@ abstract class AccessTestSupport {
     }
 
     @Transactional
+    void setUserFullName(String email, String fullName) {
+        User user = User.find("email", email).firstResult();
+        Assertions.assertNotNull(user);
+        user.fullName = fullName;
+    }
+
+    @Transactional
     void setUserEmailFormat(String email, String emailFormat) {
         User user = User.find("email", email).firstResult();
         Assertions.assertNotNull(user);

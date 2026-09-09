@@ -115,4 +115,10 @@ public final class UserDirectoryApiModels {
             default -> "User";
         };
     }
+
+    public record UserSuggestionResponse(List<UserSuggestion> items) {
+    }
+
+    public record UserSuggestion(Long id, String name, String title, String detailPath) {
+    }
 }
