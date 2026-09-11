@@ -97,21 +97,22 @@ public class AppSessionResource {
         }
         if (AuthHelper.isSupport(user)) {
             return List.of(new NavLink("Tickets", "/support/tickets"), new NavLink("Articles", "/articles"),
-                    new NavLink("Users", "/support/users"));
+                    new NavLink("Users", "/support/users"), new NavLink("Availability", "/availability"));
         }
         if (user != null && User.TYPE_USER.equalsIgnoreCase(user.type)) {
             return List.of(new NavLink("Tickets", "/user/tickets"), new NavLink("Articles", "/articles"),
-                    new NavLink("External", "/user/externals"), new NavLink("Profile", "/profile"));
+                    new NavLink("External", "/user/externals"), new NavLink("Availability", "/availability"),
+                    new NavLink("Profile", "/profile"));
         }
         if (AuthHelper.isSuperuser(user)) {
             return List.of(new NavLink("Tickets", "/superuser/tickets"), new NavLink("Users", "/superuser/users"),
                     new NavLink("Reports", "/reports"), new NavLink("Articles", "/articles"),
-                    new NavLink("Profile", "/profile"));
+                    new NavLink("Availability", "/availability"), new NavLink("Profile", "/profile"));
         }
         if (AuthHelper.isTam(user)) {
             return List.of(new NavLink("Tickets", "/user/tickets"), new NavLink("Reports", "/reports"),
                     new NavLink("Articles", "/articles"), new NavLink("Users", "/tam/users"),
-                    new NavLink("Profile", "/profile"));
+                    new NavLink("Availability", "/availability"), new NavLink("Profile", "/profile"));
         }
         return List.of(new NavLink("Tickets", "/user/tickets"), new NavLink("Articles", "/articles"),
                 new NavLink("Profile", "/profile"));

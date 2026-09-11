@@ -14,6 +14,7 @@ export const PATHS = {
   profile: "/profile",
   profilePassword: "/profile/password",
   reports: "/reports",
+  availability: "/availability",
   owner: "/owner",
   ownerEdit: "/owner/edit",
   users: "/users",

@@ -9,6 +9,7 @@
 import { lazy } from "react";
 import { PATHS } from "./paths";
 import type { AppRoute, SessionState } from "../types/app";
+import AvailabilityPage from "../pages/AvailabilityPage";
 
 const ManualPage = lazy(() => import("../pages/ManualPage"));
 const ArticleDetailPage = lazy(() => import("../pages/ArticleDetailPage"));
@@ -33,6 +34,11 @@ const LevelsPage = lazy(() => import("../pages/LevelsPage"));
 
 export function getContentRoutes(sessionState: SessionState): AppRoute[] {
   return [
+    {
+      path: PATHS.availability,
+      element: <AvailabilityPage sessionState={sessionState} />,
+      requiresAuth: true,
+    },
     {
       path: "/companies",
       element: <CompaniesPage sessionState={sessionState} />,
