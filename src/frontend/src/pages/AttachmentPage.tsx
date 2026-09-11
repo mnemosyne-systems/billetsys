@@ -14,6 +14,13 @@ import type { AttachmentDetail } from "../types/domain";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import PageHeader from "../components/layout/PageHeader";
+import AsciinemaPlayer from "../components/common/AsciinemaPlayer";
+
+function isAsciinema(mimeType?: string, name?: string): boolean {
+  const mt = (mimeType || "").toLowerCase();
+  const n = (name || "").toLowerCase();
+  return mt === "application/x-asciinema" || n.endsWith(".cast");
+}
 
 export default function AttachmentPage(props: SessionPageProps) {
   void props;
@@ -40,6 +47,13 @@ export default function AttachmentPage(props: SessionPageProps) {
                     alt={attachment.name}
                     className="max-w-full h-auto object-contain max-h-[80vh] rounded-lg"
                   />
+                </CardContent>
+              </Card>
+            ) : isAsciinema(attachment.mimeType, attachment.name) &&
+              attachment.downloadPath ? (
+              <Card>
+                <CardContent className="p-0 overflow-hidden rounded-lg">
+                  <AsciinemaPlayer src={attachment.downloadPath} />
                 </CardContent>
               </Card>
             ) : (

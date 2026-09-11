@@ -11,6 +11,12 @@ import type { AttachmentReference } from "../../types/domain";
 import { Input } from "../ui/input";
 import { Field, FieldLabel } from "../ui/field";
 
+function fileMimeType(file: File): string {
+  const ext = file.name.toLowerCase();
+  if (ext.endsWith(".cast")) return "application/x-asciinema";
+  return file.type || "application/octet-stream";
+}
+
 interface AttachmentPickerProps {
   files: File[];
   onFilesChange: (files: File[]) => void;
@@ -46,7 +52,7 @@ export default function AttachmentPicker({
                   {file.name}
                 </strong>
                 <span className="text-muted-foreground/80 shrink-0 ml-4 uppercase tracking-wider text-xs font-medium">
-                  {file.type ? file.type.split("/").pop() : "FILE"}
+                  {fileMimeType(file).split("/").pop() || "FILE"}
                 </span>
               </div>
             ))}

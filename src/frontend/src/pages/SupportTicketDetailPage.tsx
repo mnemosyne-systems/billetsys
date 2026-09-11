@@ -67,6 +67,7 @@ import {
 } from "../components/ui/select";
 import { Ratings } from "../components/ui/ratings";
 import { Card, CardContent } from "../components/ui/card";
+import AsciinemaPlayer from "../components/common/AsciinemaPlayer";
 
 interface SupportTicketDetailPageProps extends SessionPageProps {
   apiBase?: string;
@@ -76,9 +77,15 @@ interface SupportTicketDetailPageProps extends SessionPageProps {
   enableAttachmentPreviews?: boolean;
 }
 
+function resolvedMimeType(file: { type?: string; name?: string }): string {
+  const ext = (file.name || "").toLowerCase();
+  if (ext.endsWith(".cast")) return "application/x-asciinema";
+  return file.type || "application/octet-stream";
+}
+
 function attachmentPreviewKind(
   attachment: AttachmentReference,
-): "image" | "text" | "markdown" | "pdf" | null {
+): "image" | "text" | "markdown" | "pdf" | "asciinema" | null {
   const mimeType = (attachment.mimeType || "").toLowerCase();
   const name = (attachment.name || "").toLowerCase();
 
@@ -97,6 +104,9 @@ function attachmentPreviewKind(
     name.endsWith(".mkdn")
   ) {
     return "markdown";
+  }
+  if (mimeType === "application/x-asciinema" || name.endsWith(".cast")) {
+    return "asciinema";
   }
   if (
     mimeType === "text/plain" ||
@@ -200,6 +210,10 @@ function AttachmentPreview({
         ) : previewKind === "markdown" ? (
           <div className="max-h-96 overflow-auto rounded-md border bg-background p-4 shadow-lg">
             <MarkdownContent>{attachmentPreviewText(preview)}</MarkdownContent>
+          </div>
+        ) : previewKind === "asciinema" && preview.downloadPath ? (
+          <div className="overflow-hidden rounded-md border bg-background shadow-lg">
+            <AsciinemaPlayer src={preview.downloadPath} />
           </div>
         ) : (
           <pre className="max-h-96 overflow-auto rounded-md border bg-background p-4 text-xs shadow-lg">
@@ -1230,7 +1244,7 @@ export default function SupportTicketDetailPage({
                                 {file.name}
                               </TableCell>
                               <TableCell className="text-muted-foreground">
-                                {file.type || "application/octet-stream"}
+                                {resolvedMimeType(file)}
                               </TableCell>
                               <TableCell className="text-muted-foreground">
                                 {formatFileSize(file.size)}
