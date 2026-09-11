@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "fix": "prettier --write . && eslint . --fix",
-    "check": "npm run lint && npm run typecheck && prettier --check ."
+    "check": "npm run lint && npm run typecheck && prettier --check .",
+    "prepare": "cd ../.. && husky"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
@@ -86,6 +87,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "~7.0.1",
+    "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
     "typescript": "^6.0.2",

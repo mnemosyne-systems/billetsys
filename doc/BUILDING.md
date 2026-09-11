@@ -20,6 +20,28 @@ cd src/frontend
 npm ci
 ```
 
+Installing the frontend dependencies also installs the Git hooks
+(`prepare` script in `src/frontend/package.json`). If your hooks do not
+fire, reinstall them with:
+
+```bash
+make setup
+```
+
+## Git hooks
+
+Hooks live in `.husky/` and run the same checks as CI so contributors
+catch failures locally before pushing:
+
+* `pre-commit` (fast, on staged files only): `lint-staged` for changes
+  under `src/frontend/`, and `mvn -B validate` (Java formatter check)
+  when Java sources are staged.
+* `pre-push` (full CI mirror): `npm run check` (ESLint + type-check +
+  Prettier) and `mvn -B test`.
+
+Bypass a hook once with `git commit --no-verify` or
+`git push --no-verify` (CI will still run the checks).
+
 ```bash
 mvn package
 ```

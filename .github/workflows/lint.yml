@@ -9,6 +9,8 @@ on:
 jobs:
   frontend-check:
     runs-on: ubuntu-latest
+    env:
+      HUSKY: 0
     defaults:
       run:
         working-directory: src/frontend

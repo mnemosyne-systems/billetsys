@@ -15,6 +15,7 @@
 *.xml text eol=lf
 *.java text eol=lf
 *.sh text eol=lf
+.husky/* text eol=lf
 
 *.cmd text eol=crlf
 *.bat text eol=crlf

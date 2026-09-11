@@ -1,0 +1,13 @@
+# Full checks mirroring CI (.github/workflows/ci.yml + lint.yml).
+# Runs on push so contributors catch CI failures locally before opening a PR.
+# Bypass with: git push --no-verify
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+npm --prefix src/frontend run check || exit 1
+
+if command -v mvn >/dev/null 2>&1; then
+  mvn -B test || exit 1
+else
+  echo "warning: mvn not found, skipping backend tests (CI will run 'mvn test')"
+fi

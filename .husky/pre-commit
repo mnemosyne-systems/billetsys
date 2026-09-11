@@ -1,1 +1,21 @@
-cd src/frontend && npm exec lint-staged
+# Fast checks on staged changes (mirrors CI but keeps commits quick).
+# Full checks (frontend `npm run check` + `mvn test`) run in .husky/pre-push.
+# Bypass with: git commit --no-verify
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+
+# --- Frontend: lint-staged on staged files under src/frontend/ ---
+if printf '%s\n' "$STAGED" | grep -q '^src/frontend/'; then
+  (cd src/frontend && npm exec -- lint-staged) || exit 1
+fi
+
+# --- Backend: formatter validate when Java sources are staged ---
+if printf '%s\n' "$STAGED" | grep -q '\.java$'; then
+  if command -v mvn >/dev/null 2>&1; then
+    mvn -B validate || exit 1
+  else
+    echo "warning: mvn not found, skipping backend formatter check (CI will run 'mvn test')"
+  fi
+fi

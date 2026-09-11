@@ -250,6 +250,12 @@ npm run fix
 npm run check
 ```
 
+`npm ci` also installs the Git hooks: `pre-commit` runs fast staged
+checks and `pre-push` mirrors CI (`npm run check` + `mvn test`), so
+failures surface locally before GitHub CI. If hooks do not fire, run
+`make setup` from the repository root. Bypass once with `--no-verify`
+if needed.
+
 If you prefer to stay at the repository root, use:
 
 ```sh

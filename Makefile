@@ -6,9 +6,12 @@
 # OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
 #
 
-.PHONY: all format clean run test docs db-drop db-create full frontend platform
+.PHONY: all format clean run test docs db-drop db-create full frontend platform setup
 
 all: clean format run
+
+setup: frontend
+	@npm --prefix src/frontend run prepare
 
 frontend:
 	@if [ ! -f src/frontend/node_modules/.package-lock.json ] || \
