@@ -33,7 +33,7 @@ public class ReactShellFilter implements Filter {
             Pattern.compile(
                     "^/(error|not-found|profile|reports|owner|users|companies|articles|categories|entitlements|levels)$"),
             Pattern.compile("^/profile/password$"), Pattern.compile("^/owner/edit$"), Pattern.compile("^/users/new$"),
-            Pattern.compile("^/users/[^/]+(?:/edit)?$"), Pattern.compile("^/tickets(?:$|/new$|/[^/]+/edit$)"),
+            Pattern.compile("^/users/[^/]+(?:/edit)?$"), Pattern.compile("^/tickets(?:$|/new$|/import$|/[^/]+/edit$)"),
             Pattern.compile("^/attachments/[^/]+$"), Pattern.compile("^/companies(?:$|/new$|/[^/]+(?:/edit)?$)"),
             Pattern.compile("^/articles(?:$|/new$|/[^/]+(?:/edit)?$)"),
             Pattern.compile("^/categories(?:$|/new$|/[^/]+(?:/edit)?$)"),
