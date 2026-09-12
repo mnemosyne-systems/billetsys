@@ -13,6 +13,7 @@ Hamza Azeem <hamzaalsherif9@gmail.com>
 Shashank Singh <shashanksgh3@gmail.com>
 Mohamed Hamed <alkmohamed40@gmail.com>
 Ahmed Maarouf <ahmedwael5775@gmail.com>
+Mohamed Elkholy <m.elkholy182214@gmail.com>
 ```
 
 ## Committers

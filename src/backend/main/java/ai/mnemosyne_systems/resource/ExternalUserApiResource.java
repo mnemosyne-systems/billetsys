@@ -106,7 +106,7 @@ public class ExternalUserApiResource {
                 countries.stream().map(UserDirectoryApiModels::countryOption).toList(),
                 timezones.stream().map(UserDirectoryApiModels::timezoneOption).toList(),
                 List.of(new UserDirectoryApiModels.TypeOption(User.TYPE_EXTERNAL, "External")),
-                UserDirectoryApiModels.userFormData(user, company.id));
+                UserDirectoryApiModels.userFormData(user, company == null ? null : company.id));
     }
 
     @GET
