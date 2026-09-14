@@ -19,6 +19,7 @@ The profile feature is where a user can manage the personal details that shape d
 * Email address
 * Preferred email format for outbound notifications
 * Default rows for list views
+* Default order for ticket messages
 * Social or contact details
 * Phone information
 * Country and timezone
@@ -31,6 +32,10 @@ This helps billetsys function not only as a workflow tool, but also as a practic
 Users can set a **default rows** value that applies to all paginated list views (tickets, articles, companies, etc.). The available options are 10, 25, and 50. This preference is stored in the user profile and applied automatically across sessions.
 
 Individual list views can still override this default using the rows-per-page selector at the bottom of any paginated list.
+
+## Message order preference
+
+Users can also set a default order for [messages](#messages) within a ticket: **Newest first** (the default) or **Oldest first**. This preference is stored in the user profile and used as the starting order the next time a ticket is opened. It can still be changed per ticket using the sort control above the message list. 
 
 ## Notification preferences
 

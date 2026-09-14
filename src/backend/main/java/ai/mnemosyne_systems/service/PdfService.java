@@ -43,6 +43,10 @@ public class PdfService {
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM dd yyyy, h.mma");
 
     public byte[] generateTicketPdf(Ticket ticket, List<Message> messages) {
+        return generateTicketPdf(ticket, messages, "desc");
+    }
+
+    public byte[] generateTicketPdf(Ticket ticket, List<Message> messages, String messageSortDirection) {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             Document document = new Document();
             PdfWriter writer = PdfWriter.getInstance(document, outputStream);
@@ -130,7 +134,7 @@ public class PdfService {
             messagesSubTitle.setSpacingAfter(20);
             document.add(messagesSubTitle);
             // messages and attachments details
-            PdfPTable messagesTable = generateMessages(messages, writer);
+            PdfPTable messagesTable = generateMessages(messages, writer, messageSortDirection);
             document.add(messagesTable);
             document.add(Chunk.NEWLINE);
             document.close();
@@ -457,11 +461,16 @@ public class PdfService {
         return usersTable;
     }
 
-    private PdfPTable generateMessages(List<Message> messages, PdfWriter writer) throws IOException {
+    private PdfPTable generateMessages(List<Message> messages, PdfWriter writer, String messageSortDirection)
+            throws IOException {
         PdfPTable messageTable = new PdfPTable(2);
         messageTable.setWidthPercentage(100);
         List<Message> safeMessages = messages == null ? new ArrayList<>() : new ArrayList<>(messages);
-        safeMessages.sort(Comparator.reverseOrder());
+        if ("asc".equals(messageSortDirection)) {
+            safeMessages.sort(Comparator.naturalOrder());
+        } else {
+            safeMessages.sort(Comparator.reverseOrder());
+        }
         if (safeMessages.isEmpty()) {
             PdfPCell emptyCell = new PdfPCell(new Phrase("No messages"));
             emptyCell.setColspan(2);

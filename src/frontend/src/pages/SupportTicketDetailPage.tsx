@@ -403,6 +403,17 @@ export default function SupportTicketDetailPage({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const messagesHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const [scrollToMessages, setScrollToMessages] = useState(false);
+  const [messageSortDir, setMessageSortDir] = useState<"asc" | "desc">("desc");
+  const appliedSessionDefault = useRef(false);
+
+  useEffect(() => {
+    if (!appliedSessionDefault.current && sessionState.data) {
+      appliedSessionDefault.current = true;
+      if (sessionState.data.defaultMessageSortDirection === "asc") {
+        setMessageSortDir("asc");
+      }
+    }
+  }, [sessionState.data]);
   const isClosed = ticket?.displayStatus === "Closed";
   const canEditStatus = ticket?.editableStatus ?? true;
   const canEditCategory = ticket?.editableCategory ?? true;
@@ -1163,14 +1174,36 @@ export default function SupportTicketDetailPage({
             )}
 
             <div className="space-y-4">
-              <h2
-                className="px-1 text-3xl font-bold tracking-tight rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                ref={messagesHeadingRef}
-                tabIndex={-1}
-                data-shortcut-index="7"
-              >
-                Messages
-              </h2>
+              <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+                <h2
+                  className="text-3xl font-bold tracking-tight rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  ref={messagesHeadingRef}
+                  tabIndex={-1}
+                  data-shortcut-index="7"
+                >
+                  Messages
+                </h2>
+                {ticket.messages && ticket.messages.length > 1 ? (
+                  <Select
+                    value={messageSortDir}
+                    onValueChange={(value) => {
+                      appliedSessionDefault.current = true;
+                      setMessageSortDir(value as "asc" | "desc");
+                    }}
+                  >
+                    <SelectTrigger
+                      className="w-[160px]"
+                      aria-label="Message order"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="desc">Newest first</SelectItem>
+                      <SelectItem value="asc">Oldest first</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : null}
+              </div>
               {!ticket.messages || ticket.messages.length === 0 ? (
                 <p className="rounded-md border border-border/80 bg-muted/20 p-4 text-muted-foreground">
                   No messages yet.
@@ -1178,7 +1211,14 @@ export default function SupportTicketDetailPage({
               ) : (
                 <div className="space-y-4">
                   {[...(ticket.messages || [])]
-                    .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
+                    .sort((a, b) => {
+                      const aTime = a.date ? new Date(a.date).getTime() : 0;
+                      const bTime = b.date ? new Date(b.date).getTime() : 0;
+                      return messageSortDir === "asc"
+                        ? aTime - bTime
+                        : bTime - aTime;
+                    })
+
                     .map((message) => (
                       <TicketMessageCard
                         key={`msg-${message.id}`}
@@ -1297,7 +1337,11 @@ export default function SupportTicketDetailPage({
                     <div>
                       {ticket.exportPath && (
                         <Button variant="outline" asChild>
-                          <a href={ticket.exportPath}>Export</a>
+                          <a
+                            href={`${ticket.exportPath}${ticket.exportPath?.includes("?") ? "&" : "?"}dir=${messageSortDir}`}
+                          >
+                            Export
+                          </a>
                         </Button>
                       )}
                     </div>
@@ -1311,7 +1355,11 @@ export default function SupportTicketDetailPage({
               ticket.exportPath && (
                 <div className="flex justify-end pt-4 mt-2">
                   <Button variant="outline" asChild>
-                    <a href={ticket.exportPath}>Export History</a>
+                    <a
+                      href={`${ticket.exportPath}${ticket.exportPath?.includes("?") ? "&" : "?"}dir=${messageSortDir}`}
+                    >
+                      Export History
+                    </a>
                   </Button>
                 </div>
               )

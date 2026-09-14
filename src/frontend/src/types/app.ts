@@ -51,6 +51,7 @@ export interface Session {
   inactivityTimeoutSeconds?: number;
   inactivityWarningSeconds?: number;
   defaultPageSize?: number;
+  defaultMessageSortDirection?: string;
   displayName?: string;
   username?: string;
   logoBase64?: string;

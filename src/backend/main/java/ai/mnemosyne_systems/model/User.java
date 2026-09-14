@@ -84,6 +84,9 @@ public class User extends PanacheEntityBase {
     @Column(name = "page_size")
     public Integer pageSize;
 
+    @Column(name = "message_sort_direction")
+    public String messageSortDirection;
+
     @Column(name = "active", nullable = false, columnDefinition = "boolean default true")
     public boolean active = true;
 

@@ -22,7 +22,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotAuthorizedException;
+
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -67,7 +67,7 @@ public class ProfileApiResource {
         user.emailFormat = normalizeEmailFormat(request.emailFormat());
         user.logoBase64 = trimOrNull(request.logoBase64());
         user.pageSize = normalizePageSize(request.pageSize());
-
+        user.messageSortDirection = normalizeSortDirection(request.messageSortDirection());
         if (AuthHelper.isAdmin(user)) {
             ensureAdminAssignedToOwnerCompany(user);
         } else if (AuthHelper.isSupport(user)) {
@@ -114,8 +114,9 @@ public class ProfileApiResource {
                 user.phoneNumber, user.phoneExtension, user.country == null ? null : user.country.id,
                 user.country == null ? null : user.country.name, user.timezone == null ? null : user.timezone.id,
                 user.timezone == null ? null : user.timezone.name, user.logoBase64, user.emailFormat, user.pageSize,
-                currentCompany == null ? null : currentCompany.id, currentCompany == null ? null : currentCompany.name,
-                companyBase(user), AuthHelper.isSupport(user), countries, timezones, companies);
+                user.messageSortDirection, currentCompany == null ? null : currentCompany.id,
+                currentCompany == null ? null : currentCompany.name, companyBase(user), AuthHelper.isSupport(user),
+                countries, timezones, companies);
     }
 
     private void reassignSupportUserCompany(User user, Long companyId) {
@@ -185,16 +186,28 @@ public class ProfileApiResource {
         return Math.min(value, PaginationSupport.MAX_PAGE_SIZE);
     }
 
+    private String normalizeSortDirection(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim().toLowerCase();
+        if ("asc".equals(trimmed) || "desc".equals(trimmed)) {
+            return trimmed;
+        }
+        return null;
+    }
+
     public record ProfileResponse(String role, String username, String displayName, String email, String fullName,
             String social, String phoneNumber, String phoneExtension, Long countryId, String countryName,
             Long timezoneId, String timezoneName, String logoBase64, String emailFormat, Integer pageSize,
-            Long currentCompanyId, String currentCompanyName, String companyBase, boolean canSelectCompany,
-            List<CountryOption> countries, List<TimezoneOption> timezones, List<CompanyOption> companies) {
+            String messageSortDirection, Long currentCompanyId, String currentCompanyName, String companyBase,
+            boolean canSelectCompany, List<CountryOption> countries, List<TimezoneOption> timezones,
+            List<CompanyOption> companies) {
     }
 
     public record ProfileUpdateRequest(String name, String email, String fullName, String social, String phoneNumber,
             String phoneExtension, Long countryId, Long timezoneId, Long companyId, String logoBase64,
-            String emailFormat, Integer pageSize) {
+            String emailFormat, Integer pageSize, String messageSortDirection) {
     }
 
     public record PasswordUpdateRequest(String oldPassword, String newPassword, String confirmPassword) {

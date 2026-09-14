@@ -21,6 +21,8 @@ This is useful when a team needs to:
 * Prepare documentation for review
 * Preserve a support history snapshot
 
+The messages in the exported PDF follow the same order (oldest first or newest first) selected on the ticket's [message thread](#messages) at the time of export.
+
 ## Report export
 
 PDF is also useful for analytical views. Reports inside billetsys can be turned into documents that help teams discuss trends, workload, and service performance without requiring everyone to open the reporting interface directly.

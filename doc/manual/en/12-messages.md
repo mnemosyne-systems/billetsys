@@ -97,6 +97,14 @@ This makes message history one of the most important parts of understanding a ca
 
 Users only see the messages that are visible to their role group, so the thread view reflects the correct conversation scope for that reader.
 
+## Message order
+
+By default, messages within a ticket are shown newest first. A sort control above the message list lets the reader switch to **Oldest first** to read the conversation chronologically, which can make it easier to follow a long back-and-forth thread from the start.
+
+The selected order is also used when exporting the ticket to PDF (see [PDF](#pdf)), so the exported document always matches what is shown on screen.
+
+The chosen order can be saved as a personal default from the [Profile](#profile) page, so it is remembered the next time a ticket is opened.
+
 ## Role perspective
 
 Different roles participate in message threads in different ways.
