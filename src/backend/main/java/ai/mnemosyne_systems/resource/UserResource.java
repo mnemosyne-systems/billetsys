@@ -24,6 +24,7 @@ import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.util.TicketTimeSupport;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.quarkus.hibernate.orm.panache.Panache;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.smallrye.common.annotation.Blocking;
@@ -31,7 +32,6 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
@@ -55,6 +55,10 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 @Produces(MediaType.TEXT_HTML)
 @Blocking
 public class UserResource {
+
+    @Inject
+    CurrentUser currentUser;
+
     @Inject
     CrossReferenceService crossReferenceService;
 
@@ -66,19 +70,19 @@ public class UserResource {
 
     @GET
     @Path("user")
-    public Object home(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        User user = AuthHelper.findUser(auth);
+    public Object home() {
+        User user = currentUser.get();
         if (AuthHelper.isSuperuser(user)) {
             return Response.seeOther(URI.create("/superuser")).build();
         }
-        requireUser(auth);
+        requireUser();
         return Response.seeOther(URI.create("/user/tickets")).build();
     }
 
     @GET
     @Path("tam/users")
-    public Response tamUsersRoot(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        User user = requireUser(auth);
+    public Response tamUsersRoot() {
+        User user = requireUser();
         if (!User.TYPE_TAM.equalsIgnoreCase(user.type)) {
             throw new WebApplicationException(Response.seeOther(URI.create("/user")).build());
         }
@@ -87,9 +91,8 @@ public class UserResource {
 
     @GET
     @Path("tam/users/{companyId}")
-    public Response listTamUsers(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("companyId") Long companyId) {
-        User user = requireUser(auth);
+    public Response listTamUsers(@PathParam("companyId") Long companyId) {
+        User user = requireUser();
         if (!User.TYPE_TAM.equalsIgnoreCase(user.type)) {
             throw new WebApplicationException(Response.seeOther(URI.create("/user")).build());
         }
@@ -107,9 +110,8 @@ public class UserResource {
 
     @GET
     @Path("tam/users/{companyId}/create")
-    public Response createTamUserForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("companyId") Long companyId) {
-        User user = requireUser(auth);
+    public Response createTamUserForm(@PathParam("companyId") Long companyId) {
+        User user = requireUser();
         if (!User.TYPE_TAM.equalsIgnoreCase(user.type)) {
             throw new WebApplicationException(Response.seeOther(URI.create("/user")).build());
         }
@@ -128,13 +130,13 @@ public class UserResource {
     @POST
     @Path("tam/users")
     @Transactional
-    public Response createTamUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @FormParam("name") String name,
-            @FormParam("fullName") String fullName, @FormParam("email") String email,
-            @FormParam("social") String social, @FormParam("phoneNumber") String phoneNumber,
-            @FormParam("phoneExtension") String phoneExtension, @FormParam("timezoneId") Long timezoneId,
-            @FormParam("countryId") Long countryId, @FormParam("password") String password,
-            @FormParam("type") String type, @FormParam("companyId") Long companyId) {
-        User user = requireUser(auth);
+    public Response createTamUser(@FormParam("name") String name, @FormParam("fullName") String fullName,
+            @FormParam("email") String email, @FormParam("social") String social,
+            @FormParam("phoneNumber") String phoneNumber, @FormParam("phoneExtension") String phoneExtension,
+            @FormParam("timezoneId") Long timezoneId, @FormParam("countryId") Long countryId,
+            @FormParam("password") String password, @FormParam("type") String type,
+            @FormParam("companyId") Long companyId) {
+        User user = requireUser();
         if (!User.TYPE_TAM.equalsIgnoreCase(user.type)) {
             throw new WebApplicationException(Response.seeOther(URI.create("/user")).build());
         }
@@ -181,7 +183,7 @@ public class UserResource {
         }
         newUser.persist();
         eventService.record(newUser.id, ai.mnemosyne_systems.model.event.EventConstants.USER_CREATED, company.id,
-                AuthHelper.findUser(auth).id, "User created");
+                currentUser.get().id, "User created");
         boolean exists = company.users.stream()
                 .anyMatch(existing -> existing.id != null && existing.id.equals(newUser.id));
         if (!exists) {
@@ -192,15 +194,15 @@ public class UserResource {
 
     @GET
     @Path("user/tickets")
-    public Response tickets(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireUser(auth);
+    public Response tickets() {
+        requireUser();
         return Response.seeOther(URI.create("/user/tickets")).build();
     }
 
     @GET
     @Path("user/tickets/create")
-    public Response createTicketForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireUser(auth);
+    public Response createTicketForm() {
+        requireUser();
         return Response.seeOther(URI.create("/user/tickets/new")).build();
     }
 
@@ -208,9 +210,8 @@ public class UserResource {
     @Path("user/tickets")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
-    public Response createUserTicket(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
-        User user = requireUser(auth);
+    public Response createUserTicket(@HeaderParam("X-Billetsys-Client") String client, MultipartFormDataInput input) {
+        User user = requireUser();
         String status = AttachmentHelper.readFormValue(input, "status");
         String title = Ticket.normalizeTitle(AttachmentHelper.readFormValue(input, "title"));
         String messageBody = AttachmentHelper.readFormValue(input, "message");
@@ -273,8 +274,8 @@ public class UserResource {
 
     @GET
     @Path("user/support-users/{id}")
-    public Response viewSupportUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = requireUser(auth);
+    public Response viewSupportUser(@PathParam("id") Long id) {
+        User user = requireUser();
         User supportUser = User.findById(id);
         if (supportUser == null || !User.TYPE_SUPPORT.equalsIgnoreCase(supportUser.type)) {
             throw new NotFoundException();
@@ -284,8 +285,8 @@ public class UserResource {
 
     @GET
     @Path("user/tam-users/{id}")
-    public Response viewTamUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = requireUser(auth);
+    public Response viewTamUser(@PathParam("id") Long id) {
+        User user = requireUser();
         User tamUser = User.findById(id);
         if (tamUser == null || !User.TYPE_TAM.equalsIgnoreCase(tamUser.type)) {
             throw new NotFoundException();
@@ -295,8 +296,8 @@ public class UserResource {
 
     @GET
     @Path("user/superuser-users/{id}")
-    public Response viewSuperuser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = requireUser(auth);
+    public Response viewSuperuser(@PathParam("id") Long id) {
+        User user = requireUser();
         User superuser = User.findById(id);
         if (superuser == null || !User.TYPE_SUPERUSER.equalsIgnoreCase(superuser.type)) {
             throw new NotFoundException();
@@ -312,8 +313,8 @@ public class UserResource {
 
     @GET
     @Path("user/user-profiles/{id}")
-    public Response viewUserProfile(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = requireUser(auth);
+    public Response viewUserProfile(@PathParam("id") Long id) {
+        User user = requireUser();
         User viewedUser = User.findById(id);
         if (viewedUser == null) {
             throw new NotFoundException();
@@ -323,8 +324,8 @@ public class UserResource {
 
     @GET
     @Path("user/companies/{id}")
-    public Response viewCompany(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = requireUser(auth);
+    public Response viewCompany(@PathParam("id") Long id) {
+        User user = requireUser();
         Company company = Company.findById(id);
         if (company == null) {
             throw new NotFoundException();
@@ -334,22 +335,22 @@ public class UserResource {
 
     @GET
     @Path("user/tickets/open")
-    public Response tamOpenTickets(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireUser(auth);
+    public Response tamOpenTickets() {
+        requireUser();
         return Response.seeOther(URI.create("/user/tickets/open")).build();
     }
 
     @GET
     @Path("user/tickets/closed")
-    public Response tamClosedTickets(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireUser(auth);
+    public Response tamClosedTickets() {
+        requireUser();
         return Response.seeOther(URI.create("/user/tickets/closed")).build();
     }
 
     @GET
     @Path("user/tickets/{id}")
-    public Response ticketDetail(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = requireUser(auth);
+    public Response ticketDetail(@PathParam("id") Long id) {
+        User user = requireUser();
         if (findTicketForUser(user, id) == null) {
             throw new NotFoundException();
         }
@@ -364,9 +365,8 @@ public class UserResource {
     @Path("user/tickets/{id}/messages")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
-    public Response addUserMessage(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            MultipartFormDataInput input) {
-        User user = requireUser(auth);
+    public Response addUserMessage(@PathParam("id") Long id, MultipartFormDataInput input) {
+        User user = requireUser();
         String body = AttachmentHelper.readFormValue(input, "body");
         if (body == null || body.isBlank()) {
             throw new BadRequestException("Message is required");
@@ -398,8 +398,8 @@ public class UserResource {
 
     @GET
     @Path("user/tickets/{id}/edit")
-    public Response ticketEdit(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = requireUser(auth);
+    public Response ticketEdit(@PathParam("id") Long id) {
+        User user = requireUser();
         if (findTicketForUser(user, id) == null) {
             throw new NotFoundException();
         }
@@ -409,11 +409,10 @@ public class UserResource {
     @POST
     @Path("user/tickets/{id}")
     @Transactional
-    public Response updateUserTicket(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @HeaderParam("X-Billetsys-Client") String client, @FormParam("title") String title,
-            @FormParam("affectsVersionId") Long affectsVersionId,
+    public Response updateUserTicket(@PathParam("id") Long id, @HeaderParam("X-Billetsys-Client") String client,
+            @FormParam("title") String title, @FormParam("affectsVersionId") Long affectsVersionId,
             @FormParam("resolvedVersionId") Long resolvedVersionId) {
-        User user = requireUser(auth);
+        User user = requireUser();
         String normalizedTitle = Ticket.normalizeTitle(title);
         Ticket ticket = findTicketForUser(user, id);
         if (ticket == null) {
@@ -433,9 +432,8 @@ public class UserResource {
 
     @GET
     @Path("users")
-    public Response listAdminUsersRoot(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId) {
-        requireAdmin(auth);
+    public Response listAdminUsersRoot(@QueryParam("companyId") Long companyId) {
+        requireAdmin();
         if (companyId != null) {
             return Response.seeOther(URI.create("/users?companyId=" + companyId)).build();
         }
@@ -444,9 +442,8 @@ public class UserResource {
 
     @GET
     @Path("users/{companyId}")
-    public Response listAdminUsers(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("companyId") Long companyId) {
-        requireAdmin(auth);
+    public Response listAdminUsers(@PathParam("companyId") Long companyId) {
+        requireAdmin();
         Company selectedCompany = Company.findById(companyId);
         if (selectedCompany == null) {
             throw new NotFoundException();
@@ -456,15 +453,15 @@ public class UserResource {
 
     @GET
     @Path("users/create")
-    public Response createAdminUserForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireAdmin(auth);
+    public Response createAdminUserForm() {
+        requireAdmin();
         return Response.seeOther(URI.create("/users/new")).build();
     }
 
     @GET
     @Path("user/{id}/edit")
-    public Response editAdminUserForm(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public Response editAdminUserForm(@PathParam("id") Long id) {
+        requireAdmin();
         User editUser = User.findById(id);
         if (editUser == null) {
             throw new NotFoundException();
@@ -474,8 +471,8 @@ public class UserResource {
 
     @GET
     @Path("user/{id}")
-    public Response viewAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public Response viewAdminUser(@PathParam("id") Long id) {
+        requireAdmin();
         User viewUser = User.findById(id);
         if (viewUser == null) {
             throw new NotFoundException();
@@ -486,14 +483,13 @@ public class UserResource {
     @POST
     @Path("users")
     @Transactional
-    public Response createAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
+    public Response createAdminUser(@HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
             @FormParam("fullName") String fullName, @FormParam("email") String email,
             @FormParam("social") String social, @FormParam("phoneNumber") String phoneNumber,
             @FormParam("phoneExtension") String phoneExtension, @FormParam("timezoneId") Long timezoneId,
             @FormParam("countryId") Long countryId, @FormParam("type") String type,
             @FormParam("password") String password, @FormParam("companyId") Long companyId) {
-        requireAdmin(auth);
+        requireAdmin();
         validateUserFields(name, email, type, true, password);
         User newUser = new User();
         newUser.name = name.trim();
@@ -514,7 +510,7 @@ public class UserResource {
         }
         newUser.persist();
         eventService.record(newUser.id, ai.mnemosyne_systems.model.event.EventConstants.USER_CREATED, null,
-                AuthHelper.findUser(auth).id, "User created");
+                currentUser.get().id, "User created");
         if (companyId != null) {
             Company company = Company.findById(companyId);
             if (company != null) {
@@ -527,20 +523,19 @@ public class UserResource {
     @POST
     @Path("user/{id}")
     @Transactional
-    public Response updateAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @HeaderParam("X-Billetsys-Client") String client, @FormParam("name") String name,
-            @FormParam("fullName") String fullName, @FormParam("email") String email,
+    public Response updateAdminUser(@PathParam("id") Long id, @HeaderParam("X-Billetsys-Client") String client,
+            @FormParam("name") String name, @FormParam("fullName") String fullName, @FormParam("email") String email,
             @FormParam("social") String social, @FormParam("phoneNumber") String phoneNumber,
             @FormParam("phoneExtension") String phoneExtension, @FormParam("timezoneId") Long timezoneId,
             @FormParam("countryId") Long countryId, @FormParam("type") String type,
             @FormParam("password") String password, @FormParam("companyId") Long companyId,
             @FormParam("active") Boolean active) {
-        User currentUser = requireAdmin(auth);
+        User adminUser = requireAdmin();
         User editUser = User.findById(id);
         if (editUser == null) {
             throw new NotFoundException();
         }
-        if (active != null && currentUser.id != null && currentUser.id.equals(editUser.id)) {
+        if (active != null && adminUser != null && adminUser.id != null && adminUser.id.equals(editUser.id)) {
             throw new BadRequestException("Cannot change your own active status");
         }
         validateUserFields(name, email, type, false, password, editUser.name);
@@ -582,7 +577,7 @@ public class UserResource {
             eventService.record(editUser.id,
                     active ? ai.mnemosyne_systems.model.event.EventConstants.USER_ACTIVATED
                             : ai.mnemosyne_systems.model.event.EventConstants.USER_DEACTIVATED,
-                    company == null ? null : company.id, currentUser.id,
+                    company == null ? null : company.id, adminUser == null ? null : adminUser.id,
                     active ? "User activated" : "User deactivated");
         }
         return ReactRedirectSupport.redirect(client, "/users");
@@ -598,16 +593,15 @@ public class UserResource {
     @POST
     @Path("user/{id}/delete")
     @Transactional
-    public Response deleteAdminUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
-        requireAdmin(auth);
+    public Response deleteAdminUser(@HeaderParam("X-Billetsys-Client") String client, @PathParam("id") Long id) {
+        requireAdmin();
         User deleteUser = User.findById(id);
         if (deleteUser == null) {
             throw new NotFoundException();
         }
         removeUserReferences(deleteUser);
         eventService.record(deleteUser.id, ai.mnemosyne_systems.model.event.EventConstants.USER_DELETED, null,
-                AuthHelper.findUser(auth).id, "User deleted");
+                currentUser.get().id, "User deleted");
         deleteUser.delete();
         return ReactRedirectSupport.redirect(client, "/users");
     }
@@ -1117,16 +1111,16 @@ public class UserResource {
         };
     }
 
-    private User requireUser(String auth) {
-        User user = AuthHelper.findUser(auth);
+    private User requireUser() {
+        User user = currentUser.get();
         if (!AuthHelper.isUser(user)) {
             throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
         }
         return user;
     }
 
-    private User requireAdmin(String auth) {
-        User user = AuthHelper.findUser(auth);
+    private User requireAdmin() {
+        User user = currentUser.get();
         if (!AuthHelper.isAdmin(user)) {
             throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
         }

@@ -11,8 +11,10 @@ package ai.mnemosyne_systems.resource;
 import ai.mnemosyne_systems.model.Company;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
@@ -25,39 +27,38 @@ import java.util.List;
 
 @Path("/api/user")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed({ "tam", "user" })
 public class UserViewApiResource {
+
+    @Inject
+    CurrentUser currentUser;
 
     @GET
     @Path("/support-users/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse supportUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        requireUser(auth);
+    public UserDirectoryApiModels.UserDetailResponse supportUser(@PathParam("id") Long id) {
         return profileDetail(id, User.TYPE_SUPPORT);
     }
 
     @GET
     @Path("/tam-users/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse tamUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        requireUser(auth);
+    public UserDirectoryApiModels.UserDetailResponse tamUser(@PathParam("id") Long id) {
         return profileDetail(id, User.TYPE_TAM);
     }
 
     @GET
     @Path("/superuser-users/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse superuser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        User currentUser = requireUser(auth);
+    public UserDirectoryApiModels.UserDetailResponse superuser(@PathParam("id") Long id) {
+        User cUser = currentUser.get();
         User user = User.findById(id);
         if (user == null || !User.TYPE_SUPERUSER.equalsIgnoreCase(user.type)) {
             throw new NotFoundException();
         }
         boolean allowed = Company.count(
                 "select count(c) from Company c join c.users current join c.users viewed where current = ?1 and viewed = ?2",
-                currentUser, user) > 0;
+                cUser, user) > 0;
         if (!allowed) {
             throw new NotFoundException();
         }
@@ -67,9 +68,7 @@ public class UserViewApiResource {
     @GET
     @Path("/user-profiles/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse profile(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        requireUser(auth);
+    public UserDirectoryApiModels.UserDetailResponse profile(@PathParam("id") Long id) {
         User user = User.findById(id);
         if (user == null) {
             throw new NotFoundException();
@@ -80,9 +79,7 @@ public class UserViewApiResource {
     @GET
     @Path("/companies/{id}")
     @Transactional
-    public UserDirectoryApiModels.CompanyDetailResponse company(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        requireUser(auth);
+    public UserDirectoryApiModels.CompanyDetailResponse company(@PathParam("id") Long id) {
         Company company = Company.findById(id);
         if (company == null) {
             throw new NotFoundException();
@@ -122,11 +119,4 @@ public class UserViewApiResource {
                 .map(user -> UserDirectoryApiModels.userReference(user, basePath + user.id, null)).toList();
     }
 
-    private User requireUser(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isUser(user)) {
-            throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-        return user;
-    }
 }

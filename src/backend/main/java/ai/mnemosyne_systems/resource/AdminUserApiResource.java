@@ -14,11 +14,12 @@ import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.event.EventConstants;
 import ai.mnemosyne_systems.service.EventService;
+import ai.mnemosyne_systems.util.CurrentUser;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
@@ -34,16 +35,19 @@ import java.util.List;
 
 @Path("/api/admin/users")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("admin")
 public class AdminUserApiResource {
+
+    @Inject
+    CurrentUser currentUser;
 
     @Inject
     EventService eventService;
 
     @GET
     @Transactional
-    public UserDirectoryApiModels.DirectoryListResponse list(@CookieParam("authUserIdV3") String auth,
-            @QueryParam("companyId") Long companyId) {
-        OwnerResource.requireAdmin(auth);
+    public UserDirectoryApiModels.DirectoryListResponse list(@QueryParam("companyId") Long companyId) {
+
         List<Company> companies = Company.list("order by name");
         boolean unassignedSelected = companyId != null && companyId.longValue() == 0L;
         Company selectedCompany = unassignedSelected ? null : selectCompany(companies, companyId);
@@ -64,10 +68,9 @@ public class AdminUserApiResource {
     @GET
     @Path("/bootstrap")
     @Transactional
-    public UserDirectoryApiModels.UserFormResponse bootstrap(@CookieParam("authUserIdV3") String auth,
-            @QueryParam("userId") Long userId, @QueryParam("companyId") Long companyId,
-            @QueryParam("countryId") Long countryId) {
-        OwnerResource.requireAdmin(auth);
+    public UserDirectoryApiModels.UserFormResponse bootstrap(@QueryParam("userId") Long userId,
+            @QueryParam("companyId") Long companyId, @QueryParam("countryId") Long countryId) {
+
         List<Company> companies = Company.list("order by name");
         User user = userId == null ? new User() : User.findById(userId);
         if (userId != null && user == null) {
@@ -114,9 +117,8 @@ public class AdminUserApiResource {
     @GET
     @Path("/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse detail(@CookieParam("authUserIdV3") String auth,
-            @PathParam("id") Long id) {
-        OwnerResource.requireAdmin(auth);
+    public UserDirectoryApiModels.UserDetailResponse detail(@PathParam("id") Long id) {
+
         User user = User.findById(id);
         if (user == null) {
             throw new NotFoundException();
@@ -136,9 +138,9 @@ public class AdminUserApiResource {
     @Path("/{id}/active")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Transactional
-    public Response setActive(@CookieParam("authUserIdV3") String auth, @PathParam("id") Long id,
-            @HeaderParam("X-Billetsys-Client") String client, @FormParam("active") Boolean active) {
-        User currentUser = OwnerResource.requireAdmin(auth);
+    public Response setActive(@PathParam("id") Long id, @HeaderParam("X-Billetsys-Client") String client,
+            @FormParam("active") Boolean active) {
+        User actor = currentUser.get();
         if (active == null) {
             throw new BadRequestException("Active is required");
         }
@@ -146,7 +148,7 @@ public class AdminUserApiResource {
         if (user == null) {
             throw new NotFoundException();
         }
-        if (currentUser.id != null && currentUser.id.equals(user.id)) {
+        if (actor != null && actor.id != null && actor.id.equals(user.id)) {
             throw new BadRequestException("Cannot change your own active status");
         }
         user.active = active;
@@ -154,7 +156,8 @@ public class AdminUserApiResource {
         Company company = Company.<Company> find("select c from Company c join c.users u where u = ?1", user)
                 .firstResult();
         eventService.record(user.id, active ? EventConstants.USER_ACTIVATED : EventConstants.USER_DEACTIVATED,
-                company == null ? null : company.id, currentUser.id, active ? "User activated" : "User deactivated");
+                company == null ? null : company.id, actor == null ? null : actor.id,
+                active ? "User activated" : "User deactivated");
         String backPath = company != null ? "/users?companyId=" + company.id : "/users";
         return ReactRedirectSupport.redirect(client, backPath);
     }

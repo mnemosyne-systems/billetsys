@@ -5,7 +5,7 @@
 [postgresql]: https://www.postgresql.org
 [fedora]: https://getfedora.org/
 [rhel]: https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux
-[appstram]: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/installing_managing_and_removing_user-space_components/using-appstream_using-appstream
+[appstream]: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/installing_managing_and_removing_user-space_components/using-appstream_using-appstream
 [freebsd]: https://www.freebsd.org/
 [openbsd]: http://www.openbsd.org/
 [rocky]: https://rockylinux.org/

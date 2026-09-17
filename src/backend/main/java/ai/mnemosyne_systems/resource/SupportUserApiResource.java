@@ -14,16 +14,15 @@ import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.event.EventConstants;
 import ai.mnemosyne_systems.service.EventService;
-import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
-import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -36,7 +35,11 @@ import java.util.List;
 
 @Path("/api/support")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("support")
 public class SupportUserApiResource {
+
+    @Inject
+    CurrentUser cUser;
 
     @Inject
     EventService eventService;
@@ -44,9 +47,8 @@ public class SupportUserApiResource {
     @GET
     @Path("/users")
     @Transactional
-    public UserDirectoryApiModels.DirectoryListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId) {
-        User currentUser = requireSupport(auth);
+    public UserDirectoryApiModels.DirectoryListResponse list(@QueryParam("companyId") Long companyId) {
+        User currentUser = cUser.get();
         SupportResource.SupportTicketCounts counts = SupportResource.loadTicketCounts(currentUser);
         List<Company> companies = Company.list("order by name");
         Company selectedCompany = selectCompany(companies, companyId);
@@ -64,9 +66,9 @@ public class SupportUserApiResource {
     @GET
     @Path("/users/bootstrap")
     @Transactional
-    public UserDirectoryApiModels.UserFormResponse bootstrap(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId, @QueryParam("countryId") Long countryId) {
-        User currentUser = requireSupport(auth);
+    public UserDirectoryApiModels.UserFormResponse bootstrap(@QueryParam("companyId") Long companyId,
+            @QueryParam("countryId") Long countryId) {
+        User currentUser = cUser.get();
         SupportResource.loadTicketCounts(currentUser);
         List<Company> companies = Company.list("order by name");
         Company selectedCompany = companyId == null ? (companies.isEmpty() ? null : companies.get(0))
@@ -97,45 +99,35 @@ public class SupportUserApiResource {
     @GET
     @Path("/support-users/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse supportUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        requireSupport(auth);
+    public UserDirectoryApiModels.UserDetailResponse supportUser(@PathParam("id") Long id) {
         return profileDetail(id, User.TYPE_SUPPORT, "/support/users");
     }
 
     @GET
     @Path("/tam-users/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse tamUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        requireSupport(auth);
+    public UserDirectoryApiModels.UserDetailResponse tamUser(@PathParam("id") Long id) {
         return profileDetail(id, User.TYPE_TAM, "/support/users");
     }
 
     @GET
     @Path("/superuser-users/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse superuser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        requireSupport(auth);
+    public UserDirectoryApiModels.UserDetailResponse superuser(@PathParam("id") Long id) {
         return profileDetail(id, User.TYPE_SUPERUSER, "/support/users");
     }
 
     @GET
     @Path("/user-profiles/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse userProfile(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        requireSupport(auth);
+    public UserDirectoryApiModels.UserDetailResponse userProfile(@PathParam("id") Long id) {
         return profileDetail(id, null, "/support/users");
     }
 
     @GET
     @Path("/companies/{id}")
     @Transactional
-    public UserDirectoryApiModels.CompanyDetailResponse company(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        requireSupport(auth);
+    public UserDirectoryApiModels.CompanyDetailResponse company(@PathParam("id") Long id) {
         Company company = Company.findById(id);
         if (company == null) {
             throw new NotFoundException();
@@ -154,9 +146,9 @@ public class SupportUserApiResource {
     @Path("/users/{id}/active")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Transactional
-    public Response setActive(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @HeaderParam("X-Billetsys-Client") String client, @FormParam("active") Boolean active) {
-        User currentUser = requireSupport(auth);
+    public Response setActive(@PathParam("id") Long id, @HeaderParam("X-Billetsys-Client") String client,
+            @FormParam("active") Boolean active) {
+        User actor = cUser.get();
         if (active == null) {
             throw new BadRequestException("Active is required");
         }
@@ -164,7 +156,7 @@ public class SupportUserApiResource {
         if (user == null) {
             throw new NotFoundException();
         }
-        if (currentUser.id != null && currentUser.id.equals(user.id)) {
+        if (actor != null && actor.id != null && actor.id.equals(user.id)) {
             throw new BadRequestException("Cannot change your own active status");
         }
         if (!User.TYPE_USER.equalsIgnoreCase(user.type) && !User.TYPE_EXTERNAL.equalsIgnoreCase(user.type)) {
@@ -175,7 +167,8 @@ public class SupportUserApiResource {
         Company company = Company.<Company> find("select c from Company c join c.users u where u = ?1", user)
                 .firstResult();
         eventService.record(user.id, active ? EventConstants.USER_ACTIVATED : EventConstants.USER_DEACTIVATED,
-                company == null ? null : company.id, currentUser.id, active ? "User activated" : "User deactivated");
+                company == null ? null : company.id, actor == null ? null : actor.id,
+                active ? "User activated" : "User deactivated");
         String backPath = company != null ? "/support/users?companyId=" + company.id : "/support/users";
         return ReactRedirectSupport.redirect(client, backPath);
     }
@@ -241,11 +234,4 @@ public class SupportUserApiResource {
         return Country.find("code", "US").firstResult();
     }
 
-    private User requireSupport(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isSupport(user)) {
-            throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-        return user;
-    }
 }

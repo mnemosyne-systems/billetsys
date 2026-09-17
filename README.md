@@ -17,6 +17,7 @@ roles to navigate and get their work done quicker.
 ## Features
 
 - Support ticket system with 5 roles (User, Superuser, TAM, Support, Admin)
+- Keycloak Single Sign-On (SSO) authentication
 - Branding
 - Public and private messages
 - Search across ticket numbers and messages
@@ -36,6 +37,7 @@ roles to navigate and get their work done quicker.
 - [Developer guide](https://github.com/mnemosyne-systems/billetsys/blob/main/doc/DEVELOPERS.md)
 - [Build and run guide](https://github.com/mnemosyne-systems/billetsys/blob/main/doc/BUILDING.md)
 - [Frontend guide](https://github.com/mnemosyne-systems/billetsys/blob/main/src/frontend/README.md)
+- [Keycloak integration guide](https://github.com/mnemosyne-systems/billetsys/blob/main/contrib/keycloak/README.md)
 
 See the [releases page](https://github.com/mnemosyne-systems/billetsys/releases)
 for downloads and release notes.
@@ -45,6 +47,7 @@ for downloads and release notes.
 **billetsys** is built with
 
 - [Quarkus](https://quarkus.io/) on [Java 25](https://openjdk.org/) for the backend
+- [Keycloak](https://www.keycloak.org/) for identity management and Single Sign-On (SSO)
 - [PostgreSQL](https://www.postgresql.org) for storage
 - [React](https://react.dev/) and [TypeScript](https://www.typescriptlang.org/)
   on the frontend, bundled with [Vite](https://vitejs.dev/)
@@ -79,7 +82,15 @@ Copy the example environment file and fill in the secrets:
 cp .env.example .env
 ```
 
-Start the support services (CAP + Valkey) with compose:
+Set up Keycloak environment and generate the realm file:
+```sh
+cd contrib/keycloak
+cp .env-keycloak.example .env-keycloak
+python generate_realm.py
+cd ../..
+```
+
+Start the support services (CAP + Valkey + keycloak) with compose:
 
 ```sh
 make platform

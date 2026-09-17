@@ -15,6 +15,7 @@ Mohamed Hamed <alkmohamed40@gmail.com>
 Ahmed Maarouf <ahmedwael5775@gmail.com>
 Ahmed Abbas <ah.abbas333@gmail.com>
 Ahmad Bustany <ahmadbustany06@gmail.com>
+Omar Goher <omargoher59@gmail.com>
 ```
 
 ## Committers

@@ -12,6 +12,8 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./app.css";
 
+import { AuthProvider } from "./auth/AuthProvider";
+
 const rootElement = document.getElementById("root");
 
 if (!rootElement) {
@@ -29,7 +31,9 @@ if (
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>,
 );

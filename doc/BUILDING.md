@@ -77,6 +77,7 @@ The root `docker-compose.yml` starts:
 
 - `cap` on `http://localhost:3000`
 - `valkey` for CAP storage
+- `keycloak` on `http://localhost:8180`
 
 Then start billetsys itself in development mode:
 
@@ -195,5 +196,5 @@ The targets are
 * `docs` - Generate documentation
 * `db-drop` - Drop the database
 * `db-create` - Create the database
-* `platform` - Start compose services (CAP + Valkey)
+* `platform` - Start compose services (CAP + Valkey + Keycloak)
 * `full` - Run everything (db-drop, db-create, platform, clean, format, test, docs, run)

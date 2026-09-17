@@ -13,9 +13,12 @@ import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
@@ -32,16 +35,18 @@ import java.util.List;
 @Path("/api/attachments")
 @Produces(MediaType.APPLICATION_JSON)
 @Blocking
+@RolesAllowed({ "admin", "support", "superuser", "tam", "user" })
 public class AttachmentApiResource {
+
+    @Inject
+    CurrentUser currentUser;
 
     @GET
     @Path("/{id}")
     @Transactional
-    public AttachmentResponse view(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id) {
-        User user = AuthHelper.findUser(auth);
-        if (user == null) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
-        }
+    public AttachmentResponse view(@PathParam("id") Long id) {
+        User user = currentUser.get();
+
         Attachment attachment = Attachment.findById(id);
         if (attachment == null) {
             throw new NotFoundException();

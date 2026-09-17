@@ -13,11 +13,13 @@ import ai.mnemosyne_systems.service.CsvTicketImportSource;
 import ai.mnemosyne_systems.service.TicketImportService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -32,15 +34,18 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 @Path("/api/ticket-imports")
 @Produces(MediaType.APPLICATION_JSON)
 @Blocking
+@RolesAllowed({ "admin", "support" })
 public class TicketImportApiResource {
+
+    @Inject
+    CurrentUser currentUser;
 
     @Inject
     TicketImportService ticketImportService;
 
     @GET
     @Path("/bootstrap")
-    public TicketImportBootstrapResponse bootstrap(@CookieParam(AuthHelper.AUTH_COOKIE) String auth) {
-        requireImportAccess(auth);
+    public TicketImportBootstrapResponse bootstrap() {
         return new TicketImportBootstrapResponse(List.of(new TicketImportFormat("csv", "CSV",
                 CsvTicketImportSource.REQUIRED_COLUMNS, CsvTicketImportSource.OPTIONAL_COLUMNS)),
                 "/api/ticket-imports/csv");
@@ -49,9 +54,8 @@ public class TicketImportApiResource {
     @POST
     @Path("/csv")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public TicketImportService.TicketImportSummary importCsv(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            MultipartFormDataInput input) {
-        User actor = requireImportAccess(auth);
+    public TicketImportService.TicketImportSummary importCsv(MultipartFormDataInput input) {
+        User actor = currentUser.get();
         AttachmentHelper.UploadedFile file = AttachmentHelper.readFile(input, "file",
                 CsvTicketImportSource.MAX_CSV_BYTES);
         if (file == null || file.data() == null || file.data().length == 0) {
@@ -63,14 +67,6 @@ public class TicketImportApiResource {
             throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).type(MediaType.TEXT_PLAIN)
                     .entity(ex.getMessage()).build());
         }
-    }
-
-    private User requireImportAccess(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isSupport(user) && !AuthHelper.isAdmin(user)) {
-            throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
-        }
-        return user;
     }
 
     public record TicketImportBootstrapResponse(List<TicketImportFormat> formats, String submitPath) {

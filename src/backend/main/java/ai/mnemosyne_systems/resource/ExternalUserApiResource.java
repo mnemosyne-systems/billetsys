@@ -13,9 +13,11 @@ import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.quarkus.elytron.security.common.BcryptUtil;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.NotAuthorizedException;
@@ -32,14 +34,18 @@ import java.util.UUID;
 
 @Path("/api/{role}/externals")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed({ "support", "tam", "superuser", "user" })
 public class ExternalUserApiResource {
+
+    @Inject
+    CurrentUser currentUser;
 
     @GET
     @Transactional
-    public UserDirectoryApiModels.DirectoryListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("role") String role, @QueryParam("companyId") Long companyId) {
-        User currentUser = requireRole(auth, role);
-        Company company = resolveCompanyForRole(currentUser, role, companyId);
+    public UserDirectoryApiModels.DirectoryListResponse list(@PathParam("role") String role,
+            @QueryParam("companyId") Long companyId) {
+        User actor = requireRole(currentUser.get(), role);
+        Company company = resolveCompanyForRole(actor, role, companyId);
 
         List<User> users = company == null ? List.of()
                 : Company.<User> find(
@@ -58,11 +64,11 @@ public class ExternalUserApiResource {
     @GET
     @Path("/bootstrap")
     @Transactional
-    public UserDirectoryApiModels.UserFormResponse bootstrap(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("role") String role, @QueryParam("userId") Long userId, @QueryParam("companyId") Long companyId,
+    public UserDirectoryApiModels.UserFormResponse bootstrap(@PathParam("role") String role,
+            @QueryParam("userId") Long userId, @QueryParam("companyId") Long companyId,
             @QueryParam("countryId") Long countryId) {
-        User currentUser = requireRole(auth, role);
-        Company company = resolveCompanyForRole(currentUser, role, companyId);
+        User actor = requireRole(currentUser.get(), role);
+        Company company = resolveCompanyForRole(actor, role, companyId);
         if (company == null && !("support".equals(role) && companyId == null)) {
             throw new NotFoundException();
         }
@@ -112,9 +118,8 @@ public class ExternalUserApiResource {
     @GET
     @Path("/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse detail(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("role") String role, @PathParam("id") Long id) {
-        User currentUser = requireRole(auth, role);
+    public UserDirectoryApiModels.UserDetailResponse detail(@PathParam("role") String role, @PathParam("id") Long id) {
+        User actor = requireRole(currentUser.get(), role);
 
         User user = User.findById(id);
         if (user == null || !User.TYPE_EXTERNAL.equals(user.type)) {
@@ -123,7 +128,7 @@ public class ExternalUserApiResource {
 
         Company userCompany = Company.<Company> find("select c from Company c join c.users u where u = ?1", user)
                 .firstResult();
-        Company roleCompany = resolveCompanyForRole(currentUser, role, userCompany == null ? null : userCompany.id);
+        Company roleCompany = resolveCompanyForRole(actor, role, userCompany == null ? null : userCompany.id);
 
         if (userCompany == null || roleCompany == null || !userCompany.id.equals(roleCompany.id)) {
             throw new NotFoundException();
@@ -136,8 +141,7 @@ public class ExternalUserApiResource {
                 "/" + role + "/externals/" + user.id + "/delete", "/" + role + "/externals", user.active);
     }
 
-    private User requireRole(String auth, String role) {
-        User user = AuthHelper.findUser(auth);
+    private User requireRole(User user, String role) {
         if (user == null) {
             throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
         }

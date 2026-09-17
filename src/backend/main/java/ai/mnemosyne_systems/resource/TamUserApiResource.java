@@ -14,16 +14,15 @@ import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.event.EventConstants;
 import ai.mnemosyne_systems.service.EventService;
-import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
-import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -36,16 +35,19 @@ import java.util.List;
 
 @Path("/api/tam/users")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("tam")
 public class TamUserApiResource {
+
+    @Inject
+    CurrentUser cUser;
 
     @Inject
     EventService eventService;
 
     @GET
     @Transactional
-    public UserDirectoryApiModels.DirectoryListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId) {
-        User currentUser = requireTam(auth);
+    public UserDirectoryApiModels.DirectoryListResponse list(@QueryParam("companyId") Long companyId) {
+        User currentUser = cUser.get();
         List<Company> companies = Company
                 .find("select distinct c from Company c join c.users u where u = ?1 order by c.name", currentUser)
                 .list();
@@ -66,9 +68,9 @@ public class TamUserApiResource {
     @GET
     @Path("/bootstrap")
     @Transactional
-    public UserDirectoryApiModels.UserFormResponse bootstrap(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId, @QueryParam("countryId") Long countryId) {
-        User currentUser = requireTam(auth);
+    public UserDirectoryApiModels.UserFormResponse bootstrap(@QueryParam("companyId") Long companyId,
+            @QueryParam("countryId") Long countryId) {
+        User currentUser = cUser.get();
         List<Company> companies = Company
                 .find("select distinct c from Company c join c.users u where u = ?1 order by c.name", currentUser)
                 .list();
@@ -99,9 +101,9 @@ public class TamUserApiResource {
     @Path("/{id}/active")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Transactional
-    public Response setActive(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @HeaderParam("X-Billetsys-Client") String client, @FormParam("active") Boolean active) {
-        User currentUser = requireTam(auth);
+    public Response setActive(@PathParam("id") Long id, @HeaderParam("X-Billetsys-Client") String client,
+            @FormParam("active") Boolean active) {
+        User actor = cUser.get();
         if (active == null) {
             throw new BadRequestException("Active is required");
         }
@@ -109,7 +111,7 @@ public class TamUserApiResource {
         if (user == null) {
             throw new NotFoundException();
         }
-        if (currentUser.id != null && currentUser.id.equals(user.id)) {
+        if (actor != null && actor.id != null && actor.id.equals(user.id)) {
             throw new BadRequestException("Cannot change your own active status");
         }
         if (!User.TYPE_USER.equalsIgnoreCase(user.type) && !User.TYPE_EXTERNAL.equalsIgnoreCase(user.type)) {
@@ -117,7 +119,7 @@ public class TamUserApiResource {
         }
         boolean inScope = Company.count(
                 "select count(c) from Company c join c.users current join c.users viewed where current = ?1 and viewed = ?2",
-                currentUser, user) > 0;
+                actor, user) > 0;
         if (!inScope) {
             throw new NotFoundException();
         }
@@ -126,7 +128,8 @@ public class TamUserApiResource {
         Company company = Company.<Company> find("select c from Company c join c.users u where u = ?1", user)
                 .firstResult();
         eventService.record(user.id, active ? EventConstants.USER_ACTIVATED : EventConstants.USER_DEACTIVATED,
-                company == null ? null : company.id, currentUser.id, active ? "User activated" : "User deactivated");
+                company == null ? null : company.id, actor == null ? null : actor.id,
+                active ? "User activated" : "User deactivated");
         String backPath = company != null ? "/tam/users?companyId=" + company.id : "/tam/users";
         return ReactRedirectSupport.redirect(client, backPath);
     }
@@ -150,13 +153,5 @@ public class TamUserApiResource {
             }
         }
         return Country.find("code", "US").firstResult();
-    }
-
-    private User requireTam(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isUser(user) || !User.TYPE_TAM.equalsIgnoreCase(user.type)) {
-            throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-        return user;
     }
 }

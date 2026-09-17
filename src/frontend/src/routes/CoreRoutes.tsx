@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Eclipse Public License - v 2.0
  *
  *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -57,7 +57,7 @@ export function getCoreRoutes(sessionState: SessionState): AppRoute[] {
     },
     {
       path: PATHS.profilePassword,
-      element: <PasswordPage sessionState={sessionState} />,
+      element: <PasswordPage />,
       requiresAuth: true,
     },
     {

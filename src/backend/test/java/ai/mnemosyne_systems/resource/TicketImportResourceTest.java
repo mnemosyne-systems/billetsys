@@ -24,14 +24,19 @@ import java.nio.charset.StandardCharsets;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import io.quarkus.test.security.TestSecurity;
+import io.quarkus.test.security.jwt.Claim;
+import io.quarkus.test.security.jwt.JwtSecurity;
 
 @QuarkusTest
 class TicketImportResourceTest extends AccessTestSupport {
 
     @Test
+    @TestSecurity(user = "import-support", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "import-support@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "import-support") })
     void supportUserCanImportCsvTicketsAndMessages() {
         ImportFixture fixture = fixture("import-success");
-        String cookie = login("import-support", "pass");
         String sourceKey = "csv-success-" + System.nanoTime();
         String csv = """
                 source_key,title,company,entitlement,status,initial_message,requester_email,category,external_issue_link,created_at
@@ -40,7 +45,7 @@ class TicketImportResourceTest extends AccessTestSupport {
                 """
                 .formatted(sourceKey, fixture.companyName(), fixture.entitlementName());
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).contentType("multipart/form-data")
+        RestAssured.given().contentType("multipart/form-data")
                 .multiPart("file", "tickets.csv", csv.getBytes(StandardCharsets.UTF_8), "text/csv")
                 .post("/api/ticket-imports/csv").then().statusCode(200).body("rowCount", Matchers.equalTo(1))
                 .body("createdCount", Matchers.equalTo(1)).body("skippedCount", Matchers.equalTo(0))
@@ -57,17 +62,19 @@ class TicketImportResourceTest extends AccessTestSupport {
     }
 
     @Test
+    @TestSecurity(user = "import-admin", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "import-admin@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "import-admin") })
     void adminUserCanImportCsvTicketsAndMessages() {
         ImportFixture fixture = fixture("import-admin-success");
-        ensureUser("import-admin", "import-admin@mnemosyne-systems.ai", User.TYPE_ADMIN, "pass");
-        String cookie = login("import-admin", "pass");
+        ensureUser("import-admin", "import-admin@mnemosyne-systems.ai", User.TYPE_ADMIN);
         String sourceKey = "csv-admin-success-" + System.nanoTime();
         String csv = """
                 source_key,title,company,entitlement,status,initial_message,requester_email,category
                 %s,Imported by admin,%s,%s,Open,Imported from admin,import-user@mnemosyne-systems.ai,Bug
                 """.formatted(sourceKey, fixture.companyName(), fixture.entitlementName());
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).contentType("multipart/form-data")
+        RestAssured.given().contentType("multipart/form-data")
                 .multiPart("file", "tickets.csv", csv.getBytes(StandardCharsets.UTF_8), "text/csv")
                 .post("/api/ticket-imports/csv").then().statusCode(200).body("rowCount", Matchers.equalTo(1))
                 .body("createdCount", Matchers.equalTo(1)).body("failedCount", Matchers.equalTo(0));
@@ -78,19 +85,21 @@ class TicketImportResourceTest extends AccessTestSupport {
     }
 
     @Test
+    @TestSecurity(user = "import-support", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "import-support@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "import-support") })
     void duplicateSourceKeyIsSkippedOnReimport() {
         ImportFixture fixture = fixture("import-duplicate");
-        String cookie = login("import-support", "pass");
         String sourceKey = "csv-duplicate-" + System.nanoTime();
         String csv = """
                 source_key,title,company,entitlement,status,initial_message
                 %s,Duplicate import,%s,%s,Open,Initial duplicate import
                 """.formatted(sourceKey, fixture.companyName(), fixture.entitlementName());
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).contentType("multipart/form-data")
+        RestAssured.given().contentType("multipart/form-data")
                 .multiPart("file", "tickets.csv", csv.getBytes(StandardCharsets.UTF_8), "text/csv")
                 .post("/api/ticket-imports/csv").then().statusCode(200).body("createdCount", Matchers.equalTo(1));
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).contentType("multipart/form-data")
+        RestAssured.given().contentType("multipart/form-data")
                 .multiPart("file", "tickets.csv", csv.getBytes(StandardCharsets.UTF_8), "text/csv")
                 .post("/api/ticket-imports/csv").then().statusCode(200).body("createdCount", Matchers.equalTo(0))
                 .body("skippedCount", Matchers.equalTo(1)).body("results[0].result", Matchers.equalTo("skipped"));
@@ -100,16 +109,18 @@ class TicketImportResourceTest extends AccessTestSupport {
     }
 
     @Test
+    @TestSecurity(user = "import-support", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "import-support@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "import-support") })
     void invalidRowsReturnRowLevelErrors() {
         fixture("import-invalid");
-        String cookie = login("import-support", "pass");
         String sourceKey = "csv-invalid-" + System.nanoTime();
         String csv = """
                 source_key,title,company,entitlement,status,initial_message,category
                 %s,Missing company,Does Not Exist,Starter,Open,Message,Bug
                 """.formatted(sourceKey);
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).contentType("multipart/form-data")
+        RestAssured.given().contentType("multipart/form-data")
                 .multiPart("file", "tickets.csv", csv.getBytes(StandardCharsets.UTF_8), "text/csv")
                 .post("/api/ticket-imports/csv").then().statusCode(200).body("createdCount", Matchers.equalTo(0))
                 .body("failedCount", Matchers.equalTo(1)).body("results[0].result", Matchers.equalTo("failed"))
@@ -119,15 +130,17 @@ class TicketImportResourceTest extends AccessTestSupport {
     }
 
     @Test
+    @TestSecurity(user = "import-support", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "import-support@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "import-support") })
     void missingSourceKeyReturnsRowLevelError() {
         ImportFixture fixture = fixture("import-missing-source-key");
-        String cookie = login("import-support", "pass");
         String csv = """
                 source_key,title,company,entitlement,status,initial_message
                 ,Missing source key,%s,%s,Open,Message
                 """.formatted(fixture.companyName(), fixture.entitlementName());
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).contentType("multipart/form-data")
+        RestAssured.given().contentType("multipart/form-data")
                 .multiPart("file", "tickets.csv", csv.getBytes(StandardCharsets.UTF_8), "text/csv")
                 .post("/api/ticket-imports/csv").then().statusCode(200).body("createdCount", Matchers.equalTo(0))
                 .body("failedCount", Matchers.equalTo(1)).body("results[0].result", Matchers.equalTo("failed"))
@@ -135,37 +148,40 @@ class TicketImportResourceTest extends AccessTestSupport {
     }
 
     @Test
+    @TestSecurity(user = "import-user", roles = "user")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "import-user@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "import-user") })
     void nonSupportUserCannotImportCsv() {
         fixture("import-access");
-        String cookie = login("import-user", "pass");
         String csv = """
                 source_key,title,company,entitlement,status,initial_message
                 cannot-import,Denied,Company,Starter,Open,Denied
                 """;
 
-        RestAssured.given().redirects().follow(false).cookie(AuthHelper.AUTH_COOKIE, cookie)
-                .contentType("multipart/form-data")
+        RestAssured.given().redirects().follow(false).contentType("multipart/form-data")
                 .multiPart("file", "tickets.csv", csv.getBytes(StandardCharsets.UTF_8), "text/csv")
-                .post("/api/ticket-imports/csv").then().statusCode(303);
+                .post("/api/ticket-imports/csv").then().statusCode(403);
     }
 
     @Test
+    @TestSecurity(user = "import-support", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "import-support@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "import-support") })
     void missingRequiredHeaderFailsClearly() {
-        ensureUser("import-support", "import-support@mnemosyne-systems.ai", User.TYPE_SUPPORT, "pass");
-        String cookie = login("import-support", "pass");
+        ensureUser("import-support", "import-support@mnemosyne-systems.ai", User.TYPE_SUPPORT);
         String csv = """
                 source_key,title,company,status,initial_message
                 missing-entitlement,Missing entitlement,Company,Open,Message
                 """;
 
-        RestAssured.given().cookie(AuthHelper.AUTH_COOKIE, cookie).contentType("multipart/form-data")
+        RestAssured.given().contentType("multipart/form-data")
                 .multiPart("file", "tickets.csv", csv.getBytes(StandardCharsets.UTF_8), "text/csv")
                 .post("/api/ticket-imports/csv").then().statusCode(400).body(Matchers.containsString("entitlement"));
     }
 
     private ImportFixture fixture(String suffix) {
-        ensureUser("import-support", "import-support@mnemosyne-systems.ai", User.TYPE_SUPPORT, "pass");
-        ensureUser("import-user", "import-user@mnemosyne-systems.ai", User.TYPE_USER, "pass");
+        ensureUser("import-support", "import-support@mnemosyne-systems.ai", User.TYPE_SUPPORT);
+        ensureUser("import-user", "import-user@mnemosyne-systems.ai", User.TYPE_USER);
         ensureCategory("Bug", "Defects", false);
         Entitlement entitlement = ensureEntitlement("Starter Import " + suffix, "Import entitlement");
         Long companyId = ensureCompany("Import Company " + suffix);

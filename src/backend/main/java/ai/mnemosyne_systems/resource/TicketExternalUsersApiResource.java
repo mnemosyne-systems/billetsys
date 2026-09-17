@@ -14,9 +14,11 @@ import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.event.EventConstants;
 import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.quarkus.elytron.security.common.BcryptUtil;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -31,18 +33,22 @@ import jakarta.ws.rs.FormParam;
 
 @Path("/api/{role}/tickets/{ticketId}/externals")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed({ "support", "tam" })
 public class TicketExternalUsersApiResource {
 
     @jakarta.inject.Inject
     EventService eventService;
 
+    @Inject
+    CurrentUser currentUser;
+
     @POST
     @Path("/add")
     @Transactional
-    public Response add(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("role") String role,
-            @PathParam("ticketId") Long ticketId, @FormParam("email") String email) {
-        User currentUser = requireRole(auth, role);
-        Company roleCompany = resolveCompanyForRole(currentUser, role, null);
+    public Response add(@PathParam("role") String role, @PathParam("ticketId") Long ticketId,
+            @FormParam("email") String email) {
+        User actor = requireRole(currentUser.get(), role);
+        Company roleCompany = resolveCompanyForRole(actor, role, null);
 
         Ticket ticket = Ticket.findById(ticketId);
         if (ticket == null) {
@@ -69,7 +75,7 @@ public class TicketExternalUsersApiResource {
             externalUser.passwordHash = User.DISABLED_PASSWORD_HASH;
             externalUser.persist();
             eventService.record(externalUser.id, EventConstants.USER_CREATED,
-                    roleCompany == null ? null : roleCompany.id, currentUser.id, "User created");
+                    roleCompany == null ? null : roleCompany.id, actor.id, "User created");
 
             // Link to company
             roleCompany.users.add(externalUser);
@@ -83,7 +89,7 @@ public class TicketExternalUsersApiResource {
 
         if (!ticket.externalUsers.contains(externalUser)) {
             ticket.externalUsers.add(externalUser);
-            eventService.recordTicketUserAssociation(ticket, currentUser, externalUser,
+            eventService.recordTicketUserAssociation(ticket, actor, externalUser,
                     EventConstants.TICKET_EXTERNAL_USER_ADDED);
         }
 
@@ -93,10 +99,10 @@ public class TicketExternalUsersApiResource {
     @POST
     @Path("/{userId}/remove")
     @Transactional
-    public Response remove(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("role") String role,
-            @PathParam("ticketId") Long ticketId, @PathParam("userId") Long userId) {
-        User currentUser = requireRole(auth, role);
-        Company roleCompany = resolveCompanyForRole(currentUser, role, null);
+    public Response remove(@PathParam("role") String role, @PathParam("ticketId") Long ticketId,
+            @PathParam("userId") Long userId) {
+        User actor = requireRole(currentUser.get(), role);
+        Company roleCompany = resolveCompanyForRole(actor, role, null);
 
         Ticket ticket = Ticket.findById(ticketId);
         if (ticket == null) {
@@ -115,14 +121,13 @@ public class TicketExternalUsersApiResource {
         }
 
         ticket.externalUsers.remove(externalUser);
-        eventService.recordTicketUserAssociation(ticket, currentUser, externalUser,
+        eventService.recordTicketUserAssociation(ticket, actor, externalUser,
                 EventConstants.TICKET_EXTERNAL_USER_REMOVED);
 
         return Response.seeOther(URI.create("/api/" + role + "/tickets/" + ticket.id)).build();
     }
 
-    private User requireRole(String auth, String role) {
-        User user = AuthHelper.findUser(auth);
+    private User requireRole(User user, String role) {
         if (user == null) {
             throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
         }

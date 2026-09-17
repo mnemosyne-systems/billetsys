@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Session } from "../../types/app";
+import { useAuth } from "../../auth/useAuth";
 import { Button } from "../ui/button";
 import {
   AlertDialog,
@@ -35,6 +36,7 @@ function formatRemainingTime(totalSeconds: number): string {
 export default function SessionInactivityManager({
   session,
 }: SessionInactivityManagerProps) {
+  const { keycloak } = useAuth();
   const timeoutSeconds =
     session?.inactivityTimeoutSeconds || DEFAULT_TIMEOUT_SECONDS;
   const warningSeconds =
@@ -54,15 +56,8 @@ export default function SessionInactivityManager({
     }
     timeoutTriggeredRef.current = true;
     setWarningOpen(false);
-    try {
-      await fetch("/logout", {
-        credentials: "same-origin",
-        cache: "no-store",
-      });
-    } finally {
-      window.location.replace("/login");
-    }
-  }, []);
+    keycloak.logout({ redirectUri: window.location.origin });
+  }, [keycloak]);
 
   const keepAlive = useCallback(
     async (force = false) => {

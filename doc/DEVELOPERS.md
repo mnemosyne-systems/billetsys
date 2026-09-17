@@ -185,13 +185,15 @@ psql -h localhost -p 5432 -U ticketdb ticketdb
 
 #### billetsys
 
-``` sh
-cd /usr/local
-git clone https://github.com/mnemosyne-systems/billetsys.git
-cd billetsys
-```
-
 See `BUILDING.md` for the current development, build, test, and frontend integration commands.
+
+## Keycloak OIDC Authentication
+
+Billetsys uses **Keycloak** for Single Sign-On (SSO) and bearer token authentication.
+
+For full setup details, environment variables, realm generation, helper scripts (`create-user.sh` & `login.sh`), CLI testing, and role-to-endpoint mappings, see the dedicated guide:
+
+**[Keycloak Integration & Testing Guide](../contrib/keycloak/README.md)**
 
 ## Logging levels
 

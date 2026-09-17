@@ -14,9 +14,11 @@ import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.event.EventConstants;
 import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.quarkus.elytron.security.common.BcryptUtil;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -31,17 +33,21 @@ import jakarta.ws.rs.FormParam;
 
 @Path("/api/{role}/tickets/{ticketId}/participants")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed({ "superuser", "user" })
 public class TicketParticipantUsersApiResource {
 
     @jakarta.inject.Inject
     EventService eventService;
 
+    @Inject
+    CurrentUser currentUser;
+
     @POST
     @Path("/add")
     @Transactional
-    public Response add(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("role") String role,
-            @PathParam("ticketId") Long ticketId, @FormParam("email") String email) {
-        User currentUser = requireRole(auth, role);
+    public Response add(@PathParam("role") String role, @PathParam("ticketId") Long ticketId,
+            @FormParam("email") String email) {
+        User actor = requireRole(currentUser.get(), role);
 
         Ticket ticket = Ticket.findById(ticketId);
         if (ticket == null) {
@@ -74,7 +80,7 @@ public class TicketParticipantUsersApiResource {
             participantUser.passwordHash = User.DISABLED_PASSWORD_HASH;
             participantUser.persist();
             eventService.record(participantUser.id, EventConstants.USER_CREATED,
-                    roleCompany == null ? null : roleCompany.id, currentUser.id, "User created");
+                    roleCompany == null ? null : roleCompany.id, actor.id, "User created");
 
             // Link to company
             roleCompany.users.add(participantUser);
@@ -89,7 +95,7 @@ public class TicketParticipantUsersApiResource {
 
         if (!ticket.userUsers.contains(participantUser)) {
             ticket.userUsers.add(participantUser);
-            eventService.recordTicketUserAssociation(ticket, currentUser, participantUser,
+            eventService.recordTicketUserAssociation(ticket, actor, participantUser,
                     EventConstants.TICKET_PARTICIPANT_ADDED);
         }
 
@@ -99,9 +105,9 @@ public class TicketParticipantUsersApiResource {
     @POST
     @Path("/{userId}/remove")
     @Transactional
-    public Response remove(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("role") String role,
-            @PathParam("ticketId") Long ticketId, @PathParam("userId") Long userId) {
-        User currentUser = requireRole(auth, role);
+    public Response remove(@PathParam("role") String role, @PathParam("ticketId") Long ticketId,
+            @PathParam("userId") Long userId) {
+        User actor = requireRole(currentUser.get(), role);
 
         Ticket ticket = Ticket.findById(ticketId);
         if (ticket == null) {
@@ -126,14 +132,13 @@ public class TicketParticipantUsersApiResource {
         }
 
         ticket.userUsers.remove(participantUser);
-        eventService.recordTicketUserAssociation(ticket, currentUser, participantUser,
+        eventService.recordTicketUserAssociation(ticket, actor, participantUser,
                 EventConstants.TICKET_PARTICIPANT_REMOVED);
 
         return Response.seeOther(URI.create("/api/" + role + "/tickets/" + ticket.id)).build();
     }
 
-    private User requireRole(String auth, String role) {
-        User user = AuthHelper.findUser(auth);
+    private User requireRole(User user, String role) {
         if (user == null) {
             throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
         }

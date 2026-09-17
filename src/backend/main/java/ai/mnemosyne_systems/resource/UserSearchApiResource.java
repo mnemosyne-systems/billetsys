@@ -9,10 +9,11 @@
 package ai.mnemosyne_systems.resource;
 
 import ai.mnemosyne_systems.model.User;
-import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -28,19 +29,25 @@ import java.util.Locale;
 @Path("/api/users")
 @Produces(MediaType.APPLICATION_JSON)
 @Blocking
+@RolesAllowed({ "admin", "support", "superuser", "tam", "user" })
 public class UserSearchApiResource {
+
+    @Inject
+    CurrentUser currentUser;
 
     @GET
     @Path("/suggest")
     @Transactional
-    public UserDirectoryApiModels.UserSuggestionResponse suggest(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("q") @DefaultValue("") String q) {
+    public UserDirectoryApiModels.UserSuggestionResponse suggest(@QueryParam("q") @DefaultValue("") String q) {
 
-        User currentUser = requireUser(auth);
+        User actor = currentUser.get();
+        if (actor == null) {
+            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).build());
+        }
 
         String needle = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
 
-        List<User> users = scopedUsers(currentUser);
+        List<User> users = scopedUsers(actor);
         List<UserDirectoryApiModels.UserSuggestion> matches = new ArrayList<>();
 
         for (User user : users) {
@@ -56,7 +63,7 @@ public class UserSearchApiResource {
 
             if (needle.isEmpty() || nameMatches || fullNameMatches || emailMatches) {
                 matches.add(new UserDirectoryApiModels.UserSuggestion(user.id, user.getDisplayName(), user.email,
-                        detailPath(currentUser, user)));
+                        detailPath(actor, user)));
             }
 
             if (matches.size() >= 6) {
@@ -121,13 +128,5 @@ public class UserSearchApiResource {
             case User.TYPE_EXTERNAL -> "/user/externals/" + targetUser.id;
             default -> "/user/user-profiles/" + targetUser.id;
         };
-    }
-
-    private User requireUser(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (user == null) {
-            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-        return user;
     }
 }

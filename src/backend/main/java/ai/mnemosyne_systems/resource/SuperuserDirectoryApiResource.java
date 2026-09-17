@@ -15,16 +15,15 @@ import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.event.EventConstants;
 import ai.mnemosyne_systems.service.EventService;
-import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
-import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -37,7 +36,11 @@ import java.util.List;
 
 @Path("/api/superuser")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("superuser")
 public class SuperuserDirectoryApiResource {
+
+    @Inject
+    CurrentUser currentUser;
 
     @Inject
     EventService eventService;
@@ -45,12 +48,10 @@ public class SuperuserDirectoryApiResource {
     @GET
     @Path("/users")
     @Transactional
-    public UserDirectoryApiModels.DirectoryListResponse list(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId) {
-        User currentUser = requireSuperuser(auth);
+    public UserDirectoryApiModels.DirectoryListResponse list(@QueryParam("companyId") Long companyId) {
+        User u = currentUser.get();
         List<Company> companies = Company
-                .find("select distinct c from Company c join c.users u where u = ?1 order by c.name", currentUser)
-                .list();
+                .find("select distinct c from Company c join c.users u where u = ?1 order by c.name", u).list();
         Company selectedCompany = selectCompany(companies, companyId);
         List<User> users = selectedCompany == null ? List.of()
                 : Company.<User> find("select u from Company c join c.users u where c = ?1 order by u.name",
@@ -66,12 +67,11 @@ public class SuperuserDirectoryApiResource {
     @GET
     @Path("/users/bootstrap")
     @Transactional
-    public UserDirectoryApiModels.UserFormResponse bootstrap(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @QueryParam("companyId") Long companyId, @QueryParam("countryId") Long countryId) {
-        User currentUser = requireSuperuser(auth);
+    public UserDirectoryApiModels.UserFormResponse bootstrap(@QueryParam("companyId") Long companyId,
+            @QueryParam("countryId") Long countryId) {
+        User u = currentUser.get();
         List<Company> companies = Company
-                .find("select distinct c from Company c join c.users u where u = ?1 order by c.name", currentUser)
-                .list();
+                .find("select distinct c from Company c join c.users u where u = ?1 order by c.name", u).list();
         Company selectedCompany = selectCompany(companies, companyId);
         if (selectedCompany == null) {
             throw new NotFoundException();
@@ -98,43 +98,39 @@ public class SuperuserDirectoryApiResource {
     @GET
     @Path("/support-users/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse supportUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        User currentUser = requireSuperuser(auth);
+    public UserDirectoryApiModels.UserDetailResponse supportUser(@PathParam("id") Long id) {
+        User u = currentUser.get();
         User user = userByType(id, User.TYPE_SUPPORT);
-        return detailResponse(currentUser, user, canViewSupportUser(currentUser, user));
+        return detailResponse(u, user, canViewSupportUser(u, user));
     }
 
     @GET
     @Path("/superuser-users/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse superuser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        User currentUser = requireSuperuser(auth);
+    public UserDirectoryApiModels.UserDetailResponse superuser(@PathParam("id") Long id) {
+        User u = currentUser.get();
         User user = userByType(id, User.TYPE_SUPERUSER);
-        return detailResponse(currentUser, user, false);
+        return detailResponse(u, user, false);
     }
 
     @GET
     @Path("/user-profiles/{id}")
     @Transactional
-    public UserDirectoryApiModels.UserDetailResponse profile(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        User currentUser = requireSuperuser(auth);
+    public UserDirectoryApiModels.UserDetailResponse profile(@PathParam("id") Long id) {
+        User u = currentUser.get();
         User user = User.findById(id);
         if (user == null) {
             throw new NotFoundException();
         }
-        return detailResponse(currentUser, user, false);
+        return detailResponse(u, user, false);
     }
 
     @GET
     @Path("/companies/{id}")
     @Transactional
-    public UserDirectoryApiModels.CompanyDetailResponse company(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
-            @PathParam("id") Long id) {
-        User currentUser = requireSuperuser(auth);
-        Company company = allowedCompany(currentUser, id);
+    public UserDirectoryApiModels.CompanyDetailResponse company(@PathParam("id") Long id) {
+        User u = currentUser.get();
+        Company company = allowedCompany(u, id);
         return new UserDirectoryApiModels.CompanyDetailResponse(company.id, company.name, company.address1,
                 company.address2, company.city, company.state, company.zip, company.phoneNumber,
                 company.country == null ? null : company.country.name,
@@ -148,9 +144,9 @@ public class SuperuserDirectoryApiResource {
     @Path("/users/{id}/active")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Transactional
-    public Response setActive(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("id") Long id,
-            @HeaderParam("X-Billetsys-Client") String client, @FormParam("active") Boolean active) {
-        User currentUser = requireSuperuser(auth);
+    public Response setActive(@PathParam("id") Long id, @HeaderParam("X-Billetsys-Client") String client,
+            @FormParam("active") Boolean active) {
+        User actor = currentUser.get();
         if (active == null) {
             throw new BadRequestException("Active is required");
         }
@@ -158,7 +154,7 @@ public class SuperuserDirectoryApiResource {
         if (user == null) {
             throw new NotFoundException();
         }
-        if (currentUser.id != null && currentUser.id.equals(user.id)) {
+        if (actor != null && actor.id != null && actor.id.equals(user.id)) {
             throw new BadRequestException("Cannot change your own active status");
         }
         if (!User.TYPE_USER.equalsIgnoreCase(user.type) && !User.TYPE_EXTERNAL.equalsIgnoreCase(user.type)) {
@@ -166,7 +162,7 @@ public class SuperuserDirectoryApiResource {
         }
         boolean inScope = Company.count(
                 "select count(c) from Company c join c.users current join c.users viewed where current = ?1 and viewed = ?2",
-                currentUser, user) > 0;
+                actor, user) > 0;
         if (!inScope) {
             throw new NotFoundException();
         }
@@ -175,7 +171,8 @@ public class SuperuserDirectoryApiResource {
         Company company = Company.<Company> find("select c from Company c join c.users u where u = ?1", user)
                 .firstResult();
         eventService.record(user.id, active ? EventConstants.USER_ACTIVATED : EventConstants.USER_DEACTIVATED,
-                company == null ? null : company.id, currentUser.id, active ? "User activated" : "User deactivated");
+                company == null ? null : company.id, actor == null ? null : actor.id,
+                active ? "User activated" : "User deactivated");
         String backPath = company != null ? "/superuser/users?companyId=" + company.id : "/superuser/users";
         return ReactRedirectSupport.redirect(client, backPath);
     }
@@ -273,13 +270,5 @@ public class SuperuserDirectoryApiResource {
             throw new NotFoundException();
         }
         return company;
-    }
-
-    private User requireSuperuser(String auth) {
-        User user = AuthHelper.findUser(auth);
-        if (!AuthHelper.isSuperuser(user)) {
-            throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-        return user;
     }
 }

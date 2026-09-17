@@ -1,3 +1,11 @@
+/*
+ * Eclipse Public License - v 2.0
+ *
+ *   THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
+ *   PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION
+ *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+ */
+
 package ai.mnemosyne_systems.resource;
 
 import ai.mnemosyne_systems.model.Company;
@@ -5,8 +13,10 @@ import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
+import ai.mnemosyne_systems.util.CurrentUser;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -26,20 +36,24 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 @Produces(MediaType.TEXT_HTML)
 @io.smallrye.common.annotation.Blocking
+@RolesAllowed({ "support", "tam", "superuser", "user" })
 public class ExternalUserResource {
     @jakarta.inject.Inject
     ai.mnemosyne_systems.service.EventService eventService;
 
+    @Inject
+    CurrentUser currentUser;
+
     @POST
     @Path("{role}/externals")
     @Transactional
-    public Response createExternalUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("role") String role,
-            @FormParam("name") String name, @FormParam("fullName") String fullName, @FormParam("email") String email,
+    public Response createExternalUser(@PathParam("role") String role, @FormParam("name") String name,
+            @FormParam("fullName") String fullName, @FormParam("email") String email,
             @FormParam("social") String social, @FormParam("phoneNumber") String phoneNumber,
             @FormParam("phoneExtension") String phoneExtension, @FormParam("countryId") Long countryId,
             @FormParam("timezoneId") Long timezoneId, @FormParam("companyId") Long companyId) {
-        User currentUser = requireRole(auth, role);
-        Company company = resolveCompanyForRole(currentUser, role, companyId);
+        User actor = requireRole(currentUser.get(), role);
+        Company company = resolveCompanyForRole(actor, role, companyId);
         if (company == null) {
             throw new BadRequestException("Company is required");
         }
@@ -82,7 +96,7 @@ public class ExternalUserResource {
 
         user.persist();
         eventService.record(user.id, ai.mnemosyne_systems.model.event.EventConstants.USER_CREATED,
-                company == null ? null : company.id, AuthHelper.findUser(auth).id, "User created");
+                company == null ? null : company.id, actor.id, "User created");
         company.users.add(user);
 
         return Response.seeOther(URI.create("/" + role + "/externals")).build();
@@ -91,24 +105,23 @@ public class ExternalUserResource {
     @POST
     @Path("{role}/externals/{id}")
     @Transactional
-    public Response updateExternalUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("role") String role,
-            @PathParam("id") Long id, @FormParam("name") String name, @FormParam("fullName") String fullName,
-            @FormParam("email") String email, @FormParam("social") String social,
-            @FormParam("phoneNumber") String phoneNumber, @FormParam("phoneExtension") String phoneExtension,
-            @FormParam("countryId") Long countryId, @FormParam("timezoneId") Long timezoneId,
-            @FormParam("active") Boolean active) {
-        User currentUser = requireRole(auth, role);
+    public Response updateExternalUser(@PathParam("role") String role, @PathParam("id") Long id,
+            @FormParam("name") String name, @FormParam("fullName") String fullName, @FormParam("email") String email,
+            @FormParam("social") String social, @FormParam("phoneNumber") String phoneNumber,
+            @FormParam("phoneExtension") String phoneExtension, @FormParam("countryId") Long countryId,
+            @FormParam("timezoneId") Long timezoneId, @FormParam("active") Boolean active) {
+        User actor = requireRole(currentUser.get(), role);
         User user = User.findById(id);
         if (user == null || !User.TYPE_EXTERNAL.equals(user.type)) {
             throw new NotFoundException();
         }
-        if (active != null && currentUser.id != null && currentUser.id.equals(user.id)) {
+        if (active != null && actor.id != null && actor.id.equals(user.id)) {
             throw new BadRequestException("Cannot change your own active status");
         }
 
         Company userCompany = Company.<Company> find("select c from Company c join c.users u where u = ?1", user)
                 .firstResult();
-        Company roleCompany = resolveCompanyForRole(currentUser, role, userCompany == null ? null : userCompany.id);
+        Company roleCompany = resolveCompanyForRole(actor, role, userCompany == null ? null : userCompany.id);
 
         if (userCompany == null || roleCompany == null || !userCompany.id.equals(roleCompany.id)) {
             throw new NotFoundException();
@@ -146,7 +159,7 @@ public class ExternalUserResource {
             eventService.record(user.id,
                     active ? ai.mnemosyne_systems.model.event.EventConstants.USER_ACTIVATED
                             : ai.mnemosyne_systems.model.event.EventConstants.USER_DEACTIVATED,
-                    userCompany == null ? null : userCompany.id, currentUser.id,
+                    userCompany == null ? null : userCompany.id, actor.id,
                     active ? "User activated" : "User deactivated");
         }
         return Response.seeOther(URI.create("/" + role + "/externals")).build();
@@ -155,9 +168,8 @@ public class ExternalUserResource {
     @POST
     @Path("{role}/externals/{id}/delete")
     @Transactional
-    public Response deleteExternalUser(@CookieParam(AuthHelper.AUTH_COOKIE) String auth, @PathParam("role") String role,
-            @PathParam("id") Long id) {
-        User currentUser = requireRole(auth, role);
+    public Response deleteExternalUser(@PathParam("role") String role, @PathParam("id") Long id) {
+        User actor = requireRole(currentUser.get(), role);
         User user = User.findById(id);
         if (user == null || !User.TYPE_EXTERNAL.equals(user.type)) {
             throw new NotFoundException();
@@ -165,22 +177,21 @@ public class ExternalUserResource {
 
         Company userCompany = Company.<Company> find("select c from Company c join c.users u where u = ?1", user)
                 .firstResult();
-        Company roleCompany = resolveCompanyForRole(currentUser, role, userCompany == null ? null : userCompany.id);
+        Company roleCompany = resolveCompanyForRole(actor, role, userCompany == null ? null : userCompany.id);
 
         if (userCompany == null || roleCompany == null || !userCompany.id.equals(roleCompany.id)) {
             throw new NotFoundException();
         }
 
         userCompany.users.remove(user);
-        eventService.record(user.id, ai.mnemosyne_systems.model.event.EventConstants.USER_DELETED, null,
-                AuthHelper.findUser(auth).id, "User deleted");
+        eventService.record(user.id, ai.mnemosyne_systems.model.event.EventConstants.USER_DELETED, null, actor.id,
+                "User deleted");
         user.delete();
 
         return Response.seeOther(URI.create("/" + role + "/externals")).build();
     }
 
-    private User requireRole(String auth, String role) {
-        User user = AuthHelper.findUser(auth);
+    private User requireRole(User user, String role) {
         if (user == null) {
             throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
         }

@@ -2,18 +2,21 @@
 
 # Password Reset
 
-The **Password Reset** flow provides a secure, self-service way for users to regain access to their accounts if they forget their credentials.
+The **Password Reset** flow provides a secure, self-service way for users to regain access to their accounts if they forget their credentials. In Billetsys, user credentials and password policies are centrally managed by **Keycloak**.
 
 ## Purpose
 
-To maintain security while minimizing support overhead, billetsys allows users to independently reset their passwords. This flow is protected by CAP (CAPTCHA) integration to prevent abuse, such as automated spam or enumeration attacks.
+To maintain security while minimizing support overhead, billetsys integrates with Keycloak's self-service credential management workflows. Users can independently reset or update their passwords directly through Keycloak.
 
-## The Reset Flow
+## Keycloak Password Reset Flow
 
-1. **Requesting a Reset**: A user initiates the process from the login page by clicking "Forgot your password?". They are prompted to enter their email address.
-2. **CAP Verification**: Before the request is accepted, the user must solve a CAP challenge. This ensures that the request is coming from a human and protects the system from automated bots.
-3. **Email Delivery**: If the email matches an active account, billetsys sends an email containing the user's username and a secure, time-limited reset link. The email format follows that user's profile preference when one has been configured.
-4. **Setting a New Password**: Clicking the link takes the user to a secure reset page where they can establish a new password and immediately regain access to the application.
+1. **Initiating Reset**: Click "Forgot your password?" on the login page or navigate directly to the Keycloak authentication screen.
+2. **Keycloak Verification**: Keycloak prompts for your registered email address or username.
+3. **Email Delivery**: Keycloak sends a time-limited password reset link to your email address (if SMTP is configured in Keycloak).
+4. **Updating Password**: Clicking the secure link takes you to Keycloak's **Update Password** page where you specify your new password.
+
+---
+
 
 ## Security Considerations
 
