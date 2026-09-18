@@ -25,7 +25,7 @@ The reporting functionality is organized around visual summaries of ticket data.
 * Tickets by category
 * Tickets by company
 * Ticket volume over time
-* Average first-response time
+* First-response time (minimum, average, maximum)
 * Average resolution time
 * Pickup time (minimum, average, maximum)
 * Resolution distribution
@@ -70,6 +70,16 @@ For each category the report shows the minimum, average, and maximum pickup time
 Tickets that have been created but not yet assigned are still counted. For those tickets the current time is used as the end point, so long-waiting unassigned tickets increase the reported values instead of being excluded.
 
 Like the other reports, pickup time is available to roles with oversight responsibilities (admin, TAM, and superuser), each seeing the scope that matches their responsibility.
+
+## First response time
+
+The first response time report shows how quickly tickets receive their first answer from the support team. It measures the time from the requester's first message to the first reply by support, grouped by category.
+
+For each category the report shows the minimum, average, and maximum first response time in hours. This makes it possible to see both the typical response speed and outliers within the same view.
+
+Tickets that have not received a support reply yet are excluded entirely. Only tickets with an actual first response contribute to the reported values.
+
+Like the other reports, first response time is available to roles with oversight responsibilities (admin, TAM, and superuser), each seeing the scope that matches their responsibility.
 
 ## Export
 

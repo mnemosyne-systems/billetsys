@@ -495,9 +495,9 @@ export default function ReportsPage({ sessionState }: SessionPageProps) {
               </ReportChartCard>
               <ReportChartCard
                 chartKey="responseTimeChart"
-                title="Avg. First Response Time (hours)"
+                title="First Response Time (hours)"
                 type="bar"
-                items={reports.firstResponse}
+                statItems={reports.firstResponse}
                 scriptReady={chartScriptState.loaded}
                 scriptError={chartScriptState.error}
                 onChartReady={onChartReady}

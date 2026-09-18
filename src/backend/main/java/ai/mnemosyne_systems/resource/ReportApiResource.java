@@ -13,6 +13,7 @@ import ai.mnemosyne_systems.model.Company;
 import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.PickupTimeStat;
 import ai.mnemosyne_systems.model.ReportData;
+import ai.mnemosyne_systems.model.TimeStat;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.event.Event;
@@ -99,7 +100,7 @@ public class ReportApiResource {
                 selectedCompany == null ? "All" : selectedCompany.name, showCompanyFilter, showCompanyChart, exportPath,
                 period, data.totalTickets, toPoints(data.ticketsByStatus), toPoints(data.ticketsByCategory),
                 toPoints(data.ticketsByCompany), toPoints(data.ticketsOverTime),
-                toDoublePoints(data.avgFirstResponseTime), toDoublePoints(data.avgResolutionTime),
+                toTimeStatPoints(data.firstResponseTimeStats), toDoublePoints(data.avgResolutionTime),
                 toStatPoints(data.pickupTimeStats), toHistogram(data.resolutionHistogram));
     }
 
@@ -113,6 +114,11 @@ public class ReportApiResource {
     }
 
     private List<StatMetricPoint> toStatPoints(Map<String, PickupTimeStat> values) {
+        return values.entrySet().stream().map(entry -> new StatMetricPoint(entry.getKey(), entry.getValue().min(),
+                entry.getValue().avg(), entry.getValue().max())).toList();
+    }
+
+    private List<StatMetricPoint> toTimeStatPoints(Map<String, TimeStat> values) {
         return values.entrySet().stream().map(entry -> new StatMetricPoint(entry.getKey(), entry.getValue().min(),
                 entry.getValue().avg(), entry.getValue().max())).toList();
     }
@@ -162,7 +168,7 @@ public class ReportApiResource {
         data.ticketsByCategory = buildTicketsByCategory(tickets);
         data.ticketsByCompany = buildTicketsByCompany(tickets);
         data.ticketsOverTime = buildTicketsOverTime(messagesByTicket, period);
-        data.avgFirstResponseTime = buildAvgFirstResponseTime(tickets, messagesByTicket);
+        data.firstResponseTimeStats = buildFirstResponseTimeStats(tickets, messagesByTicket);
         data.avgResolutionTime = buildAvgResolutionTime(tickets, messagesByTicket);
         data.pickupTimeStats = buildPickupTimeStats(tickets);
         data.resolutionHistogram = buildResolutionHistogram(tickets, messagesByTicket);
@@ -230,7 +236,7 @@ public class ReportApiResource {
         return result;
     }
 
-    private Map<String, Double> buildAvgFirstResponseTime(List<Ticket> tickets,
+    private Map<String, TimeStat> buildFirstResponseTimeStats(List<Ticket> tickets,
             Map<Long, List<Message>> messagesByTicket) {
         Map<String, List<Double>> hoursByCategory = new LinkedHashMap<>();
         for (Ticket ticket : tickets) {
@@ -256,13 +262,18 @@ public class ReportApiResource {
                     : "Uncategorized";
             hoursByCategory.computeIfAbsent(category, ignored -> new ArrayList<>()).add(Math.max(hours, 0));
         }
-        Map<String, Double> unsorted = new LinkedHashMap<>();
+        Map<String, TimeStat> unsorted = new LinkedHashMap<>();
         for (Map.Entry<String, List<Double>> entry : hoursByCategory.entrySet()) {
-            double average = entry.getValue().stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
-            unsorted.put(entry.getKey(), Math.round(average * 10.0) / 10.0);
+            List<Double> values = entry.getValue();
+            double min = values.stream().mapToDouble(Double::doubleValue).min().orElse(0.0);
+            double average = values.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+            double max = values.stream().mapToDouble(Double::doubleValue).max().orElse(0.0);
+            unsorted.put(entry.getKey(), new TimeStat(Math.round(min * 10.0) / 10.0, Math.round(average * 10.0) / 10.0,
+                    Math.round(max * 10.0) / 10.0));
         }
-        Map<String, Double> result = new LinkedHashMap<>();
-        unsorted.entrySet().stream().sorted(Map.Entry.<String, Double> comparingByValue().reversed())
+        Map<String, TimeStat> result = new LinkedHashMap<>();
+        unsorted.entrySet().stream()
+                .sorted((left, right) -> Double.compare(right.getValue().avg(), left.getValue().avg()))
                 .forEachOrdered(entry -> result.put(entry.getKey(), entry.getValue()));
         return result;
     }
@@ -401,7 +412,7 @@ public class ReportApiResource {
     public record ReportResponse(String role, List<CompanyOption> companies, Long selectedCompanyId, String companyName,
             boolean showCompanyFilter, boolean showCompanyChart, String exportPath, String period, int totalTickets,
             List<MetricPoint> status, List<MetricPoint> category, List<MetricPoint> company, List<MetricPoint> timeline,
-            List<DoubleMetricPoint> firstResponse, List<DoubleMetricPoint> resolutionTime,
+            List<StatMetricPoint> firstResponse, List<DoubleMetricPoint> resolutionTime,
             List<StatMetricPoint> pickupTime, List<HistogramBucket> histogram) {
     }
 

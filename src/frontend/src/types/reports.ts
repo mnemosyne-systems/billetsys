@@ -40,7 +40,7 @@ export interface ReportData {
   category?: ReportChartPoint[];
   company?: ReportChartPoint[];
   timeline?: ReportChartPoint[];
-  firstResponse?: ReportChartPoint[];
+  firstResponse?: ReportStatPoint[];
   resolutionTime?: ReportChartPoint[];
   pickupTime?: ReportStatPoint[];
   histogram?: ReportHistogramBucket[];
