@@ -332,7 +332,7 @@ public class TicketResource {
     @GET
     @Path("/export/{id}")
     @Produces("application/pdf")
-    public Response exportTicketToPdf(@PathParam("id") Long id) {
+    public Response exportTicketToPdf(@PathParam("id") Long id, @QueryParam("dir") String dir) {
         User user = currentUser.get();
         if (!AuthHelper.isSupport(user) && !AuthHelper.isUser(user) && !AuthHelper.isSuperuser(user)) {
             throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
@@ -344,8 +344,9 @@ public class TicketResource {
         if (!MessageVisibilitySupport.canAccessTicket(user, ticket)) {
             throw new WebApplicationException(Response.seeOther(URI.create("/")).build());
         }
+        String messageSortDirection = "asc".equals(dir) ? "asc" : "desc";
         byte[] ticketPdf = pdfService.generateTicketPdf(ticket,
-                MessageVisibilitySupport.loadMessagesForViewer(ticket, user));
+                MessageVisibilitySupport.loadMessagesForViewer(ticket, user), messageSortDirection);
         return Response.ok(ticketPdf).header("Content-Disposition", "attachment; filename=\"" + ticket.name + ".pdf\"")
                 .build();
     }

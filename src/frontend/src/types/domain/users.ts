@@ -82,6 +82,7 @@ export interface ProfileRecord extends UserReference {
   currentCompanyId?: Id;
   emailFormat?: string;
   pageSize?: number;
+  messageSortDirection?: string;
 }
 
 export interface DirectoryUserRecord extends UserReference {

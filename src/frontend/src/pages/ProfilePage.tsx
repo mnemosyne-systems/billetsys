@@ -43,6 +43,7 @@ interface ProfileFormState {
   logoBase64: string;
   emailFormat: string;
   pageSize: string;
+  messageSortDirection: string;
 }
 
 export default function ProfilePage(props: SessionPageProps) {
@@ -77,6 +78,7 @@ export default function ProfilePage(props: SessionPageProps) {
         logoBase64: profile.logoBase64 || "",
         emailFormat: profile.emailFormat || "",
         pageSize: profile.pageSize ? String(profile.pageSize) : "10",
+        messageSortDirection: profile.messageSortDirection || "desc",
       });
     }
   }, [profile]);
@@ -163,6 +165,7 @@ export default function ProfilePage(props: SessionPageProps) {
           companyId: formState.companyId ? Number(formState.companyId) : null,
           emailFormat: formState.emailFormat || null,
           pageSize: formState.pageSize ? Number(formState.pageSize) : null,
+          messageSortDirection: formState.messageSortDirection || null,
         }),
       });
       if (!response.ok) {
@@ -187,6 +190,7 @@ export default function ProfilePage(props: SessionPageProps) {
               logoBase64: updated.logoBase64 || "",
               emailFormat: updated.emailFormat || "",
               pageSize: updated.pageSize ? String(updated.pageSize) : "10",
+              messageSortDirection: updated.messageSortDirection || "desc",
             }
           : current,
       );
@@ -355,6 +359,23 @@ export default function ProfilePage(props: SessionPageProps) {
                     <SelectItem value="10">10</SelectItem>
                     <SelectItem value="25">25</SelectItem>
                     <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel>Default ticket message order</FieldLabel>
+                <Select
+                  value={formState.messageSortDirection || "desc"}
+                  onValueChange={(value) =>
+                    updateField("messageSortDirection", value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select order" />
+                  </SelectTrigger>
+                  <SelectContent position="popper">
+                    <SelectItem value="desc">Newest first</SelectItem>
+                    <SelectItem value="asc">Oldest first</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>

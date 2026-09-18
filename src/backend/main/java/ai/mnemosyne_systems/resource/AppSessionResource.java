@@ -65,8 +65,8 @@ public class AppSessionResource {
                     installationTamRoleIcon, installationUserRoleIcon, installationExternalRoleIcon,
                     installationAdminRoleColor, installationSupportRoleColor, installationSuperuserRoleColor,
                     installationTamRoleColor, installationUserRoleColor, installationExternalRoleColor,
-                    AuthHelper.INACTIVITY_TIMEOUT_SECONDS, AuthHelper.WARNING_LEAD_SECONDS, null, "/login", List.of(),
-                    List.of("The React shell now uses clean URLs for login, tickets, and admin pages.",
+                    AuthHelper.INACTIVITY_TIMEOUT_SECONDS, AuthHelper.WARNING_LEAD_SECONDS, null, null, "/login",
+                    List.of(), List.of("The React shell now uses clean URLs for login, tickets, and admin pages.",
                             "Sign in to see role-aware navigation."));
         }
         return new SessionResponse(true, user.name, user.getDisplayName(), user.email, user.type, user.logoBase64,
@@ -77,7 +77,7 @@ public class AppSessionResource {
                 installationExternalRoleIcon, installationAdminRoleColor, installationSupportRoleColor,
                 installationSuperuserRoleColor, installationTamRoleColor, installationUserRoleColor,
                 installationExternalRoleColor, AuthHelper.INACTIVITY_TIMEOUT_SECONDS, AuthHelper.WARNING_LEAD_SECONDS,
-                user.pageSize, homePath(user), navigation(user),
+                user.pageSize, user.messageSortDirection, homePath(user), navigation(user),
                 List.of("The React shell now covers tickets, admin management, profile, and reports.",
                         "Legacy page routes now redirect into the React screens for the same workflows."));
     }
@@ -134,8 +134,8 @@ public class AppSessionResource {
             String installationUserRoleIcon, String installationExternalRoleIcon, String installationAdminRoleColor,
             String installationSupportRoleColor, String installationSuperuserRoleColor, String installationTamRoleColor,
             String installationUserRoleColor, String installationExternalRoleColor, int inactivityTimeoutSeconds,
-            int inactivityWarningSeconds, Integer defaultPageSize, String homePath, List<NavLink> navigation,
-            List<String> notices) {
+            int inactivityWarningSeconds, Integer defaultPageSize, String defaultMessageSortDirection, String homePath,
+            List<NavLink> navigation, List<String> notices) {
     }
 
     public record NavLink(String label, String href) {
