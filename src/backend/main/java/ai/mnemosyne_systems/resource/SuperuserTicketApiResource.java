@@ -19,6 +19,7 @@ import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.model.event.Event;
 import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.service.EventService;
+import ai.mnemosyne_systems.service.TicketCsvExportService;
 import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.util.CurrentUser;
 import jakarta.annotation.security.RolesAllowed;
@@ -57,6 +58,8 @@ public class SuperuserTicketApiResource {
 
     @Inject
     EventService eventService;
+    @Inject
+    TicketCsvExportService csvExportService;
 
     @GET
     @Transactional
@@ -111,6 +114,40 @@ public class SuperuserTicketApiResource {
                 .stream().map(ticket -> new SupportTicketApiResource.TicketSuggestion(ticket.id, ticket.name,
                         ticket.displayTitle(), "/superuser/tickets/" + ticket.id))
                 .toList());
+    }
+
+    @GET
+    @Path("/export")
+    @Transactional
+    @Produces("text/csv")
+    public Response export(@CookieParam(AuthHelper.AUTH_COOKIE) String auth,
+            @QueryParam("view") @DefaultValue("assigned") String view, @QueryParam("q") String q,
+            @QueryParam("sort") String sort, @QueryParam("dir") String dir) {
+        User user = requireSuperuser(auth);
+        SuperuserResource.SupportTicketData data = superuserResource.buildTicketDataForUser(user);
+        String normalizedView = normalizeView(view);
+
+        List<Ticket> tickets;
+
+        if (normalizedView.equals("open")) {
+            tickets = data.openTickets;
+        } else if (normalizedView.equals("closed")) {
+            tickets = data.closedTickets;
+        } else {
+            tickets = data.assignedTickets;
+        }
+        String searchTerm = TicketSearchSupport.normalizeSearchTerm(q);
+        if (searchTerm != null) {
+            tickets = TicketSearchSupport.combineTickets(data.assignedTickets, data.openTickets, data.closedTickets);
+        }
+        tickets = TicketSearchSupport.filterTicketsBySearch(tickets, searchTerm, user);
+        List<SupportTicketApiResource.SupportTicketSummary> allSummaries = tickets.stream()
+                .map(ticket -> toSummary(ticket, data)).toList();
+        List<SupportTicketApiResource.SupportTicketSummary> sorted = PaginationSupport.sortOnly(allSummaries, sort, dir,
+                SupportTicketApiResource.ticketSortColumns());
+        byte[] csv = csvExportService.exportSummaries(sorted);
+        return Response.ok(csv)
+                .header("Content-Disposition", "attachment; filename=\"tickets-" + normalizedView + ".csv\"").build();
     }
 
     @GET
