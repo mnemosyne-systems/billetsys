@@ -28,6 +28,9 @@ public class TicketCreationService {
     @Inject
     EventService eventService;
 
+    @Inject
+    TicketBootstrapService ticketBootstrapService;
+
     public Ticket createTicketWithInitialMessage(TicketCreationRequest request) {
         Ticket ticket = new Ticket();
         ticket.name = Ticket.nextName(request.company());
@@ -79,15 +82,7 @@ public class TicketCreationService {
     }
 
     public Version defaultAffectsVersion(CompanyEntitlement companyEntitlement) {
-        if (companyEntitlement == null || companyEntitlement.entitlement == null) {
-            return null;
-        }
-        Version version = Version.find("entitlement = ?1 and name = ?2 order by date asc, id asc",
-                companyEntitlement.entitlement, "1.0.0").firstResult();
-        if (version != null) {
-            return version;
-        }
-        return Version.find("entitlement = ?1 order by date asc, id asc", companyEntitlement.entitlement).firstResult();
+        return ticketBootstrapService.defaultAffectsVersion(companyEntitlement);
     }
 
     private String trimOrNull(String value) {

@@ -18,7 +18,9 @@ import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.model.event.Event;
 import ai.mnemosyne_systems.service.CrossReferenceService;
+import ai.mnemosyne_systems.service.DirectoryService;
 import ai.mnemosyne_systems.service.EventService;
+import ai.mnemosyne_systems.service.TicketBootstrapService;
 import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.util.CurrentUser;
 import jakarta.annotation.security.RolesAllowed;
@@ -36,10 +38,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
 @Path("/api/superuser/tickets")
 @Produces(MediaType.APPLICATION_JSON)
@@ -57,6 +57,12 @@ public class SuperuserTicketApiResource {
 
     @Inject
     EventService eventService;
+
+    @Inject
+    TicketBootstrapService ticketBootstrapService;
+
+    @Inject
+    DirectoryService directoryService;
 
     @GET
     @Transactional
@@ -120,20 +126,17 @@ public class SuperuserTicketApiResource {
             @QueryParam("companyEntitlementId") Long companyEntitlementId) {
         User user = currentUser.get();
         SuperuserResource.SupportTicketData data = superuserResource.buildTicketDataForUser(user);
-        List<Company> companies = superuserResource.userCompanies(user);
+        List<Company> companies = directoryService.allowedCompanies(user);
         Company selectedCompany = selectCompany(companies, companyId);
-        List<CompanyEntitlement> entitlements = selectedCompany == null ? List.of()
-                : uniqueEntitlements(CompanyEntitlement.find(
-                        "select distinct ce from CompanyEntitlement ce join fetch ce.entitlement join fetch ce.supportLevel where ce.company = ?1 order by ce.entitlement.name, ce.supportLevel.level, ce.supportLevel.id",
-                        selectedCompany).list());
-        CompanyEntitlement selectedEntitlement = selectEntitlement(entitlements, companyEntitlementId);
-        Long selectedCompanyEntitlementId = selectedEntitlement == null ? null : selectedEntitlement.id;
-        Version defaultAffectsVersion = superuserResource.defaultAffectsVersion(selectedEntitlement);
-        List<SupportTicketApiResource.VersionOption> versions = SupportTicketViewSupport
-                .availableVersions(selectedEntitlement).stream()
-                .map(version -> new SupportTicketApiResource.VersionOption(version.id, version.name,
-                        version.date == null ? null : version.date.toString()))
-                .toList();
+        List<TicketBootstrapService.CompanyEntitlementOption> entitlements = selectedCompany == null ? List.of()
+                : ticketBootstrapService.orderedEntitlementOptionsForCompany(selectedCompany.id);
+        Long selectedCompanyEntitlementId = TicketBootstrapService.selectEntitlementId(entitlements,
+                companyEntitlementId);
+        Long versionsEntitlementId = entitlementIdForVersions(selectedCompanyEntitlementId, entitlements);
+        List<TicketBootstrapService.VersionOption> versions = versionsEntitlementId == null ? List.of()
+                : ticketBootstrapService.versionOptionsForEntitlement(versionsEntitlementId);
+        TicketBootstrapService.VersionOption defaultVersion = TicketBootstrapService
+                .selectDefaultVersionOption(versions);
         Category defaultCategory = Category.findDefault();
         return new SupportTicketApiResource.SupportTicketBootstrapResponse(
                 data.assignedTickets == null ? 0 : data.assignedTickets.size(),
@@ -143,13 +146,31 @@ public class SuperuserTicketApiResource {
                 companies.stream().map(company -> new SupportTicketApiResource.CompanyOption(company.id, company.name))
                         .toList(),
                 entitlements.stream().map(this::toEntitlementOption).toList(), selectedCompanyEntitlementId,
-                Category.<Category> list("order by name").stream().map(this::toCategoryOption).toList(),
+                ticketBootstrapService.allCategoryOptions().stream().map(this::toCategoryOption).toList(),
                 defaultCategory == null ? null : defaultCategory.id,
-                defaultAffectsVersion == null ? null
-                        : new SupportTicketApiResource.VersionOption(defaultAffectsVersion.id,
-                                defaultAffectsVersion.name,
-                                defaultAffectsVersion.date == null ? null : defaultAffectsVersion.date.toString()),
-                versions, "/superuser/tickets");
+                defaultVersion == null ? null
+                        : new SupportTicketApiResource.VersionOption(defaultVersion.id(), defaultVersion.name(),
+                                defaultVersion.date() == null ? null : defaultVersion.date().toString()),
+                versions.stream()
+                        .map(version -> new SupportTicketApiResource.VersionOption(version.id(), version.name(),
+                                version.date() == null ? null : version.date().toString()))
+                        .toList(),
+                "/superuser/tickets");
+    }
+
+    private Long entitlementIdForVersions(Long selectedEntitlementId,
+            List<TicketBootstrapService.CompanyEntitlementOption> entitlements) {
+        if (selectedEntitlementId == null) {
+            return null;
+        }
+        return entitlements.stream().filter(entry -> selectedEntitlementId.equals(entry.id())).findFirst()
+                .map(TicketBootstrapService.CompanyEntitlementOption::entitlementId).orElse(null);
+    }
+
+    private List<TicketBootstrapService.VersionOption> detailVersions(Ticket ticket) {
+        Long entitlementId = ticket == null || ticket.companyEntitlement == null
+                || ticket.companyEntitlement.entitlement == null ? null : ticket.companyEntitlement.entitlement.id;
+        return entitlementId == null ? List.of() : ticketBootstrapService.versionOptionsForEntitlement(entitlementId);
     }
 
     @GET
@@ -198,11 +219,11 @@ public class SuperuserTicketApiResource {
                 superuserResource.resolveLowestEntitlementLevelName(ticket), ticket.externalIssueLink,
                 ticket.affectsVersion == null ? null : ticket.affectsVersion.id,
                 ticket.resolvedVersion == null ? null : ticket.resolvedVersion.id, ticket.rating, ticket.ratingComment,
-                superuserResource.availableVersions(ticket).stream()
-                        .map(version -> new SupportTicketApiResource.VersionOption(version.id, version.name,
-                                version.date == null ? null : version.date.toString()))
+                detailVersions(ticket).stream()
+                        .map(version -> new SupportTicketApiResource.VersionOption(version.id(), version.name(),
+                                version.date() == null ? null : version.date().toString()))
                         .toList(),
-                Category.<Category> list("order by name").stream().map(this::toCategoryOption).toList(),
+                ticketBootstrapService.allCategoryOptions().stream().map(this::toCategoryOption).toList(),
                 supportUsers.stream().map(this::toUserReference).toList(), "Superusers",
                 secondaryUsers.stream().map(this::toUserReference).toList(),
                 messages.stream().map(m -> toMessageEntry(m, ticketCache)).toList(),
@@ -243,14 +264,14 @@ public class SuperuserTicketApiResource {
                 ticket.company == null ? null : "/superuser/companies/" + ticket.company.id);
     }
 
-    private SupportTicketApiResource.EntitlementOption toEntitlementOption(CompanyEntitlement entry) {
-        return new SupportTicketApiResource.EntitlementOption(entry.id,
-                entry.entitlement == null ? null : entry.entitlement.name,
-                entry.supportLevel == null ? null : entry.supportLevel.name);
+    private SupportTicketApiResource.EntitlementOption toEntitlementOption(
+            TicketBootstrapService.CompanyEntitlementOption entry) {
+        return new SupportTicketApiResource.EntitlementOption(entry.id(), entry.entitlementName(),
+                entry.supportLevelName());
     }
 
-    private SupportTicketApiResource.CategoryOption toCategoryOption(Category category) {
-        return new SupportTicketApiResource.CategoryOption(category.id, category.name);
+    private SupportTicketApiResource.CategoryOption toCategoryOption(TicketBootstrapService.CategoryOption category) {
+        return new SupportTicketApiResource.CategoryOption(category.id(), category.name());
     }
 
     private SupportTicketApiResource.UserReference toUserReference(User user) {
@@ -304,32 +325,6 @@ public class SuperuserTicketApiResource {
         }
         return companies.stream().filter(company -> company.id != null && company.id.equals(companyId)).findFirst()
                 .orElse(companies.get(0));
-    }
-
-    private CompanyEntitlement selectEntitlement(List<CompanyEntitlement> entitlements, Long companyEntitlementId) {
-        if (entitlements == null || entitlements.isEmpty()) {
-            return null;
-        }
-        if (companyEntitlementId == null) {
-            return entitlements.get(0);
-        }
-        return entitlements.stream()
-                .filter(entitlement -> entitlement.id != null && entitlement.id.equals(companyEntitlementId))
-                .findFirst().orElse(entitlements.get(0));
-    }
-
-    private List<CompanyEntitlement> uniqueEntitlements(List<CompanyEntitlement> entitlements) {
-        List<CompanyEntitlement> uniqueEntitlements = new ArrayList<>();
-        Set<Long> entitlementIds = new LinkedHashSet<>();
-        for (CompanyEntitlement entitlement : entitlements) {
-            if (entitlement == null || entitlement.entitlement == null || entitlement.entitlement.id == null) {
-                continue;
-            }
-            if (entitlementIds.add(entitlement.entitlement.id)) {
-                uniqueEntitlements.add(entitlement);
-            }
-        }
-        return uniqueEntitlements;
     }
 
     private String userPath(User user) {

@@ -308,8 +308,8 @@ public class PdfService {
                 histogramTable.addCell(createCell("Duration", red, Color.WHITE));
                 histogramTable.addCell(createCell("Count", red, Color.WHITE));
                 histogramTable.addCell(createCell("Tickets", red, Color.WHITE));
-                for (Map.Entry<String, List<Ticket>> entry : data.resolutionHistogram.entrySet()) {
-                    List<Ticket> tickets = entry.getValue();
+                for (Map.Entry<String, List<HistogramTicket>> entry : data.resolutionHistogram.entrySet()) {
+                    List<HistogramTicket> tickets = entry.getValue();
                     histogramTable.addCell(new Phrase(entry.getKey(), normalFont));
                     histogramTable.addCell(new Phrase(String.valueOf(tickets.size()), normalFont));
                     if (tickets.isEmpty()) {
@@ -319,7 +319,7 @@ public class PdfService {
                         for (int i = 0; i < tickets.size(); i++) {
                             if (i > 0)
                                 names.append(", ");
-                            names.append(tickets.get(i).name);
+                            names.append(tickets.get(i).name());
                         }
                         histogramTable.addCell(new Phrase(names.toString(), normalFont));
                     }

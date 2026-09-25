@@ -18,6 +18,7 @@ import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.PdfService;
 import ai.mnemosyne_systems.service.TicketEmailService;
+import ai.mnemosyne_systems.service.TicketBootstrapService;
 import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
@@ -83,6 +84,9 @@ public class TicketResource {
 
     @Inject
     TicketEmailService ticketEmailService;
+
+    @Inject
+    TicketBootstrapService ticketBootstrapService;
 
     @Inject
     PdfService pdfService;
@@ -199,7 +203,7 @@ public class TicketResource {
         ticket.company = company;
         ticket.requester = user;
         ticket.companyEntitlement = entitlement;
-        ticket.affectsVersion = defaultAffectsVersion(entitlement);
+        ticket.affectsVersion = ticketBootstrapService.defaultAffectsVersion(entitlement);
         ticket.category = category;
         ticket.persist();
         eventService.saveTicketEvent(ticket, user);
@@ -291,29 +295,10 @@ public class TicketResource {
         return Response.seeOther(URI.create("/tickets/new?companyId=" + company.id)).build();
     }
 
-    private List<Version> availableVersions(CompanyEntitlement companyEntitlement) {
-        if (companyEntitlement == null || companyEntitlement.entitlement == null) {
-            return java.util.List.of();
-        }
-        return Version.list("entitlement = ?1 order by date asc, id asc", companyEntitlement.entitlement);
-    }
-
-    private Version defaultAffectsVersion(CompanyEntitlement companyEntitlement) {
-        if (companyEntitlement == null || companyEntitlement.entitlement == null) {
-            return null;
-        }
-        Version version = Version.find("entitlement = ?1 and name = ?2 order by date asc, id asc",
-                companyEntitlement.entitlement, "1.0.0").firstResult();
-        if (version != null) {
-            return version;
-        }
-        return Version.find("entitlement = ?1 order by date asc, id asc", companyEntitlement.entitlement).firstResult();
-    }
-
     private Version resolveVersion(CompanyEntitlement companyEntitlement, Long versionId, String label,
             boolean required) {
         if (versionId == null) {
-            if (required && !availableVersions(companyEntitlement).isEmpty()) {
+            if (required && !ticketBootstrapService.availableVersions(companyEntitlement).isEmpty()) {
                 throw new BadRequestException(label + " version is required");
             }
             return null;

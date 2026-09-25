@@ -9,6 +9,7 @@
 package ai.mnemosyne_systems.resource;
 
 import ai.mnemosyne_systems.infra.BrandingProvider;
+import ai.mnemosyne_systems.infra.BrandingService;
 import ai.mnemosyne_systems.model.Company;
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Installation;
@@ -17,6 +18,7 @@ import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.AuthHelper;
 import io.smallrye.common.annotation.Blocking;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import jakarta.ws.rs.GET;
@@ -36,6 +38,15 @@ import java.util.List;
 @Blocking
 @RolesAllowed("admin")
 public class OwnerApiResource {
+
+    @Inject
+    BrandingService brandingService;
+
+    @Inject
+    ai.mnemosyne_systems.service.DirectoryService directoryService;
+
+    @Inject
+    ai.mnemosyne_systems.service.TicketBootstrapService bootstrapService;
 
     @GET
     @Transactional
@@ -63,6 +74,7 @@ public class OwnerApiResource {
         company.country = request.countryId() != null ? Country.findById(request.countryId()) : null;
         company.timezone = request.timezoneId() != null ? Timezone.findById(request.timezoneId()) : null;
         company.phoneNumber = request.phoneNumber();
+        List<Long> previousMemberIds = company.users.stream().map(member -> member.id).toList();
         company.users.clear();
         company.users.addAll(OwnerResource.resolveSelectedUsers(request.supportIds(), request.tamIds()));
         Installation installation = OwnerResource.findOrCreateInstallation(company);
@@ -86,6 +98,20 @@ public class OwnerApiResource {
         installation.externalRoleColor = BrandingProvider.normalizeRoleColor(request.externalRoleColor());
         installation.logoBase64 = trimToNull(request.logoBase64());
         installation.backgroundBase64 = trimToNull(request.backgroundBase64());
+        brandingService.invalidate();
+        // Owner membership edits record no event, so invalidate directory caches explicitly.
+        directoryService.invalidateUsers(company.id);
+        java.util.LinkedHashSet<Long> memberIds = new java.util.LinkedHashSet<>(previousMemberIds);
+        for (User member : company.users) {
+            memberIds.add(member.id);
+        }
+        for (Long memberId : memberIds) {
+            if (memberId != null) {
+                directoryService.invalidateCompanies(memberId);
+            }
+        }
+        // Company rename surfaces in the global company options.
+        bootstrapService.invalidateAllCompanies();
         return toResponse(company);
     }
 

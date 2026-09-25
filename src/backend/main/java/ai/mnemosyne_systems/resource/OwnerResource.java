@@ -14,9 +14,11 @@ import ai.mnemosyne_systems.model.Installation;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.infra.BrandingProvider;
+import ai.mnemosyne_systems.infra.BrandingService;
 import ai.mnemosyne_systems.util.AuthHelper;
 import io.smallrye.common.annotation.Blocking;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 
@@ -39,6 +41,15 @@ import java.util.List;
 @Blocking
 @RolesAllowed("admin")
 public class OwnerResource {
+
+    @Inject
+    BrandingService brandingService;
+
+    @Inject
+    ai.mnemosyne_systems.service.DirectoryService directoryService;
+
+    @Inject
+    ai.mnemosyne_systems.service.TicketBootstrapService bootstrapService;
 
     @GET
     public Response viewOwner() {
@@ -78,6 +89,7 @@ public class OwnerResource {
         company.country = countryId != null ? Country.findById(countryId) : null;
         company.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
         company.phoneNumber = phoneNumber;
+        List<Long> previousMemberIds = company.users.stream().map(member -> member.id).toList();
         company.users.clear();
         company.users.addAll(resolveSelectedUsers(supportIds, tamIds));
         Installation installation = findOrCreateInstallation(company);
@@ -87,6 +99,20 @@ public class OwnerResource {
         installation.buttonsColor = normalizedButtonsColor;
         installation.use24HourClock = Boolean.TRUE.equals(use24HourClock);
         installation.ticketAutoCloseDays = clampAutoCloseDays(ticketAutoCloseDays);
+        brandingService.invalidate();
+        // Owner membership edits record no event, so invalidate directory caches explicitly.
+        directoryService.invalidateUsers(company.id);
+        java.util.LinkedHashSet<Long> memberIds = new java.util.LinkedHashSet<>(previousMemberIds);
+        for (User member : company.users) {
+            memberIds.add(member.id);
+        }
+        for (Long memberId : memberIds) {
+            if (memberId != null) {
+                directoryService.invalidateCompanies(memberId);
+            }
+        }
+        // Company rename surfaces in the global company options.
+        bootstrapService.invalidateAllCompanies();
         return Response.seeOther(URI.create("/owner")).build();
     }
 

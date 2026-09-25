@@ -13,6 +13,7 @@ import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.event.EventConstants;
+import ai.mnemosyne_systems.service.DirectoryService;
 import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.util.CurrentUser;
 import jakarta.annotation.security.RolesAllowed;
@@ -44,6 +45,9 @@ public class SupportUserApiResource {
     @Inject
     EventService eventService;
 
+    @Inject
+    DirectoryService directoryService;
+
     @GET
     @Path("/users")
     @Transactional
@@ -52,15 +56,18 @@ public class SupportUserApiResource {
         SupportResource.SupportTicketCounts counts = SupportResource.loadTicketCounts(currentUser);
         List<Company> companies = Company.list("order by name");
         Company selectedCompany = selectCompany(companies, companyId);
-        List<User> users = selectedCompany == null ? List.of()
-                : Company.<User> find("select u from Company c join c.users u where c = ?1 order by u.name",
-                        selectedCompany).list();
+        List<UserDirectoryApiModels.UserReference> users = selectedCompany == null ? List.of()
+                : directoryService.userEntriesForCompany(selectedCompany.id).stream()
+                        .map(entry -> new UserDirectoryApiModels.UserReference(entry.id(), entry.username(),
+                                entry.displayName(), entry.email(), entry.type(),
+                                UserDirectoryApiModels.typeLabel(entry.type()), detailPath(entry.id(), entry.type()),
+                                null, entry.active()))
+                        .toList();
         String createPath = selectedCompany != null ? "/support/users/new?companyId=" + selectedCompany.id
                 : "/support/users/new";
         return new UserDirectoryApiModels.DirectoryListResponse("Users", "",
                 selectedCompany == null ? null : selectedCompany.id, true, false, createPath,
-                companies.stream().map(UserDirectoryApiModels::companyOption).toList(), users.stream()
-                        .map(user -> UserDirectoryApiModels.userReference(user, detailPath(user), null)).toList());
+                companies.stream().map(UserDirectoryApiModels::companyOption).toList(), users);
     }
 
     @GET
@@ -198,15 +205,15 @@ public class SupportUserApiResource {
                 .map(user -> UserDirectoryApiModels.userReference(user, basePath + user.id, null)).toList();
     }
 
-    private String detailPath(User user) {
-        if (user == null || user.id == null || user.type == null) {
+    private String detailPath(Long id, String type) {
+        if (id == null || type == null) {
             return null;
         }
-        return switch (user.type.toLowerCase()) {
-            case User.TYPE_SUPPORT -> "/support/support-users/" + user.id;
-            case User.TYPE_TAM -> "/support/tam-users/" + user.id;
-            case User.TYPE_SUPERUSER -> "/support/superuser-users/" + user.id;
-            default -> "/support/user-profiles/" + user.id;
+        return switch (type.toLowerCase()) {
+            case User.TYPE_SUPPORT -> "/support/support-users/" + id;
+            case User.TYPE_TAM -> "/support/tam-users/" + id;
+            case User.TYPE_SUPERUSER -> "/support/superuser-users/" + id;
+            default -> "/support/user-profiles/" + id;
         };
     }
 

@@ -19,8 +19,10 @@ import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.service.CrossReferenceService;
+import ai.mnemosyne_systems.service.DirectoryService;
 import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.TicketEmailService;
+import ai.mnemosyne_systems.service.TicketBootstrapService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.util.TicketTimeSupport;
@@ -67,6 +69,12 @@ public class UserResource {
 
     @Inject
     EventService eventService;
+
+    @Inject
+    DirectoryService directoryService;
+
+    @Inject
+    TicketBootstrapService ticketBootstrapService;
 
     @GET
     @Path("user")
@@ -535,6 +543,7 @@ public class UserResource {
         if (editUser == null) {
             throw new NotFoundException();
         }
+        List<Long> previousCompanyIds = directoryService.companyIdsOfUser(editUser.id);
         if (active != null && adminUser != null && adminUser.id != null && adminUser.id.equals(editUser.id)) {
             throw new BadRequestException("Cannot change your own active status");
         }
@@ -580,6 +589,9 @@ public class UserResource {
                     company == null ? null : company.id, adminUser == null ? null : adminUser.id,
                     active ? "User activated" : "User deactivated");
         }
+        // Profile fields and membership change without an event unless active
+        // changed, so invalidate the directory caches explicitly.
+        directoryService.invalidateUserEverywhere(editUser.id, previousCompanyIds);
         return ReactRedirectSupport.redirect(client, "/users");
     }
 
@@ -599,10 +611,13 @@ public class UserResource {
         if (deleteUser == null) {
             throw new NotFoundException();
         }
+        List<Long> previousCompanyIds = directoryService.companyIdsOfUser(deleteUser.id);
         removeUserReferences(deleteUser);
         eventService.record(deleteUser.id, ai.mnemosyne_systems.model.event.EventConstants.USER_DELETED, null,
                 currentUser.get().id, "User deleted");
         deleteUser.delete();
+        // Memberships were detached before the event above, so invalidate explicitly.
+        directoryService.invalidateUserEverywhere(deleteUser.id, previousCompanyIds);
         return ReactRedirectSupport.redirect(client, "/users");
     }
 
@@ -1021,23 +1036,14 @@ public class UserResource {
     }
 
     List<Version> availableVersions(Ticket ticket) {
-        if (ticket == null || ticket.companyEntitlement == null || ticket.companyEntitlement.entitlement == null) {
+        if (ticket == null) {
             return List.of();
         }
-        return Version.list("entitlement = ?1 order by date asc, id asc", ticket.companyEntitlement.entitlement);
+        return ticketBootstrapService.availableVersions(ticket.companyEntitlement);
     }
 
     Version defaultAffectsVersion(CompanyEntitlement entitlement) {
-        if (entitlement == null || entitlement.entitlement == null) {
-            return null;
-        }
-        Version version = Version
-                .find("entitlement = ?1 and name = ?2 order by date asc, id asc", entitlement.entitlement, "1.0.0")
-                .firstResult();
-        if (version != null) {
-            return version;
-        }
-        return Version.find("entitlement = ?1 order by date asc, id asc", entitlement.entitlement).firstResult();
+        return ticketBootstrapService.defaultAffectsVersion(entitlement);
     }
 
     List<Version> knownVersions() {

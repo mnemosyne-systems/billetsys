@@ -15,6 +15,7 @@ import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
+import ai.mnemosyne_systems.service.TicketBootstrapService;
 import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
@@ -50,6 +51,9 @@ public class TicketWorkbenchApiResource {
 
     @Inject
     CurrentUser currentUser;
+
+    @Inject
+    TicketBootstrapService ticketBootstrapService;
 
     @GET
     @Transactional
@@ -87,36 +91,39 @@ public class TicketWorkbenchApiResource {
             throw new NotFoundException();
         }
         Company selectedCompany = determineCompany(ticket, companyId);
-        List<CompanyEntitlement> entitlements = loadEntitlements(selectedCompany);
-        CompanyEntitlement selectedEntitlement = determineEntitlement(ticket, entitlements);
-        List<Version> versions = availableVersions(selectedEntitlement);
+        List<TicketBootstrapService.CompanyEntitlementOption> entitlements = selectedCompany == null ? List.of()
+                : ticketBootstrapService.entitlementOptionsForCompany(selectedCompany.id);
+        Long selectedEntitlementId = determineEntitlementId(ticket, entitlements);
+        Long versionsEntitlementId = entitlementIdForVersions(ticket, selectedEntitlementId, entitlements);
+        List<TicketBootstrapService.VersionOption> versions = versionsEntitlementId == null ? List.of()
+                : ticketBootstrapService.versionOptionsForEntitlement(versionsEntitlementId);
+        TicketBootstrapService.VersionOption defaultVersion = TicketBootstrapService
+                .selectDefaultVersionOption(versions);
         Category defaultCategory = ticket.category == null ? Category.findDefault() : ticket.category;
         if (ticketId == null) {
             ticket.status = ticket.status == null ? "Open" : ticket.status;
             ticket.title = ticket.displayTitle();
             ticket.company = selectedCompany;
-            ticket.companyEntitlement = selectedEntitlement;
-            ticket.affectsVersion = defaultAffectsVersion(selectedEntitlement);
             ticket.category = defaultCategory;
         }
         return new TicketFormResponse(ticketId == null ? "New ticket" : "Edit ticket",
                 ticketId == null ? "/tickets" : "/tickets/" + ticketId, "/tickets", ticketId != null,
-                Company.<Company> list("order by name").stream()
-                        .map(company -> new CompanyOption(company.id, company.name)).toList(),
+                ticketBootstrapService.allCompanyOptions().stream()
+                        .map(company -> new CompanyOption(company.id(), company.name())).toList(),
                 entitlements.stream()
-                        .map(entitlement -> new EntitlementOption(entitlement.id, entitlementLabel(entitlement)))
+                        .map(entitlement -> new EntitlementOption(entitlement.id(),
+                                entitlementLabel(entitlement.entitlementName(), entitlement.supportLevelName())))
                         .toList(),
-                Category.<Category> listAll().stream().map(category -> new CategoryOption(category.id, category.name))
-                        .toList(),
-                versions.stream().map(version -> new VersionOption(version.id, version.name)).toList(),
+                ticketBootstrapService.allCategoryOptions().stream()
+                        .map(category -> new CategoryOption(category.id(), category.name())).toList(),
+                versions.stream().map(version -> new VersionOption(version.id(), version.name())).toList(),
                 ticketId == null ? List.of()
                         : MessageVisibilitySupport.loadMessagesForViewer(ticket, user).stream()
                                 .map(this::toMessageSummary).toList(),
                 new TicketFormData(ticket.id, ticket.displayTitle(), ticket.status,
-                        ticket.company == null ? null : ticket.company.id,
-                        ticket.companyEntitlement == null ? null : ticket.companyEntitlement.id,
+                        ticket.company == null ? null : ticket.company.id, selectedEntitlementId,
                         ticket.category == null ? null : ticket.category.id, ticket.externalIssueLink,
-                        ticket.affectsVersion == null ? null : ticket.affectsVersion.id,
+                        defaultVersion == null ? null : defaultVersion.id(),
                         ticket.resolvedVersion == null ? null : ticket.resolvedVersion.id, ticket.rating,
                         ticket.ratingComment));
     }
@@ -145,46 +152,31 @@ public class TicketWorkbenchApiResource {
         return Company.find("order by name").firstResult();
     }
 
-    private CompanyEntitlement determineEntitlement(Ticket ticket, List<CompanyEntitlement> entitlements) {
-        if (ticket != null && ticket.companyEntitlement != null) {
-            return ticket.companyEntitlement;
+    private Long determineEntitlementId(Ticket ticket,
+            List<TicketBootstrapService.CompanyEntitlementOption> entitlements) {
+        if (ticket != null && ticket.companyEntitlement != null && ticket.companyEntitlement.id != null) {
+            return ticket.companyEntitlement.id;
         }
-        return entitlements.isEmpty() ? null : entitlements.get(0);
+        return entitlements.isEmpty() ? null : entitlements.get(0).id();
     }
 
-    private List<CompanyEntitlement> loadEntitlements(Company company) {
-        if (company == null) {
-            return List.of();
+    private Long entitlementIdForVersions(Ticket ticket, Long selectedEntitlementId,
+            List<TicketBootstrapService.CompanyEntitlementOption> entitlements) {
+        if (ticket != null && ticket.companyEntitlement != null && selectedEntitlementId != null
+                && selectedEntitlementId.equals(ticket.companyEntitlement.id)) {
+            return ticket.companyEntitlement.entitlement == null ? null : ticket.companyEntitlement.entitlement.id;
         }
-        return CompanyEntitlement.find(
-                "select distinct ce from CompanyEntitlement ce join fetch ce.entitlement join fetch ce.supportLevel where ce.company = ?1",
-                company).list();
-    }
-
-    private List<Version> availableVersions(CompanyEntitlement companyEntitlement) {
-        if (companyEntitlement == null || companyEntitlement.entitlement == null) {
-            return List.of();
-        }
-        return Version.list("entitlement = ?1 order by date asc, id asc", companyEntitlement.entitlement);
-    }
-
-    private Version defaultAffectsVersion(CompanyEntitlement companyEntitlement) {
-        if (companyEntitlement == null || companyEntitlement.entitlement == null) {
+        if (selectedEntitlementId == null) {
             return null;
         }
-        Version version = Version.find("entitlement = ?1 and name = ?2 order by date asc, id asc",
-                companyEntitlement.entitlement, "1.0.0").firstResult();
-        return version != null ? version
-                : Version.find("entitlement = ?1 order by date asc, id asc", companyEntitlement.entitlement)
-                        .firstResult();
+        return entitlements.stream().filter(entry -> selectedEntitlementId.equals(entry.id())).findFirst()
+                .map(TicketBootstrapService.CompanyEntitlementOption::entitlementId).orElse(null);
     }
 
-    private String entitlementLabel(CompanyEntitlement entitlement) {
-        String entitlementName = entitlement == null || entitlement.entitlement == null ? "Unknown entitlement"
-                : entitlement.entitlement.name;
-        String levelName = entitlement == null || entitlement.supportLevel == null ? "No level"
-                : entitlement.supportLevel.name;
-        return entitlementName + " • " + levelName;
+    private String entitlementLabel(String entitlementName, String supportLevelName) {
+        String resolvedEntitlementName = entitlementName == null ? "Unknown entitlement" : entitlementName;
+        String resolvedLevelName = supportLevelName == null ? "No level" : supportLevelName;
+        return resolvedEntitlementName + " • " + resolvedLevelName;
     }
 
     private String formatDate(LocalDateTime date) {

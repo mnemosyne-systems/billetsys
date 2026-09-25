@@ -49,6 +49,9 @@ public class ProfileResource {
     @Inject
     CurrentUser currentUser;
 
+    @Inject
+    ai.mnemosyne_systems.service.DirectoryService directoryService;
+
     @GET
     public Object edit() {
         return Response.seeOther(URI.create("/profile")).build();
@@ -59,6 +62,7 @@ public class ProfileResource {
     @Transactional
     public Object update(MultivaluedMap<String, String> form) {
         User user = currentUser.get();
+        List<Long> previousCompanyIds = directoryService.companyIdsOfUser(user.id);
         String name = value(form, "name");
         if (name == null || name.isBlank()) {
             return profileErrorRedirect("Username is required");
@@ -139,6 +143,9 @@ public class ProfileResource {
         if (logoData != null && !logoData.isBlank()) {
             user.logoBase64 = logoData.trim();
         }
+        // Profile edits (name, email, membership) record no event, so
+        // invalidate the directory caches explicitly.
+        directoryService.invalidateUserEverywhere(user.id, previousCompanyIds);
         return Response.seeOther(URI.create("/profile")).build();
     }
 

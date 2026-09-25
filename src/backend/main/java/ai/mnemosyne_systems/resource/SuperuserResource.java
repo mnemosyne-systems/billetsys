@@ -21,6 +21,7 @@ import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.TicketEmailService;
+import ai.mnemosyne_systems.service.TicketBootstrapService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.util.TicketTimeSupport;
@@ -77,6 +78,9 @@ public class SuperuserResource {
 
     @Inject
     EventService eventService;
+
+    @Inject
+    TicketBootstrapService ticketBootstrapService;
 
     @GET
     @Path("superuser")
@@ -731,23 +735,14 @@ public class SuperuserResource {
     }
 
     List<Version> availableVersions(Ticket ticket) {
-        if (ticket == null || ticket.companyEntitlement == null || ticket.companyEntitlement.entitlement == null) {
+        if (ticket == null) {
             return List.of();
         }
-        return Version.list("entitlement = ?1 order by date asc, id asc", ticket.companyEntitlement.entitlement);
+        return ticketBootstrapService.availableVersions(ticket.companyEntitlement);
     }
 
     Version defaultAffectsVersion(CompanyEntitlement entitlement) {
-        if (entitlement == null || entitlement.entitlement == null) {
-            return null;
-        }
-        Version version = Version
-                .find("entitlement = ?1 and name = ?2 order by date asc, id asc", entitlement.entitlement, "1.0.0")
-                .firstResult();
-        if (version != null) {
-            return version;
-        }
-        return Version.find("entitlement = ?1 order by date asc, id asc", entitlement.entitlement).firstResult();
+        return ticketBootstrapService.defaultAffectsVersion(entitlement);
     }
 
     List<Version> knownVersions() {

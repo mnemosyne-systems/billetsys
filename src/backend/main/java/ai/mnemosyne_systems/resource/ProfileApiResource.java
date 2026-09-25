@@ -39,6 +39,9 @@ public class ProfileApiResource {
     @Inject
     CurrentUser currentUser;
 
+    @Inject
+    ai.mnemosyne_systems.service.DirectoryService directoryService;
+
     @GET
     @Transactional
     public ProfileResponse profile() {
@@ -54,6 +57,7 @@ public class ProfileApiResource {
         if (request == null || request.name() == null || request.name().isBlank()) {
             throw new WebApplicationException("Username is required", Response.Status.BAD_REQUEST);
         }
+        List<Long> previousCompanyIds = directoryService.companyIdsOfUser(user.id);
         if (user.name == null || user.name.isBlank()) {
             user.name = request.name().trim();
         }
@@ -73,6 +77,9 @@ public class ProfileApiResource {
         } else if (AuthHelper.isSupport(user)) {
             reassignSupportUserCompany(user, request.companyId());
         }
+        // Profile edits (name, email, membership) record no event, so
+        // invalidate the directory caches explicitly.
+        directoryService.invalidateUserEverywhere(user.id, previousCompanyIds);
         return toResponse(user);
     }
 

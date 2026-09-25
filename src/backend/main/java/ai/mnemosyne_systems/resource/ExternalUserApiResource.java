@@ -12,6 +12,7 @@ import ai.mnemosyne_systems.model.Company;
 import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
+import ai.mnemosyne_systems.service.DirectoryService;
 import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.util.CurrentUser;
 import io.quarkus.elytron.security.common.BcryptUtil;
@@ -40,25 +41,30 @@ public class ExternalUserApiResource {
     @Inject
     CurrentUser currentUser;
 
+    @Inject
+    DirectoryService directoryService;
+
     @GET
     @Transactional
     public UserDirectoryApiModels.DirectoryListResponse list(@PathParam("role") String role,
             @QueryParam("companyId") Long companyId) {
         User actor = requireRole(currentUser.get(), role);
-        Company company = resolveCompanyForRole(actor, role, companyId);
+        Long resolvedCompanyId = resolveCompanyIdForRole(actor, role, companyId);
 
-        List<User> users = company == null ? List.of()
-                : Company.<User> find(
-                        "select u from Company c join c.users u where c = ?1 and u.type = ?2 order by u.fullName",
-                        company, User.TYPE_EXTERNAL).list();
+        List<UserDirectoryApiModels.UserReference> users = resolvedCompanyId == null ? List.of()
+                : directoryService.userEntriesForCompany(resolvedCompanyId).stream()
+                        .filter(entry -> User.TYPE_EXTERNAL.equalsIgnoreCase(entry.type()))
+                        .map(entry -> new UserDirectoryApiModels.UserReference(entry.id(), entry.username(),
+                                entry.displayName(), entry.email(), entry.type(),
+                                UserDirectoryApiModels.typeLabel(entry.type()), "/" + role + "/externals/" + entry.id(),
+                                null, entry.active()))
+                        .toList();
 
         String createPath = "/" + role + "/externals/new";
-        return new UserDirectoryApiModels.DirectoryListResponse("External Contributors", "",
-                company == null ? null : company.id, false, true, createPath,
-                company == null ? List.of() : List.of(UserDirectoryApiModels.companyOption(company)),
-                users.stream().map(
-                        user -> UserDirectoryApiModels.userReference(user, "/" + role + "/externals/" + user.id, null))
-                        .toList());
+        Company company = resolvedCompanyId == null ? null : Company.findById(resolvedCompanyId);
+        return new UserDirectoryApiModels.DirectoryListResponse("External Contributors", "", resolvedCompanyId, false,
+                true, createPath, company == null ? List.of() : List.of(UserDirectoryApiModels.companyOption(company)),
+                users);
     }
 
     @GET
@@ -68,17 +74,17 @@ public class ExternalUserApiResource {
             @QueryParam("userId") Long userId, @QueryParam("companyId") Long companyId,
             @QueryParam("countryId") Long countryId) {
         User actor = requireRole(currentUser.get(), role);
-        Company company = resolveCompanyForRole(actor, role, companyId);
-        if (company == null && !("support".equals(role) && companyId == null)) {
+        Long resolvedCompanyId = resolveCompanyIdForRole(actor, role, companyId);
+        if (resolvedCompanyId == null && !("support".equals(role) && companyId == null)) {
             throw new NotFoundException();
         }
 
-        List<Company> availableCompanies;
+        List<DirectoryService.CompanyOption> availableCompanies;
         if ("support".equals(role)) {
-            availableCompanies = Company.list("order by name");
+            availableCompanies = Company.<Company> list("order by name").stream()
+                    .map(company -> new DirectoryService.CompanyOption(company.id, company.name)).toList();
         } else {
-            availableCompanies = Company.<Company> find(
-                    "select distinct c from Company c join c.users u where u = ?1 order by c.name", currentUser).list();
+            availableCompanies = directoryService.companyOptionsForActor(actor.id);
         }
 
         User user = userId == null ? new User() : User.findById(userId);
@@ -105,14 +111,20 @@ public class ExternalUserApiResource {
         String submitPath = userId == null ? "/" + role + "/externals" : "/" + role + "/externals/" + userId;
         String title = userId == null ? "External Contributor" : "Edit External Contributor";
 
+        List<UserDirectoryApiModels.CompanyOption> companyOptions = availableCompanies.stream()
+                .map(option -> new UserDirectoryApiModels.CompanyOption(option.id(), option.name())).toList();
+        if ("support".equals(role)) {
+            java.util.ArrayList<UserDirectoryApiModels.CompanyOption> withUnassigned = new java.util.ArrayList<>();
+            withUnassigned.add(new UserDirectoryApiModels.CompanyOption(0L, "Unassigned"));
+            withUnassigned.addAll(companyOptions);
+            companyOptions = withUnassigned;
+        }
         return new UserDirectoryApiModels.UserFormResponse(title, submitPath, "/" + role + "/externals",
-                company == null ? null : company.id, true, false,
-                "support".equals(role) ? UserDirectoryApiModels.prependUnassignedCompanyOption(availableCompanies)
-                        : availableCompanies.stream().map(UserDirectoryApiModels::companyOption).toList(),
+                resolvedCompanyId, true, false, companyOptions,
                 countries.stream().map(UserDirectoryApiModels::countryOption).toList(),
                 timezones.stream().map(UserDirectoryApiModels::timezoneOption).toList(),
                 List.of(new UserDirectoryApiModels.TypeOption(User.TYPE_EXTERNAL, "External")),
-                UserDirectoryApiModels.userFormData(user, company.id));
+                UserDirectoryApiModels.userFormData(user, resolvedCompanyId));
     }
 
     @GET
@@ -128,9 +140,9 @@ public class ExternalUserApiResource {
 
         Company userCompany = Company.<Company> find("select c from Company c join c.users u where u = ?1", user)
                 .firstResult();
-        Company roleCompany = resolveCompanyForRole(actor, role, userCompany == null ? null : userCompany.id);
+        Long roleCompanyId = resolveCompanyIdForRole(actor, role, userCompany == null ? null : userCompany.id);
 
-        if (userCompany == null || roleCompany == null || !userCompany.id.equals(roleCompany.id)) {
+        if (userCompany == null || roleCompanyId == null || !userCompany.id.equals(roleCompanyId)) {
             throw new NotFoundException();
         }
 
@@ -157,24 +169,25 @@ public class ExternalUserApiResource {
         throw new NotAuthorizedException(Response.status(Response.Status.UNAUTHORIZED).build());
     }
 
-    private Company resolveCompanyForRole(User user, String role, Long requestedCompanyId) {
+    private Long resolveCompanyIdForRole(User user, String role, Long requestedCompanyId) {
         if ("support".equals(role)) {
             if (requestedCompanyId != null) {
-                return Company.findById(requestedCompanyId);
+                Company company = Company.findById(requestedCompanyId);
+                return company == null ? null : company.id;
             }
             return null; // Prompt for selection or default
         }
         if ("tam".equals(role) || "superuser".equals(role) || "user".equals(role)) {
-            List<Company> companies = Company.<Company> find(
-                    "select distinct c from Company c join c.users u where u = ?1 order by c.name", user).list();
+            List<DirectoryService.CompanyOption> companies = directoryService.companyOptionsForActor(user.id);
             if (companies.isEmpty()) {
                 return null;
             }
             if (requestedCompanyId != null) {
-                return companies.stream().filter(c -> c.id != null && c.id.equals(requestedCompanyId)).findFirst()
-                        .orElse(companies.get(0));
+                return companies.stream()
+                        .filter(option -> option.id() != null && option.id().equals(requestedCompanyId)).findFirst()
+                        .orElse(companies.get(0)).id();
             }
-            return companies.get(0);
+            return companies.get(0).id();
         }
         return null;
     }

@@ -48,6 +48,9 @@ public class CategoryResource {
     @jakarta.inject.Inject
     ai.mnemosyne_systems.service.EventService eventService;
 
+    @jakarta.inject.Inject
+    ai.mnemosyne_systems.service.TicketBootstrapService bootstrapService;
+
     @GET
     public Response list() {
         return Response.seeOther(URI.create("/categories")).build();
@@ -132,6 +135,8 @@ public class CategoryResource {
         List<Attachment> attachments = storeAttachments(category,
                 AttachmentHelper.readAttachments(input, "attachments"));
         category.description = resolveInlineAttachmentUrls(category.description, attachments);
+        // Name/default edits record no event, so invalidate explicitly.
+        bootstrapService.invalidateAllCategories();
         return ReactRedirectSupport.redirect(client, "/categories");
     }
 

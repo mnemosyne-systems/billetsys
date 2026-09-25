@@ -26,6 +26,9 @@ public class TicketAutoCloseService {
     @Inject
     TicketEmailService ticketEmailService;
 
+    @Inject
+    ReportService reportService;
+
     // Run once a day at a DST-independent time so auto-close notifications are never skipped or duplicated.
     @Scheduled(cron = "0 0 2 * * ?", timeZone = "${ticket.scheduler.timezone}")
     @Transactional
@@ -52,6 +55,15 @@ public class TicketAutoCloseService {
             ticket.rating = -1;
             ticket.status = "Closed";
             ticketEmailService.notifyStatusChange(ticket, previousStatus, null);
+        }
+        if (!ticketsToClose.isEmpty()) {
+            // Accuracy note: there is no staleness gap here. The nightly auto-close bypasses EventService (which is
+            // what normally evicts report snapshots), so it evicts the whole report-snapshots cache explicitly on
+            // every run that closes tickets — staleness after auto-close is near-zero, not TTL-bound. The eviction
+            // is deliberately coarse (whole cache, not per-company) because report keys embed user scopes (see
+            // ReportService.computeReport), making targeted invalidation infeasible. Do not "optimize" this into
+            // targeted invalidation without rethinking the key design first.
+            reportService.invalidateAll();
         }
     }
 

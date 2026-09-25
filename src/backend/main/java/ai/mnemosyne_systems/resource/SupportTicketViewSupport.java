@@ -12,7 +12,6 @@ import ai.mnemosyne_systems.model.CompanyEntitlement;
 import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
-import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.util.TicketTimeSupport;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,7 +19,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -36,42 +34,6 @@ final class SupportTicketViewSupport {
 
     static List<Message> loadMessages(Ticket ticket, User viewer) {
         return MessageVisibilitySupport.loadMessagesForViewer(ticket, viewer);
-    }
-
-    static List<CompanyEntitlement> uniqueEntitlements(List<CompanyEntitlement> entries) {
-        if (entries == null || entries.isEmpty()) {
-            return List.of();
-        }
-        List<CompanyEntitlement> unique = new ArrayList<>();
-        Set<Long> seenEntitlementIds = new LinkedHashSet<>();
-        for (CompanyEntitlement entry : entries) {
-            if (entry == null || entry.entitlement == null || entry.entitlement.id == null) {
-                continue;
-            }
-            if (seenEntitlementIds.add(entry.entitlement.id)) {
-                unique.add(entry);
-            }
-        }
-        return unique;
-    }
-
-    static List<Version> availableVersions(CompanyEntitlement companyEntitlement) {
-        if (companyEntitlement == null || companyEntitlement.entitlement == null) {
-            return List.of();
-        }
-        return Version.list("entitlement = ?1 order by date asc, id asc", companyEntitlement.entitlement);
-    }
-
-    static Version defaultAffectsVersion(CompanyEntitlement companyEntitlement) {
-        if (companyEntitlement == null || companyEntitlement.entitlement == null) {
-            return null;
-        }
-        Version version = Version.find("entitlement = ?1 and name = ?2 order by date asc, id asc",
-                companyEntitlement.entitlement, "1.0.0").firstResult();
-        if (version != null) {
-            return version;
-        }
-        return Version.find("entitlement = ?1 order by date asc, id asc", companyEntitlement.entitlement).firstResult();
     }
 
     static String formatDate(LocalDateTime date) {

@@ -45,6 +45,9 @@ public class LevelResource {
     @jakarta.inject.Inject
     ai.mnemosyne_systems.service.EventService eventService;
 
+    @jakarta.inject.Inject
+    ai.mnemosyne_systems.service.TicketBootstrapService bootstrapService;
+
     public static final class ColorOption {
         private final String value;
         private final String label;
@@ -166,6 +169,9 @@ public class LevelResource {
         level.country = countryId != null ? Country.findById(countryId) : Country.find("code", "US").firstResult();
         level.timezone = timezoneId != null ? Timezone.findById(timezoneId)
                 : Timezone.find("name", "America/New_York").firstResult();
+        // Level name edits record no event but appear in entitlement option
+        // labels, so invalidate explicitly.
+        bootstrapService.invalidateAllEntitlementOptions();
         return ReactRedirectSupport.redirect(client, "/levels");
     }
 

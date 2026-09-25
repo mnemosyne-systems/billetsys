@@ -22,6 +22,7 @@ import ai.mnemosyne_systems.model.event.EventConstants;
 import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.TicketEmailService;
+import ai.mnemosyne_systems.service.TicketBootstrapService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.util.CurrentUser;
@@ -74,6 +75,9 @@ public class SupportResource {
 
     @Inject
     ExternalUserResource externalUserResource;
+
+    @Inject
+    TicketBootstrapService ticketBootstrapService;
 
     @GET
     public Response listTickets() {
@@ -539,22 +543,10 @@ public class SupportResource {
         return Response.seeOther(URI.create("/support/tickets/new?companyId=" + company.id + suffix)).build();
     }
 
-    private List<CompanyEntitlement> uniqueEntitlements(List<CompanyEntitlement> entries) {
-        return SupportTicketViewSupport.uniqueEntitlements(entries);
-    }
-
-    private List<Version> availableVersions(CompanyEntitlement companyEntitlement) {
-        return SupportTicketViewSupport.availableVersions(companyEntitlement);
-    }
-
-    private Version defaultAffectsVersion(CompanyEntitlement companyEntitlement) {
-        return SupportTicketViewSupport.defaultAffectsVersion(companyEntitlement);
-    }
-
     private Version resolveVersion(CompanyEntitlement companyEntitlement, Long versionId, String label,
             boolean required) {
         if (versionId == null) {
-            if (required && !availableVersions(companyEntitlement).isEmpty()) {
+            if (required && !ticketBootstrapService.availableVersions(companyEntitlement).isEmpty()) {
                 throw new BadRequestException(label + " version is required");
             }
             return null;

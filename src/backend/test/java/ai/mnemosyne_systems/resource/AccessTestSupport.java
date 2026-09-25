@@ -8,6 +8,7 @@
 
 package ai.mnemosyne_systems.resource;
 
+import ai.mnemosyne_systems.infra.BrandingService;
 import ai.mnemosyne_systems.model.Category;
 import ai.mnemosyne_systems.model.Article;
 import ai.mnemosyne_systems.model.Attachment;
@@ -55,6 +56,9 @@ abstract class AccessTestSupport {
 
     @Inject
     TicketEmailService ticketEmailService;
+
+    @Inject
+    BrandingService brandingService;
 
     @Transactional
     void ensureUser(String name, String email, String type) {
@@ -553,6 +557,9 @@ abstract class AccessTestSupport {
             return;
         }
         installation.use24HourClock = use24HourClock;
+        // Direct write bypasses the owner endpoints, so invalidate the branding
+        // cache explicitly — just like every other Installation writer must.
+        brandingService.invalidate();
     }
 
     @Transactional

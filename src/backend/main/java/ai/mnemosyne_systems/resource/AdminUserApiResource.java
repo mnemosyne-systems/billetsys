@@ -13,6 +13,7 @@ import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.event.EventConstants;
+import ai.mnemosyne_systems.service.DirectoryService;
 import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.util.CurrentUser;
 import jakarta.annotation.security.RolesAllowed;
@@ -44,6 +45,9 @@ public class AdminUserApiResource {
     @Inject
     EventService eventService;
 
+    @Inject
+    DirectoryService directoryService;
+
     @GET
     @Transactional
     public UserDirectoryApiModels.DirectoryListResponse list(@QueryParam("companyId") Long companyId) {
@@ -53,16 +57,23 @@ public class AdminUserApiResource {
         Company selectedCompany = unassignedSelected ? null : selectCompany(companies, companyId);
         List<User> users = unassignedSelected ? User.<User> find(
                 "select u from User u where not exists (select 1 from Company c join c.users cu where cu = u) order by u.name")
-                .list()
+                .list() : List.of();
+        List<UserDirectoryApiModels.UserReference> items = unassignedSelected
+                ? users.stream()
+                        .map(user -> UserDirectoryApiModels.userReference(user, "/users/" + user.id,
+                                "/users/" + user.id + "/edit"))
+                        .toList()
                 : selectedCompany == null ? List.of()
-                        : Company.<User> find("select u from Company c join c.users u where c = ?1 order by u.name",
-                                selectedCompany).list();
+                        : directoryService.userEntriesForCompany(selectedCompany.id).stream()
+                                .map(entry -> new UserDirectoryApiModels.UserReference(entry.id(), entry.username(),
+                                        entry.displayName(), entry.email(), entry.type(),
+                                        UserDirectoryApiModels.typeLabel(entry.type()), "/users/" + entry.id(),
+                                        "/users/" + entry.id() + "/edit", entry.active()))
+                                .toList();
         String createPath = selectedCompany != null ? "/users/new?companyId=" + selectedCompany.id : "/users/new";
         return new UserDirectoryApiModels.DirectoryListResponse("Users", "",
                 unassignedSelected ? 0L : selectedCompany == null ? null : selectedCompany.id, true, false, createPath,
-                UserDirectoryApiModels.prependUnassignedCompanyOption(companies),
-                users.stream().map(user -> UserDirectoryApiModels.userReference(user, "/users/" + user.id,
-                        "/users/" + user.id + "/edit")).toList());
+                UserDirectoryApiModels.prependUnassignedCompanyOption(companies), items);
     }
 
     @GET

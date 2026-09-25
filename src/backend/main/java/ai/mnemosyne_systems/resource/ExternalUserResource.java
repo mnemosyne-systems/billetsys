@@ -44,6 +44,9 @@ public class ExternalUserResource {
     @Inject
     CurrentUser currentUser;
 
+    @Inject
+    ai.mnemosyne_systems.service.DirectoryService directoryService;
+
     @POST
     @Path("{role}/externals")
     @Transactional
@@ -162,6 +165,9 @@ public class ExternalUserResource {
                     userCompany == null ? null : userCompany.id, actor.id,
                     active ? "User activated" : "User deactivated");
         }
+        // Profile fields change without an event unless active changed, so
+        // invalidate the directory caches explicitly.
+        directoryService.invalidateUserEverywhere(user.id, userCompany == null ? List.of() : List.of(userCompany.id));
         return Response.seeOther(URI.create("/" + role + "/externals")).build();
     }
 
@@ -184,8 +190,8 @@ public class ExternalUserResource {
         }
 
         userCompany.users.remove(user);
-        eventService.record(user.id, ai.mnemosyne_systems.model.event.EventConstants.USER_DELETED, null, actor.id,
-                "User deleted");
+        eventService.record(user.id, ai.mnemosyne_systems.model.event.EventConstants.USER_DELETED, userCompany.id,
+                actor.id, "User deleted");
         user.delete();
 
         return Response.seeOther(URI.create("/" + role + "/externals")).build();

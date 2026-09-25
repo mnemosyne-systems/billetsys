@@ -50,6 +50,9 @@ public class EntitlementResource {
     @jakarta.inject.Inject
     ai.mnemosyne_systems.service.EventService eventService;
 
+    @jakarta.inject.Inject
+    ai.mnemosyne_systems.service.TicketBootstrapService bootstrapService;
+
     @GET
     public Response listEntitlements() {
         return Response.seeOther(URI.create("/entitlements")).build();
@@ -121,6 +124,9 @@ public class EntitlementResource {
                 versionDates);
         entitlement.versions.clear();
         entitlement.versions.addAll(resolvedVersions);
+        // Version and name edits record no event, so invalidate explicitly.
+        bootstrapService.invalidateVersions(entitlement.id);
+        bootstrapService.invalidateAllEntitlementOptions();
         return ReactRedirectSupport.redirect(client, "/entitlements");
     }
 

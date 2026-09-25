@@ -13,6 +13,7 @@ import ai.mnemosyne_systems.model.Country;
 import ai.mnemosyne_systems.model.Timezone;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.event.EventConstants;
+import ai.mnemosyne_systems.service.DirectoryService;
 import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.util.CurrentUser;
 import jakarta.annotation.security.RolesAllowed;
@@ -44,25 +45,28 @@ public class TamUserApiResource {
     @Inject
     EventService eventService;
 
+    @Inject
+    DirectoryService directoryService;
+
     @GET
     @Transactional
     public UserDirectoryApiModels.DirectoryListResponse list(@QueryParam("companyId") Long companyId) {
         User currentUser = cUser.get();
-        List<Company> companies = Company
-                .find("select distinct c from Company c join c.users u where u = ?1 order by c.name", currentUser)
-                .list();
-        Company selectedCompany = selectCompany(companies, companyId);
-        List<User> users = selectedCompany == null ? List.of()
-                : Company.<User> find("select u from Company c join c.users u where c = ?1 order by u.name",
-                        selectedCompany).list();
-        String createPath = selectedCompany != null ? "/tam/users/new?companyId=" + selectedCompany.id
+        List<DirectoryService.CompanyOption> companies = directoryService.companyOptionsForActor(currentUser.id);
+        Long selectedCompanyId = DirectoryService.selectCompanyId(companies, companyId);
+        List<UserDirectoryApiModels.UserReference> users = selectedCompanyId == null ? List.of()
+                : directoryService.userEntriesForCompany(selectedCompanyId).stream()
+                        .map(entry -> new UserDirectoryApiModels.UserReference(entry.id(), entry.username(),
+                                entry.displayName(), entry.email(), entry.type(),
+                                UserDirectoryApiModels.typeLabel(entry.type()), "/user/user-profiles/" + entry.id(),
+                                null, entry.active()))
+                        .toList();
+        String createPath = selectedCompanyId != null ? "/tam/users/new?companyId=" + selectedCompanyId
                 : "/tam/users/new";
-        return new UserDirectoryApiModels.DirectoryListResponse("Users", "",
-                selectedCompany == null ? null : selectedCompany.id, false, companies.size() <= 1, createPath,
-                companies.stream().map(UserDirectoryApiModels::companyOption).toList(),
-                users.stream()
-                        .map(user -> UserDirectoryApiModels.userReference(user, "/user/user-profiles/" + user.id, null))
-                        .toList());
+        return new UserDirectoryApiModels.DirectoryListResponse("Users", "", selectedCompanyId, false,
+                companies.size() <= 1, createPath, companies.stream()
+                        .map(option -> new UserDirectoryApiModels.CompanyOption(option.id(), option.name())).toList(),
+                users);
     }
 
     @GET
@@ -71,11 +75,9 @@ public class TamUserApiResource {
     public UserDirectoryApiModels.UserFormResponse bootstrap(@QueryParam("companyId") Long companyId,
             @QueryParam("countryId") Long countryId) {
         User currentUser = cUser.get();
-        List<Company> companies = Company
-                .find("select distinct c from Company c join c.users u where u = ?1 order by c.name", currentUser)
-                .list();
-        Company selectedCompany = selectCompany(companies, companyId);
-        if (selectedCompany == null) {
+        List<DirectoryService.CompanyOption> companies = directoryService.companyOptionsForActor(currentUser.id);
+        Long selectedCompanyId = DirectoryService.selectCompanyId(companies, companyId);
+        if (selectedCompanyId == null) {
             throw new NotFoundException();
         }
         User newUser = new User();
@@ -88,13 +90,14 @@ public class TamUserApiResource {
         List<Timezone> timezones = selectedCountry == null ? List.of()
                 : Timezone.list("country = ?1 order by name", selectedCountry);
         return new UserDirectoryApiModels.UserFormResponse("New user", "/tam/users",
-                "/tam/users?companyId=" + selectedCompany.id, selectedCompany.id, companies.size() <= 1, true,
-                companies.stream().map(UserDirectoryApiModels::companyOption).toList(),
+                "/tam/users?companyId=" + selectedCompanyId, selectedCompanyId, companies.size() <= 1, true,
+                companies.stream().map(option -> new UserDirectoryApiModels.CompanyOption(option.id(), option.name()))
+                        .toList(),
                 countries.stream().map(UserDirectoryApiModels::countryOption).toList(),
                 timezones.stream().map(UserDirectoryApiModels::timezoneOption).toList(),
                 List.of(new UserDirectoryApiModels.TypeOption(User.TYPE_USER, "User"),
                         new UserDirectoryApiModels.TypeOption(User.TYPE_EXTERNAL, "External")),
-                UserDirectoryApiModels.userFormData(newUser, selectedCompany.id));
+                UserDirectoryApiModels.userFormData(newUser, selectedCompanyId));
     }
 
     @POST
@@ -132,17 +135,6 @@ public class TamUserApiResource {
                 active ? "User activated" : "User deactivated");
         String backPath = company != null ? "/tam/users?companyId=" + company.id : "/tam/users";
         return ReactRedirectSupport.redirect(client, backPath);
-    }
-
-    private Company selectCompany(List<Company> companies, Long companyId) {
-        if (companies == null || companies.isEmpty()) {
-            return null;
-        }
-        if (companyId == null) {
-            return companies.get(0);
-        }
-        return companies.stream().filter(company -> company.id != null && company.id.equals(companyId)).findFirst()
-                .orElse(companies.get(0));
     }
 
     private Country selectCountry(Long countryId) {

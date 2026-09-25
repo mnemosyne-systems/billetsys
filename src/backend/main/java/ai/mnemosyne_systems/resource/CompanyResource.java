@@ -53,6 +53,12 @@ public class CompanyResource {
     @jakarta.inject.Inject
     ai.mnemosyne_systems.service.EventService eventService;
 
+    @jakarta.inject.Inject
+    ai.mnemosyne_systems.service.DirectoryService directoryService;
+
+    @jakarta.inject.Inject
+    ai.mnemosyne_systems.service.TicketBootstrapService bootstrapService;
+
     @GET
     public Response listCompanies() {
         return Response.seeOther(URI.create("/companies")).build();
@@ -147,6 +153,7 @@ public class CompanyResource {
         company.country = countryId != null ? Country.findById(countryId) : null;
         company.timezone = timezoneId != null ? Timezone.findById(timezoneId) : null;
         company.phoneNumber = phoneNumber;
+        List<Long> previousMemberIds = company.users.stream().map(member -> member.id).toList();
         if (request.getParameterMap().containsKey("userIds") || request.getParameterMap().containsKey("tamIds")) {
             company.users.clear();
             company.users.addAll(resolveUsers(userIds, tamIds, company.id));
@@ -170,6 +177,19 @@ public class CompanyResource {
                     company.id, currentUser.get().id, "Company entitlement deleted");
             entry.delete();
         }
+        // Rename and membership edits record no event, so invalidate explicitly.
+        directoryService.invalidateUsers(company.id);
+        java.util.LinkedHashSet<Long> memberIds = new java.util.LinkedHashSet<>(previousMemberIds);
+        for (User member : company.users) {
+            memberIds.add(member.id);
+        }
+        for (Long memberId : memberIds) {
+            if (memberId != null) {
+                directoryService.invalidateCompanies(memberId);
+            }
+        }
+        // Company renames surface in the global company options.
+        bootstrapService.invalidateAllCompanies();
         return ReactRedirectSupport.redirect(client, "/companies");
     }
 

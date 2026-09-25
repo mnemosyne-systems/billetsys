@@ -20,5 +20,5 @@ public class ReportData {
     public Map<String, TimeStat> firstResponseTimeStats;
     public Map<String, TimeStat> resolutionTimeStats;
     public Map<String, PickupTimeStat> pickupTimeStats;
-    public Map<String, List<Ticket>> resolutionHistogram;
+    public Map<String, List<HistogramTicket>> resolutionHistogram;
 }

@@ -8,9 +8,8 @@
 
 package ai.mnemosyne_systems.infra;
 
-import ai.mnemosyne_systems.model.Company;
-import ai.mnemosyne_systems.model.Installation;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,54 +27,47 @@ public class BrandingProvider {
     public static final String DEFAULT_INSTALLATION_COLOR = "#b00020";
     private static final Pattern HEX_COLOR_PATTERN = Pattern.compile("^#[0-9a-fA-F]{6}$");
 
+    @Inject
+    BrandingService brandingService;
+
     public String installationCompanyName() {
-        Installation installation = installation();
-        if (installation != null) {
-            if (installation.name != null && !installation.name.isBlank()) {
-                return installation.name;
-            }
-            if (installation.company != null && installation.company.name != null
-                    && !installation.company.name.isBlank()) {
-                return installation.company.name;
-            }
+        String companyName = brandingService.snapshot().companyName();
+        if (companyName != null && !companyName.isBlank()) {
+            return companyName;
         }
         return "billetsys";
     }
 
     public String installationLogoBase64() {
-        Installation installation = installation();
-        if (installation != null && installation.logoBase64 != null && !installation.logoBase64.isBlank()) {
-            return installation.logoBase64;
+        String logoBase64 = brandingService.snapshot().logoBase64();
+        if (logoBase64 != null && !logoBase64.isBlank()) {
+            return logoBase64;
         }
         return defaultInstallationLogoBase64();
     }
 
     public String installationHeaderFooterColor() {
-        Installation installation = installation();
-        return normalizeInstallationColor(installation == null ? null : installation.headerFooterColor);
+        return normalizeInstallationColor(brandingService.snapshot().headerFooterColor());
     }
 
     public String installationHeadersColor() {
-        Installation installation = installation();
-        return normalizeInstallationColor(installation == null ? null : installation.headersColor);
+        return normalizeInstallationColor(brandingService.snapshot().headersColor());
     }
 
     public String installationButtonsColor() {
-        Installation installation = installation();
-        return normalizeInstallationColor(installation == null ? null : installation.buttonsColor);
+        return normalizeInstallationColor(brandingService.snapshot().buttonsColor());
     }
 
     public String installationBackgroundBase64() {
-        Installation installation = installation();
-        if (installation == null || installation.backgroundBase64 == null || installation.backgroundBase64.isBlank()) {
+        String backgroundBase64 = brandingService.snapshot().backgroundBase64();
+        if (backgroundBase64 == null || backgroundBase64.isBlank()) {
             return null;
         }
-        return installation.backgroundBase64;
+        return backgroundBase64;
     }
 
     public boolean installationUse24HourClock() {
-        Installation installation = installation();
-        return installation != null && Boolean.TRUE.equals(installation.use24HourClock);
+        return Boolean.TRUE.equals(brandingService.snapshot().use24HourClock());
     }
 
     public String defaultInstallationLogoBase64() {
@@ -96,77 +88,57 @@ public class BrandingProvider {
     }
 
     public String installationAdminRoleIcon() {
-        Installation installation = installation();
-        return (installation != null && installation.adminRoleIcon != null && !installation.adminRoleIcon.isBlank())
-                ? installation.adminRoleIcon
-                : "shield-check";
+        String icon = brandingService.snapshot().adminRoleIcon();
+        return (icon != null && !icon.isBlank()) ? icon : "shield-check";
     }
 
     public String installationSupportRoleIcon() {
-        Installation installation = installation();
-        return (installation != null && installation.supportRoleIcon != null && !installation.supportRoleIcon.isBlank())
-                ? installation.supportRoleIcon
-                : "headset";
+        String icon = brandingService.snapshot().supportRoleIcon();
+        return (icon != null && !icon.isBlank()) ? icon : "headset";
     }
 
     public String installationSuperuserRoleIcon() {
-        Installation installation = installation();
-        return (installation != null && installation.superuserRoleIcon != null
-                && !installation.superuserRoleIcon.isBlank()) ? installation.superuserRoleIcon : "crown";
+        String icon = brandingService.snapshot().superuserRoleIcon();
+        return (icon != null && !icon.isBlank()) ? icon : "crown";
     }
 
     public String installationTamRoleIcon() {
-        Installation installation = installation();
-        return (installation != null && installation.tamRoleIcon != null && !installation.tamRoleIcon.isBlank())
-                ? installation.tamRoleIcon
-                : "briefcase";
+        String icon = brandingService.snapshot().tamRoleIcon();
+        return (icon != null && !icon.isBlank()) ? icon : "briefcase";
     }
 
     public String installationUserRoleIcon() {
-        Installation installation = installation();
-        return (installation != null && installation.userRoleIcon != null && !installation.userRoleIcon.isBlank())
-                ? installation.userRoleIcon
-                : "user";
+        String icon = brandingService.snapshot().userRoleIcon();
+        return (icon != null && !icon.isBlank()) ? icon : "user";
     }
 
     public String installationExternalRoleIcon() {
-        Installation installation = installation();
-        return (installation != null && installation.externalRoleIcon != null
-                && !installation.externalRoleIcon.isBlank()) ? installation.externalRoleIcon : "user-star";
+        String icon = brandingService.snapshot().externalRoleIcon();
+        return (icon != null && !icon.isBlank()) ? icon : "user-star";
     }
 
     public String installationAdminRoleColor() {
-        Installation installation = installation();
-        return normalizeRoleColor(installation == null ? null : installation.adminRoleColor);
+        return normalizeRoleColor(brandingService.snapshot().adminRoleColor());
     }
 
     public String installationSupportRoleColor() {
-        Installation installation = installation();
-        return normalizeRoleColor(installation == null ? null : installation.supportRoleColor);
+        return normalizeRoleColor(brandingService.snapshot().supportRoleColor());
     }
 
     public String installationSuperuserRoleColor() {
-        Installation installation = installation();
-        return normalizeRoleColor(installation == null ? null : installation.superuserRoleColor);
+        return normalizeRoleColor(brandingService.snapshot().superuserRoleColor());
     }
 
     public String installationTamRoleColor() {
-        Installation installation = installation();
-        return normalizeRoleColor(installation == null ? null : installation.tamRoleColor);
+        return normalizeRoleColor(brandingService.snapshot().tamRoleColor());
     }
 
     public String installationUserRoleColor() {
-        Installation installation = installation();
-        return normalizeRoleColor(installation == null ? null : installation.userRoleColor);
+        return normalizeRoleColor(brandingService.snapshot().userRoleColor());
     }
 
     public String installationExternalRoleColor() {
-        Installation installation = installation();
-        return normalizeRoleColor(installation == null ? null : installation.externalRoleColor);
-    }
-
-    private Installation installation() {
-        return Installation.find("singletonKey", "installation").firstResult();
+        return normalizeRoleColor(brandingService.snapshot().externalRoleColor());
     }
 
     public static String normalizeInstallationColor(String color) {
