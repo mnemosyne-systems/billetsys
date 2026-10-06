@@ -43,8 +43,7 @@ public final class PaginationSupport {
         return (totalItems + pageSize - 1) / pageSize;
     }
 
-    public static <T> List<T> sortAndPaginate(List<T> items, String sort, String dir,
-            Map<String, SortColumn<T>> sortColumns, Integer page, Integer pageSize) {
+    public static <T> List<T> sortOnly(List<T> items, String sort, String dir, Map<String, SortColumn<T>> sortColumns) {
         if (items == null || items.isEmpty()) {
             return List.of();
         }
@@ -53,6 +52,13 @@ public final class PaginationSupport {
             SortColumn<T> sortColumn = sortColumns.get(sort);
             sorted.sort(sortColumn.comparator(dir));
         }
+        return sorted;
+    }
+
+    public static <T> List<T> sortAndPaginate(List<T> items, String sort, String dir,
+            Map<String, SortColumn<T>> sortColumns, Integer page, Integer pageSize) {
+        List<T> sorted = sortOnly(items, sort, dir, sortColumns);
+
         int normalizedPageSize = normalizePageSize(pageSize);
         int normalizedPage = normalizePageForTotal(page, sorted.size(), normalizedPageSize);
         int fromIndex = (normalizedPage - 1) * normalizedPageSize;
