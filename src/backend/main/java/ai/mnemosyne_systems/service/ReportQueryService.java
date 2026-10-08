@@ -17,13 +17,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Database-side aggregation for the three expensive per-ticket duration metrics (R1/R2 of #192).
+ * Database-side aggregation for the report metrics: the three expensive per-ticket duration metrics (R1/R2 of #192)
+ * plus the count-based metrics (status/category/company GROUP BYs, ticket total, timeline and histogram slim rows).
  * <p>
- * Each query returns ONE SLIM ROW per ticket (ticket id, category name, raw timestamps only) — no Message body/author
- * hydration, no full Event entity hydration. The database does the filtering (company scope, event/message type) and
- * grouping (MIN/MAX/COUNT per ticket); all date arithmetic stays in Java so the SQL uses no Postgres-only functions
- * ({@code EXTRACT(EPOCH...)}, {@code NOW()}, {@code date_trunc}) and behaves identically on H2 (tests) and Postgres
- * (prod).
+ * Each query returns aggregate rows or ONE SLIM ROW per ticket (ids, names, raw timestamps only) — no Ticket/Message
+ * entity hydration, no Message body/author loading, no full Event entity hydration. The database does the filtering
+ * (company scope, event/message type) and grouping (MIN/MAX/COUNT per ticket or per group); all date arithmetic stays
+ * in Java so the SQL uses no Postgres-only functions ({@code EXTRACT(EPOCH...)}, {@code NOW()}, {@code date_trunc}) and
+ * behaves identically on H2 (tests) and Postgres (prod).
  * <p>
  * Business-logic guards preserved in the Java post-processing inside {@link ReportService}:
  * <ul>
@@ -44,8 +45,20 @@ public class ReportQueryService {
             long messageCount) {
     }
 
-    public record ResolutionRow(Long ticketId, String categoryName, String status, LocalDateTime firstAt,
-            LocalDateTime lastAt) {
+    public record ResolutionRow(Long ticketId, String ticketName, String categoryName, String companyName,
+            String status, LocalDateTime firstAt, LocalDateTime lastAt) {
+    }
+
+    public record StatusCount(String status, long count) {
+    }
+
+    public record CategoryCount(String categoryName, long count) {
+    }
+
+    public record CompanyCount(String companyName, long count) {
+    }
+
+    public record TimelineRow(Long ticketId, LocalDateTime firstAt) {
     }
 
     /**
@@ -97,22 +110,99 @@ public class ReportQueryService {
     }
 
     /**
-     * One slim row per Closed ticket: earliest and latest message dates. Closed-only is pre-filtered in SQL (so the
-     * database does the work) and re-checked in Java by the caller.
+     * One slim row per Closed ticket: display fields plus earliest and latest message dates. Closed-only is
+     * pre-filtered in SQL (so the database does the work) and re-checked in Java by the caller. The row list is shared
+     * between the resolution-time stats and the resolution histogram, so both metrics run off this single query.
      */
     public List<ResolutionRow> resolutionRows(List<Long> companyIds) {
         String companyFilter = companyFilterSql(companyIds);
         String statusFilter = "lower(t.status) = 'closed'";
         String where = companyFilter.isEmpty() ? " where " + statusFilter : companyFilter + " and " + statusFilter;
-        String sql = "select t.id, c.name, t.status, "
+        String sql = "select t.id, t.name, c.name, co.name, t.status, "
                 + "(select min(m1.date) from messages m1 where m1.ticket_id = t.id), "
                 + "(select max(m2.date) from messages m2 where m2.ticket_id = t.id) "
-                + "from tickets t left join categories c on c.id = t.category_id" + where;
+                + "from tickets t left join categories c on c.id = t.category_id "
+                + "join companies co on co.id = t.company_id" + where;
         List<Object[]> rows = Panache.getEntityManager().createNativeQuery(sql).getResultList();
         List<ResolutionRow> result = new ArrayList<>(rows.size());
         for (Object[] row : rows) {
-            result.add(new ResolutionRow(toLong(row[0]), (String) row[1], (String) row[2], toDateTime(row[3]),
-                    toDateTime(row[4])));
+            result.add(new ResolutionRow(toLong(row[0]), (String) row[1], (String) row[2], (String) row[3],
+                    (String) row[4], toDateTime(row[5]), toDateTime(row[6])));
+        }
+        return result;
+    }
+
+    /**
+     * Status groups with ticket counts. Grouping stays case-sensitive; a {@code null} status yields a {@code null}
+     * group key that the caller normalizes (together with blank values) to {@code "Open"}.
+     */
+    public List<StatusCount> statusCounts(List<Long> companyIds) {
+        String sql = "select t.status, count(*) from tickets t" + companyFilterSql(companyIds) + " group by t.status";
+        List<Object[]> rows = Panache.getEntityManager().createNativeQuery(sql).getResultList();
+        List<StatusCount> result = new ArrayList<>(rows.size());
+        for (Object[] row : rows) {
+            result.add(new StatusCount((String) row[0], toLong(row[1])));
+        }
+        return result;
+    }
+
+    /**
+     * Category groups with ticket counts. Tickets without a category form a single {@code null}-keyed group that the
+     * caller normalizes to {@code "Uncategorized"}.
+     */
+    public List<CategoryCount> categoryCounts(List<Long> companyIds) {
+        String sql = "select c.name, count(*) from tickets t left join categories c on c.id = t.category_id"
+                + companyFilterSql(companyIds) + " group by c.name";
+        List<Object[]> rows = Panache.getEntityManager().createNativeQuery(sql).getResultList();
+        List<CategoryCount> result = new ArrayList<>(rows.size());
+        for (Object[] row : rows) {
+            result.add(new CategoryCount((String) row[0], toLong(row[1])));
+        }
+        return result;
+    }
+
+    /**
+     * Company groups with ticket counts. The inner join is safe because every ticket has a company
+     * ({@code Ticket.company} is non-nullable).
+     */
+    public List<CompanyCount> companyCounts(List<Long> companyIds) {
+        String sql = "select co.name, count(*) from tickets t join companies co on co.id = t.company_id"
+                + companyFilterSql(companyIds) + " group by co.name";
+        List<Object[]> rows = Panache.getEntityManager().createNativeQuery(sql).getResultList();
+        List<CompanyCount> result = new ArrayList<>(rows.size());
+        for (Object[] row : rows) {
+            result.add(new CompanyCount((String) row[0], toLong(row[1])));
+        }
+        return result;
+    }
+
+    /**
+     * Total ticket count for the scope. Deliberately a dedicated query rather than derived from the status groups, so
+     * the headline total cannot drift with grouping semantics.
+     */
+    public long totalTickets(List<Long> companyIds) {
+        String sql = "select count(*) from tickets t" + companyFilterSql(companyIds);
+        return toLong(Panache.getEntityManager().createNativeQuery(sql).getSingleResult());
+    }
+
+    /**
+     * One slim row per ticket: earliest message date, or {@code null} for tickets with no messages (the caller skips
+     * those, matching the previous entity-based behavior). Bucketing by month/year/all stays in Java so no date
+     * functions are needed in SQL.
+     * <p>
+     * Known edge-case difference vs the old in-Java pass: SQL {@code MIN} ignores {@code NULL} message dates, while the
+     * old code read the first row of a date-ordered entity list (where NULL ordering is DB-specific) and skipped the
+     * ticket when that row had a null date. A ticket mixing null-dated and dated messages may therefore be counted now
+     * where it was previously skipped. In practice message dates are never null (the column is non-nullable), so this
+     * only affects hand-crafted rows.
+     */
+    public List<TimelineRow> timelineRows(List<Long> companyIds) {
+        String sql = "select t.id, (select min(m1.date) from messages m1 where m1.ticket_id = t.id) " + "from tickets t"
+                + companyFilterSql(companyIds);
+        List<Object[]> rows = Panache.getEntityManager().createNativeQuery(sql).getResultList();
+        List<TimelineRow> result = new ArrayList<>(rows.size());
+        for (Object[] row : rows) {
+            result.add(new TimelineRow(toLong(row[0]), toDateTime(row[1])));
         }
         return result;
     }

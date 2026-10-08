@@ -10,10 +10,8 @@ package ai.mnemosyne_systems.service;
 
 import ai.mnemosyne_systems.model.Company;
 import ai.mnemosyne_systems.model.HistogramTicket;
-import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.PickupTimeStat;
 import ai.mnemosyne_systems.model.ReportData;
-import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.TimeStat;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.util.TicketTimeSupport;
@@ -34,11 +32,9 @@ import java.util.TreeMap;
 /**
  * Shared report aggregation, previously duplicated between {@code ReportApiResource} and {@code ReportResource}.
  * <p>
- * The three duration metrics (pickup, first response, resolution) are aggregated database-side via
- * {@link ReportQueryService} (one slim row per ticket — ticket id, category, raw timestamps only); the
- * {@code report-snapshots} cache on {@link #computeReport} sits above those SQL calls and caches their grouped output.
- * The non-duration metrics (status/category/company/timeline/histogram counts) stay on the previous entity-loading
- * approach, per the original #192 scope.
+ * Every metric is aggregated database-side via {@link ReportQueryService} (GROUP BY counts plus one slim row per ticket
+ * — ids, names, raw timestamps only); no Ticket/Message entity hydration happens here. The {@code report-snapshots}
+ * cache on {@link #computeReport} sits above those SQL calls and caches their grouped output.
  */
 @ApplicationScoped
 public class ReportService {
@@ -115,63 +111,38 @@ public class ReportService {
     }
 
     public ReportData buildReportData(List<Company> filterCompanies, String period) {
-        List<Ticket> tickets;
-        if (filterCompanies != null && !filterCompanies.isEmpty()) {
-            tickets = Ticket
-                    .find("from Ticket t left join fetch t.category left join fetch t.company where t.company in ?1",
-                            filterCompanies)
-                    .list();
-        } else {
-            tickets = Ticket.find("from Ticket t left join fetch t.category left join fetch t.company").list();
-        }
-
-        List<Message> allMessages;
-        if (filterCompanies != null && !filterCompanies.isEmpty()) {
-            allMessages = Message
-                    .find("from Message m left join fetch m.author where m.ticket.company in ?1 order by m.date asc",
-                            filterCompanies)
-                    .list();
-        } else {
-            allMessages = Message.find("from Message m left join fetch m.author order by m.date asc").list();
-        }
-
-        Map<Long, List<Message>> messagesByTicket = new LinkedHashMap<>();
-        for (Message message : allMessages) {
-            if (message.ticket != null && message.ticket.id != null) {
-                messagesByTicket.computeIfAbsent(message.ticket.id, ignored -> new ArrayList<>()).add(message);
-            }
-        }
-
-        ReportData data = new ReportData();
-        data.totalTickets = tickets.size();
-        data.ticketsByStatus = buildTicketsByStatus(tickets);
-        data.ticketsByCategory = buildTicketsByCategory(tickets);
-        data.ticketsByCompany = buildTicketsByCompany(tickets);
-        data.ticketsOverTime = buildTicketsOverTime(messagesByTicket, period);
         List<Long> companyIds = filterCompanies == null || filterCompanies.isEmpty() ? null
                 : filterCompanies.stream().map(company -> company.id).toList();
+        // Single shared row list for both Closed-ticket metrics: resolution stats and histogram bucketing.
+        List<ReportQueryService.ResolutionRow> resolutionRowList = reportQueryService.resolutionRows(companyIds);
+
+        ReportData data = new ReportData();
+        data.totalTickets = (int) reportQueryService.totalTickets(companyIds);
+        data.ticketsByStatus = buildTicketsByStatus(reportQueryService.statusCounts(companyIds));
+        data.ticketsByCategory = buildTicketsByCategory(reportQueryService.categoryCounts(companyIds));
+        data.ticketsByCompany = buildTicketsByCompany(reportQueryService.companyCounts(companyIds));
+        data.ticketsOverTime = buildTicketsOverTime(reportQueryService.timelineRows(companyIds), period);
         data.firstResponseTimeStats = buildFirstResponseTimeStats(reportQueryService.firstResponseRows(companyIds));
-        data.resolutionTimeStats = buildResolutionTimeStats(reportQueryService.resolutionRows(companyIds));
+        data.resolutionTimeStats = buildResolutionTimeStats(resolutionRowList);
         data.pickupTimeStats = buildPickupTimeStats(reportQueryService.pickupRows(companyIds));
-        data.resolutionHistogram = buildResolutionHistogram(tickets, messagesByTicket);
+        data.resolutionHistogram = buildResolutionHistogram(resolutionRowList);
         return data;
     }
 
-    private Map<String, Long> buildTicketsByStatus(List<Ticket> tickets) {
+    private Map<String, Long> buildTicketsByStatus(List<ReportQueryService.StatusCount> rows) {
         Map<String, Long> result = new LinkedHashMap<>();
-        for (Ticket ticket : tickets) {
-            String status = ticket.status == null || ticket.status.isBlank() ? "Open" : ticket.status;
-            result.merge(status, 1L, Long::sum);
+        for (ReportQueryService.StatusCount row : rows) {
+            String status = row.status() == null || row.status().isBlank() ? "Open" : row.status();
+            result.merge(status, row.count(), Long::sum);
         }
         return result;
     }
 
-    private Map<String, Long> buildTicketsByCategory(List<Ticket> tickets) {
+    private Map<String, Long> buildTicketsByCategory(List<ReportQueryService.CategoryCount> rows) {
         Map<String, Long> unsorted = new LinkedHashMap<>();
-        for (Ticket ticket : tickets) {
-            String name = ticket.category != null && ticket.category.name != null ? ticket.category.name
-                    : "Uncategorized";
-            unsorted.merge(name, 1L, Long::sum);
+        for (ReportQueryService.CategoryCount row : rows) {
+            String name = row.categoryName() != null ? row.categoryName() : "Uncategorized";
+            unsorted.merge(name, row.count(), Long::sum);
         }
         Map<String, Long> result = new LinkedHashMap<>();
         unsorted.entrySet().stream().sorted(Map.Entry.<String, Long> comparingByValue().reversed())
@@ -179,11 +150,11 @@ public class ReportService {
         return result;
     }
 
-    private Map<String, Long> buildTicketsByCompany(List<Ticket> tickets) {
+    private Map<String, Long> buildTicketsByCompany(List<ReportQueryService.CompanyCount> rows) {
         Map<String, Long> unsorted = new LinkedHashMap<>();
-        for (Ticket ticket : tickets) {
-            String name = ticket.company != null && ticket.company.name != null ? ticket.company.name : "Unknown";
-            unsorted.merge(name, 1L, Long::sum);
+        for (ReportQueryService.CompanyCount row : rows) {
+            String name = row.companyName() != null ? row.companyName() : "Unknown";
+            unsorted.merge(name, row.count(), Long::sum);
         }
         Map<String, Long> result = new LinkedHashMap<>();
         unsorted.entrySet().stream().sorted(Map.Entry.<String, Long> comparingByValue().reversed())
@@ -191,7 +162,7 @@ public class ReportService {
         return result;
     }
 
-    private Map<String, Long> buildTicketsOverTime(Map<Long, List<Message>> messagesByTicket, String period) {
+    private Map<String, Long> buildTicketsOverTime(List<ReportQueryService.TimelineRow> rows, String period) {
         DateTimeFormatter format;
         java.time.LocalDateTime cutoff;
         if ("month".equals(period)) {
@@ -206,9 +177,9 @@ public class ReportService {
         }
 
         Map<String, Long> result = new TreeMap<>();
-        for (List<Message> messages : messagesByTicket.values()) {
-            if (!messages.isEmpty() && messages.get(0).date != null) {
-                java.time.LocalDateTime date = messages.get(0).date;
+        for (ReportQueryService.TimelineRow row : rows) {
+            if (row.firstAt() != null) {
+                java.time.LocalDateTime date = row.firstAt();
                 if (cutoff != null && date.isBefore(cutoff)) {
                     continue;
                 }
@@ -308,8 +279,7 @@ public class ReportService {
         return result;
     }
 
-    private Map<String, List<HistogramTicket>> buildResolutionHistogram(List<Ticket> tickets,
-            Map<Long, List<Message>> messagesByTicket) {
+    private Map<String, List<HistogramTicket>> buildResolutionHistogram(List<ReportQueryService.ResolutionRow> rows) {
         Map<String, List<HistogramTicket>> histogram = new LinkedHashMap<>();
         histogram.put(BUCKET_UNDER_1H, new ArrayList<>());
         histogram.put(BUCKET_1_TO_8H, new ArrayList<>());
@@ -317,23 +287,16 @@ public class ReportService {
         histogram.put(BUCKET_1_TO_7D, new ArrayList<>());
         histogram.put(BUCKET_OVER_7D, new ArrayList<>());
 
-        for (Ticket ticket : tickets) {
-            if (!"Closed".equalsIgnoreCase(ticket.status)) {
+        for (ReportQueryService.ResolutionRow row : rows) {
+            if (!"Closed".equalsIgnoreCase(row.status())) {
                 continue;
             }
-            List<Message> messages = messagesByTicket.get(ticket.id);
-            if (messages == null || messages.isEmpty()) {
+            if (row.firstAt() == null || row.lastAt() == null) {
                 continue;
             }
-            Message first = messages.get(0);
-            Message last = messages.get(messages.size() - 1);
-            if (first.date == null || last.date == null) {
-                continue;
-            }
-            HistogramTicket summary = new HistogramTicket(ticket.id, ticket.name, ticket.status,
-                    ticket.company == null ? null : ticket.company.name,
-                    ticket.category == null ? null : ticket.category.name);
-            double hours = Duration.between(first.date, last.date).toMinutes() / 60.0;
+            HistogramTicket summary = new HistogramTicket(row.ticketId(), row.ticketName(), row.status(),
+                    row.companyName(), row.categoryName());
+            double hours = Duration.between(row.firstAt(), row.lastAt()).toMinutes() / 60.0;
             if (hours < 1) {
                 histogram.get(BUCKET_UNDER_1H).add(summary);
             } else if (hours < 8) {
