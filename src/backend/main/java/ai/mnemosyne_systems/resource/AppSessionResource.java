@@ -100,9 +100,9 @@ public class AppSessionResource {
             return List.of(new NavLink("Dashboard", "/"), new NavLink("Owner", "/owner"),
                     new NavLink("Companies", "/companies"), new NavLink("Tickets", "/tickets"),
                     new NavLink("Articles", "/articles"), new NavLink("Categories", "/categories"),
-                    new NavLink("Entitlements", "/entitlements"), new NavLink("Levels", "/levels"),
-                    new NavLink("Users", "/users"), new NavLink("Profile", "/profile"),
-                    new NavLink("Reports", "/reports"));
+                    new NavLink("Custom fields", "/custom-fields"), new NavLink("Entitlements", "/entitlements"),
+                    new NavLink("Levels", "/levels"), new NavLink("Users", "/users"),
+                    new NavLink("Profile", "/profile"), new NavLink("Reports", "/reports"));
         }
         if (AuthHelper.isSupport(user)) {
             return List.of(new NavLink("Tickets", "/support/tickets"), new NavLink("Articles", "/articles"),

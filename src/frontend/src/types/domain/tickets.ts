@@ -9,6 +9,7 @@
 import type { MessageReference } from "./attachments";
 import type { CompanyEntitlementOption } from "./companies";
 import type { NamedEntity, VersionInfo } from "./common";
+import type { CustomFieldView } from "./customFields";
 import type { UserReference } from "./users";
 import type { Id } from "../app";
 
@@ -47,6 +48,8 @@ export interface TicketReference extends NamedEntity {
   ticketEntitlementExpired?: boolean;
   externalUsers?: UserReference[];
   userUsers?: UserReference[];
+  customFields?: CustomFieldView[];
+  editableCustomFields?: boolean;
 }
 
 export interface TicketListItem extends TicketReference {
@@ -80,6 +83,7 @@ export interface SupportTicketCreateBootstrap {
   companyEntitlements?: CompanyEntitlementOption[];
   categories?: NamedEntity[];
   versions?: VersionInfo[];
+  customFields?: CustomFieldView[];
   [key: string]: unknown;
 }
 
@@ -93,6 +97,7 @@ export interface TicketWorkbenchBootstrap {
   categories?: NamedEntity[];
   versions?: VersionInfo[];
   messages?: MessageReference[];
+  customFields?: CustomFieldView[];
   [key: string]: unknown;
 }
 

@@ -18,6 +18,8 @@ const ArticlesPage = lazy(() => import("../pages/ArticlesPage"));
 const CategoriesPage = lazy(() => import("../pages/CategoriesPage"));
 const CategoryDetailPage = lazy(() => import("../pages/CategoryDetailPage"));
 const CategoryFormPage = lazy(() => import("../pages/CategoryFormPage"));
+const CustomFieldsPage = lazy(() => import("../pages/CustomFieldsPage"));
+const CustomFieldFormPage = lazy(() => import("../pages/CustomFieldFormPage"));
 const CompaniesPage = lazy(() => import("../pages/CompaniesPage"));
 const CompanyDetailPage = lazy(() => import("../pages/CompanyDetailPage"));
 const CompanyFormPage = lazy(() => import("../pages/CompanyFormPage"));
@@ -71,6 +73,21 @@ export function getContentRoutes(sessionState: SessionState): AppRoute[] {
     {
       path: "/articles/:id/edit",
       element: <ArticleFormPage sessionState={sessionState} mode="edit" />,
+    },
+
+    {
+      path: "/custom-fields",
+      element: <CustomFieldsPage sessionState={sessionState} />,
+    },
+    {
+      path: "/custom-fields/new",
+      element: (
+        <CustomFieldFormPage sessionState={sessionState} mode="create" />
+      ),
+    },
+    {
+      path: "/custom-fields/:id/edit",
+      element: <CustomFieldFormPage sessionState={sessionState} mode="edit" />,
     },
 
     {

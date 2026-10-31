@@ -21,6 +21,7 @@ import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.service.DirectoryService;
 import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.TicketBootstrapService;
+import ai.mnemosyne_systems.service.TicketCustomFieldService;
 import ai.mnemosyne_systems.service.UserAvailabilityService;
 import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.util.CurrentUser;
@@ -68,6 +69,9 @@ public class UserTicketApiResource {
 
     @Inject
     UserAvailabilityService userAvailabilityService;
+
+    @Inject
+    TicketCustomFieldService ticketCustomFieldService;
 
     @GET
     @Transactional
@@ -156,9 +160,11 @@ public class UserTicketApiResource {
                 defaultVersion == null ? null
                         : new SupportTicketApiResource.VersionOption(defaultVersion.id(), defaultVersion.name(),
                                 defaultVersion.date() == null ? null : defaultVersion.date().toString()),
-                versions.stream().map(version -> new SupportTicketApiResource.VersionOption(version.id(),
-                        version.name(), version.date() == null ? null : version.date().toString())).toList(),
-                "/user/tickets");
+                versions.stream()
+                        .map(version -> new SupportTicketApiResource.VersionOption(version.id(), version.name(),
+                                version.date() == null ? null : version.date().toString()))
+                        .toList(),
+                "/user/tickets", TicketCustomFieldService.toViews(ticketCustomFieldService.activeDefinitions()));
     }
 
     private Long entitlementIdForVersions(Long selectedEntitlementId,
@@ -238,7 +244,8 @@ public class UserTicketApiResource {
                 "/user/tickets/" + ticket.id + "/messages", "/tickets/export/" + ticket.id,
                 List.of("Open", "Assigned", "In Progress", "Resolved", "Closed"), false, false, false, true, tamView,
                 externalUsers.stream().map(this::toUserReference).toList(),
-                userUsers.stream().map(this::toUserReference).toList(), eventEntries, availabilityWarnings);
+                userUsers.stream().map(this::toUserReference).toList(), eventEntries, availabilityWarnings,
+                ticketCustomFieldService.valuesForTicket(ticket), false);
     }
 
     @GET
@@ -387,6 +394,7 @@ public class UserTicketApiResource {
             boolean editableCategory, boolean editableExternalIssue, boolean editableAffectsVersion,
             boolean editableResolvedVersion, List<SupportTicketApiResource.UserReference> externalUsers,
             List<SupportTicketApiResource.UserReference> userUsers, List<SupportTicketApiResource.EventEntry> events,
-            List<String> availabilityWarnings) {
+            List<String> availabilityWarnings, List<TicketCustomFieldService.CustomFieldView> customFields,
+            boolean editableCustomFields) {
     }
 }
