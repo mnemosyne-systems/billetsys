@@ -38,6 +38,7 @@ export interface SupportTicketCreateFormState {
   affectsVersionId: string;
   message: string;
   isPublic: boolean;
+  customFields: Record<string, string>;
 }
 
 export interface SupportTicketDetailState {
@@ -47,6 +48,7 @@ export interface SupportTicketDetailState {
   externalIssueLink: string;
   affectsVersionId: string;
   resolvedVersionId: string;
+  customFields: Record<string, string>;
 }
 
 export interface TicketWorkbenchFormState {
@@ -59,4 +61,5 @@ export interface TicketWorkbenchFormState {
   externalIssueLink: string;
   affectsVersionId: string;
   resolvedVersionId: string;
+  customFields: Record<string, string>;
 }

@@ -23,6 +23,7 @@ import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.service.TicketBootstrapService;
+import ai.mnemosyne_systems.service.TicketCustomFieldService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.util.CurrentUser;
@@ -78,6 +79,9 @@ public class SupportResource {
 
     @Inject
     TicketBootstrapService ticketBootstrapService;
+
+    @Inject
+    TicketCustomFieldService ticketCustomFieldService;
 
     @GET
     public Response listTickets() {
@@ -391,6 +395,7 @@ public class SupportResource {
         ticket.affectsVersion = resolveVersion(entitlement, affectsVersionId, "Affects", true);
         ticket.category = categoryId != null ? Category.findById(categoryId) : Category.findDefault();
         ticket.persist();
+        ticketCustomFieldService.saveValues(ticket, AttachmentHelper.readFormValue(input, "customFields"), true);
         eventService.saveTicketEvent(ticket, user);
         assignCompanyTams(ticket);
         boolean isPublic = AttachmentHelper.readFormBoolean(input, "isPublic", true);
@@ -418,7 +423,7 @@ public class SupportResource {
             @FormParam("companyEntitlementId") Long companyEntitlementId, @FormParam("categoryId") Long categoryId,
             @FormParam("externalIssueLink") String externalIssueLink,
             @FormParam("affectsVersionId") Long affectsVersionId,
-            @FormParam("resolvedVersionId") Long resolvedVersionId) {
+            @FormParam("resolvedVersionId") Long resolvedVersionId, @FormParam("customFields") String customFields) {
         User user = currentUser.get();
         String normalizedTitle = Ticket.normalizeTitle(title);
         Ticket ticket = Ticket.findById(id);
@@ -446,6 +451,7 @@ public class SupportResource {
         if (entitlement == null) {
             throw new BadRequestException("Entitlement is required");
         }
+        ticketCustomFieldService.saveValues(ticket, customFields, false, status);
         String previousStatus = ticketEmailService.computeEffectiveStatus(ticket, ticket.status);
         if (sameStatus(status, "Resolved") || sameStatus(status, "Closed")) {
             if (ticket.resolvedAt == null) {

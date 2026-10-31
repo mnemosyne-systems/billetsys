@@ -12,10 +12,16 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import DataState from "../components/common/DataState";
 import PageHeader from "../components/layout/PageHeader";
+import CustomFieldsFields from "../components/tickets/CustomFieldsFields";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
 import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import { postForm } from "../utils/api";
+import {
+  customFieldValues,
+  hasActiveCustomFields,
+  serializeCustomFields,
+} from "../utils/customFields";
 import { toQueryString } from "../utils/formatting";
 import { resolvePostRedirectPath } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
@@ -105,6 +111,7 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
           resolvedVersionId: bootstrap.ticket?.resolvedVersionId
             ? String(bootstrap.ticket.resolvedVersionId)
             : "",
+          customFields: customFieldValues(bootstrap.customFields),
         };
       }
       const entitlements = bootstrap.entitlements || [];
@@ -130,6 +137,12 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
         )
           ? current.resolvedVersionId
           : "",
+        customFields: Object.fromEntries(
+          (bootstrap.customFields || []).map((field) => [
+            String(field.id),
+            current.customFields[String(field.id)] ?? "",
+          ]),
+        ),
       };
     });
   }, [bootstrap]);
@@ -150,7 +163,7 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
     }
     try {
       setSaveState({ saving: true, error: "" });
-      const response = await postForm(bootstrap.submitPath, [
+      const entries: Array<[string, string]> = [
         ["title", formState.title],
         ["status", formState.status],
         ["companyId", formState.companyId],
@@ -159,7 +172,14 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
         ["externalIssueLink", formState.externalIssueLink],
         ["affectsVersionId", formState.affectsVersionId],
         ["resolvedVersionId", formState.resolvedVersionId],
-      ]);
+      ];
+      if (hasActiveCustomFields(bootstrap.customFields)) {
+        entries.push([
+          "customFields",
+          serializeCustomFields(bootstrap.customFields, formState.customFields),
+        ]);
+      }
+      const response = await postForm(bootstrap.submitPath, entries);
       toast.success(
         bootstrap.edit
           ? "Ticket updated successfully."
@@ -439,6 +459,30 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
                     data-shortcut-index="8"
                   />
                 </Field>
+
+                {(bootstrap.customFields || []).length > 0 && (
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <CustomFieldsFields
+                      fields={bootstrap.customFields}
+                      values={formState.customFields}
+                      onChange={(fieldId, value) =>
+                        setFormState((current) =>
+                          current
+                            ? {
+                                ...current,
+                                customFields: {
+                                  ...current.customFields,
+                                  [fieldId]: value,
+                                },
+                              }
+                            : current,
+                        )
+                      }
+                      editable={formState.status !== "Closed"}
+                      enforceRequired={!bootstrap.edit}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -489,6 +533,12 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
                   </ul>
                 </CardContent>
               </Card>
+            )}
+
+            {saveState.error && (
+              <p className="text-sm font-medium text-destructive">
+                {saveState.error}
+              </p>
             )}
 
             <div className="flex items-center justify-end space-x-3 pt-4">

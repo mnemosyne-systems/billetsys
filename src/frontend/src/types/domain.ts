@@ -12,4 +12,5 @@ export * from "./domain/attachments";
 export * from "./domain/content";
 export * from "./domain/companies";
 export * from "./domain/tickets";
+export * from "./domain/customFields";
 export * from "./domain/availability";
