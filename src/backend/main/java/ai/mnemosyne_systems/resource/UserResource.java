@@ -23,6 +23,7 @@ import ai.mnemosyne_systems.service.DirectoryService;
 import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.service.TicketBootstrapService;
+import ai.mnemosyne_systems.service.TicketCustomFieldService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.util.TicketTimeSupport;
@@ -75,6 +76,9 @@ public class UserResource {
 
     @Inject
     TicketBootstrapService ticketBootstrapService;
+
+    @Inject
+    TicketCustomFieldService ticketCustomFieldService;
 
     @GET
     @Path("user")
@@ -263,6 +267,7 @@ public class UserResource {
         ticket.affectsVersion = resolveKnownVersion(affectsVersionId, "Affects");
         ticket.category = categoryId != null ? Category.findById(categoryId) : Category.findDefault();
         ticket.persist();
+        ticketCustomFieldService.saveValues(ticket, AttachmentHelper.readFormValue(input, "customFields"), true);
         boolean isPublic = AttachmentHelper.readFormBoolean(input, "isPublic", true);
         eventService.saveTicketEvent(ticket, user);
         Message message = new Message();

@@ -22,6 +22,7 @@ import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.service.TicketBootstrapService;
+import ai.mnemosyne_systems.service.TicketCustomFieldService;
 import ai.mnemosyne_systems.util.AttachmentHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.util.TicketTimeSupport;
@@ -81,6 +82,9 @@ public class SuperuserResource {
 
     @Inject
     TicketBootstrapService ticketBootstrapService;
+
+    @Inject
+    TicketCustomFieldService ticketCustomFieldService;
 
     @GET
     @Path("superuser")
@@ -226,6 +230,7 @@ public class SuperuserResource {
         ticket.affectsVersion = resolveKnownVersion(affectsVersionId, "Affects");
         ticket.category = categoryId != null ? Category.findById(categoryId) : Category.findDefault();
         ticket.persist();
+        ticketCustomFieldService.saveValues(ticket, AttachmentHelper.readFormValue(input, "customFields"), true);
         boolean isPublic = AttachmentHelper.readFormBoolean(input, "isPublic", true);
         eventService.saveTicketEvent(ticket, ticket.requester);
         Message message = new Message();

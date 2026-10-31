@@ -19,6 +19,7 @@ import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.PdfService;
 import ai.mnemosyne_systems.service.TicketEmailService;
 import ai.mnemosyne_systems.service.TicketBootstrapService;
+import ai.mnemosyne_systems.service.TicketCustomFieldService;
 import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
@@ -89,6 +90,9 @@ public class TicketResource {
 
     @Inject
     TicketBootstrapService ticketBootstrapService;
+
+    @Inject
+    TicketCustomFieldService ticketCustomFieldService;
 
     @Inject
     PdfService pdfService;
@@ -173,7 +177,8 @@ public class TicketResource {
     @RolesAllowed("support")
     public Response create(@HeaderParam("X-Billetsys-Client") String client, @FormParam("status") String status,
             @FormParam("title") String title, @FormParam("companyId") Long companyId,
-            @FormParam("companyEntitlementId") Long companyEntitlementId, @FormParam("categoryId") Long categoryId) {
+            @FormParam("companyEntitlementId") Long companyEntitlementId, @FormParam("categoryId") Long categoryId,
+            @FormParam("customFields") String customFields) {
         User user = currentUser.get();
         String normalizedTitle = Ticket.normalizeTitle(title);
         if (status == null || status.isBlank()) {
@@ -208,6 +213,7 @@ public class TicketResource {
         ticket.affectsVersion = ticketBootstrapService.defaultAffectsVersion(entitlement);
         ticket.category = category;
         ticket.persist();
+        ticketCustomFieldService.saveValues(ticket, customFields, true);
         eventService.saveTicketEvent(ticket, user);
         return ReactRedirectSupport.redirect(client, "/tickets");
     }
@@ -221,7 +227,7 @@ public class TicketResource {
             @FormParam("companyEntitlementId") Long companyEntitlementId, @FormParam("categoryId") Long categoryId,
             @FormParam("externalIssueLink") String externalIssueLink,
             @FormParam("affectsVersionId") Long affectsVersionId,
-            @FormParam("resolvedVersionId") Long resolvedVersionId) {
+            @FormParam("resolvedVersionId") Long resolvedVersionId, @FormParam("customFields") String customFields) {
         User user = currentUser.get();
         Ticket ticket = Ticket.findById(id);
         if (ticket == null) {
@@ -245,6 +251,7 @@ public class TicketResource {
         if (entitlement == null) {
             throw new BadRequestException("Entitlement is required");
         }
+        ticketCustomFieldService.saveValues(ticket, customFields, false, status);
         String previousStatus = ticketEmailService.computeEffectiveStatus(ticket, ticket.status);
         if (sameStatus(status, "Resolved") || sameStatus(status, "Closed")) {
             if (ticket.resolvedAt == null) {

@@ -14,6 +14,7 @@ import type { SessionPageProps } from "../types/app";
 import { PATHS } from "../routes/paths";
 import type {
   CollectionResponse,
+  CustomFieldListResponse,
   DirectoryUsersResponse,
   NamedEntity,
   OwnerCompany,
@@ -27,6 +28,7 @@ import {
   Key,
   Layers,
   Tags,
+  ListChecks,
   BookOpen,
   BarChart3,
   Shield,
@@ -45,6 +47,7 @@ export default function HomePage({ sessionState }: SessionPageProps) {
     "Entitlements",
     "Levels",
     "Categories",
+    "Custom fields",
     "Articles",
     "Reports",
   ]);
@@ -65,6 +68,9 @@ export default function HomePage({ sessionState }: SessionPageProps) {
   );
   const categoriesState = useJson<CollectionResponse<NamedEntity>>(
     isAdminDashboard ? "/api/categories" : null,
+  );
+  const customFieldsState = useJson<CustomFieldListResponse>(
+    isAdminDashboard ? "/api/custom-fields" : null,
   );
   const articlesState = useJson<CollectionResponse<NamedEntity>>(
     isAdminDashboard ? "/api/articles" : null,
@@ -121,6 +127,10 @@ export default function HomePage({ sessionState }: SessionPageProps) {
         return (
           <Tags className="h-6 w-6 shrink-0 text-rose-600 transition-colors group-hover:text-rose-700" />
         );
+      case "custom fields":
+        return (
+          <ListChecks className="h-6 w-6 shrink-0 text-teal-600 transition-colors group-hover:text-teal-700" />
+        );
       case "articles":
         return (
           <BookOpen className="h-6 w-6 shrink-0 text-indigo-600 transition-colors group-hover:text-indigo-700" />
@@ -153,6 +163,8 @@ export default function HomePage({ sessionState }: SessionPageProps) {
         return countLabel(levelsState.data?.items);
       case "categories":
         return countLabel(categoriesState.data?.items);
+      case "custom fields":
+        return countLabel(customFieldsState.data?.items);
       case "articles":
         return countLabel(articlesState.data?.items);
       default:

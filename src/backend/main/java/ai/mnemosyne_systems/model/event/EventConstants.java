@@ -67,4 +67,8 @@ public class EventConstants {
     public static final long VERSION_DELETED = 133L;
     public static final long USER_ACTIVATED = 134L;
     public static final long USER_DEACTIVATED = 135L;
+    public static final long CUSTOM_FIELD_CREATED = 136L;
+    public static final long CUSTOM_FIELD_UPDATED = 137L;
+    public static final long CUSTOM_FIELD_DEACTIVATED = 138L;
+    public static final long CUSTOM_FIELD_DELETED = 139L;
 }

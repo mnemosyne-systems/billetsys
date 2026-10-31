@@ -84,6 +84,9 @@ public class Ticket extends PanacheEntityBase {
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<Message> messages = new ArrayList<>();
 
+    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
+    public List<TicketCustomFieldValue> customFieldValues = new ArrayList<>();
+
     @ManyToMany
     @JoinTable(name = "ticket_supports", joinColumns = @JoinColumn(name = "ticket_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
     public List<User> supportUsers = new ArrayList<>();

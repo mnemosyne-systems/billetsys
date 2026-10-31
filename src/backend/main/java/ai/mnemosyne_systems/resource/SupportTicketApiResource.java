@@ -21,6 +21,7 @@ import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.model.event.Event;
 import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.TicketBootstrapService;
+import ai.mnemosyne_systems.service.TicketCustomFieldService;
 import ai.mnemosyne_systems.service.UserAvailabilityService;
 import ai.mnemosyne_systems.util.CurrentUser;
 import jakarta.annotation.security.RolesAllowed;
@@ -63,6 +64,9 @@ public class SupportTicketApiResource {
 
     @Inject
     UserAvailabilityService userAvailabilityService;
+
+    @Inject
+    TicketCustomFieldService ticketCustomFieldService;
 
     @GET
     @Transactional
@@ -150,7 +154,7 @@ public class SupportTicketApiResource {
                         .map(version -> new VersionOption(version.id(), version.name(),
                                 version.date() == null ? null : version.date().toString()))
                         .toList(),
-                "/support/tickets");
+                "/support/tickets", TicketCustomFieldService.toViews(ticketCustomFieldService.activeDefinitions()));
     }
 
     private Long entitlementIdForVersions(Long selectedEntitlementId,
@@ -215,7 +219,8 @@ public class SupportTicketApiResource {
                 SupportTicketViewSupport.isEntitlementExpired(ticket), "/support/tickets/" + ticket.id,
                 "/support/tickets/" + ticket.id + "/messages", "/tickets/export/" + ticket.id,
                 List.of("Open", "Assigned", "In Progress", "Waiting for External Feedback", "Resolved", "Closed"),
-                externalUsers.stream().map(this::toUserReference).toList(), eventEntries, availabilityWarnings);
+                externalUsers.stream().map(this::toUserReference).toList(), eventEntries, availabilityWarnings,
+                ticketCustomFieldService.valuesForTicket(ticket), !"Closed".equalsIgnoreCase(ticket.status));
     }
 
     @GET
@@ -412,7 +417,8 @@ public class SupportTicketApiResource {
     public record SupportTicketBootstrapResponse(int assignedCount, int openCount, Long selectedCompanyId,
             String ticketName, String title, List<CompanyOption> companies, List<EntitlementOption> companyEntitlements,
             Long selectedCompanyEntitlementId, List<CategoryOption> categories, Long defaultCategoryId,
-            VersionOption defaultAffectsVersion, List<VersionOption> versions, String submitPath) {
+            VersionOption defaultAffectsVersion, List<VersionOption> versions, String submitPath,
+            List<TicketCustomFieldService.CustomFieldView> customFields) {
     }
 
     public record RedirectResponse(String redirectTo) {
@@ -452,6 +458,7 @@ public class SupportTicketApiResource {
             List<VersionOption> versions, List<CategoryOption> categories, List<UserReference> supportUsers,
             List<UserReference> tamUsers, List<MessageEntry> messages, boolean ticketEntitlementExpired,
             String actionPath, String messageActionPath, String exportPath, List<String> statusOptions,
-            List<UserReference> externalUsers, List<EventEntry> events, List<String> availabilityWarnings) {
+            List<UserReference> externalUsers, List<EventEntry> events, List<String> availabilityWarnings,
+            List<TicketCustomFieldService.CustomFieldView> customFields, boolean editableCustomFields) {
     }
 }
