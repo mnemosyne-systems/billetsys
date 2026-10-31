@@ -15,6 +15,7 @@ import PageHeader from "../components/layout/PageHeader";
 import MarkdownContent from "../components/markdown/MarkdownContent";
 import LexicalEditor from "../components/editor/LexicalEditor";
 import MessageVisibilityField from "../components/tickets/MessageVisibilityField";
+import CustomFieldsFields from "../components/tickets/CustomFieldsFields";
 import {
   InactiveIcon,
   isInactive,
@@ -26,6 +27,12 @@ import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
 import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import { postForm, postMultipart } from "../utils/api";
+import type { FormEntries } from "../utils/api";
+import {
+  customFieldValues,
+  hasActiveCustomFields,
+  serializeCustomFields,
+} from "../utils/customFields";
 import {
   formatFileSize,
   toQueryString,
@@ -431,6 +438,8 @@ export default function SupportTicketDetailPage({
   const showUserUsers =
     sessionState.data?.role === "user" ||
     sessionState.data?.role === "superuser";
+  const canEditCustomFields = ticket?.editableCustomFields === true;
+  const hasEditableCustomFields = hasActiveCustomFields(ticket?.customFields);
 
   useNumberShortcuts({ enableFieldJumps: true });
 
@@ -515,6 +524,7 @@ export default function SupportTicketDetailPage({
       resolvedVersionId: ticket.resolvedVersionId
         ? String(ticket.resolvedVersionId)
         : "none",
+      customFields: customFieldValues(ticket.customFields),
     });
     setRatingValue(ticket.rating ?? 0);
     setRatingComment(ticket.ratingComment ?? "");
@@ -560,34 +570,40 @@ export default function SupportTicketDetailPage({
     }
     try {
       setSaveState({ saving: true, error: "" });
+      const entries: FormEntries = [
+        ["title", formState.title],
+        ["status", formState.status],
+        ["companyId", ticket.companyId],
+        ["companyEntitlementId", ticket.companyEntitlementId],
+        [
+          "categoryId",
+          formState.categoryId && formState.categoryId !== "none"
+            ? formState.categoryId
+            : null,
+        ],
+        ["externalIssueLink", formState.externalIssueLink],
+        [
+          "affectsVersionId",
+          formState.affectsVersionId === "none"
+            ? ""
+            : formState.affectsVersionId,
+        ],
+        [
+          "resolvedVersionId",
+          formState.resolvedVersionId && formState.resolvedVersionId !== "none"
+            ? formState.resolvedVersionId
+            : null,
+        ],
+      ];
+      if (canEditCustomFields && hasEditableCustomFields) {
+        entries.push([
+          "customFields",
+          serializeCustomFields(ticket.customFields, formState.customFields),
+        ]);
+      }
       const response = await postForm(
         ticket.actionPath || `${apiBase}/${id || ""}`,
-        [
-          ["title", formState.title],
-          ["status", formState.status],
-          ["companyId", ticket.companyId],
-          ["companyEntitlementId", ticket.companyEntitlementId],
-          [
-            "categoryId",
-            formState.categoryId && formState.categoryId !== "none"
-              ? formState.categoryId
-              : null,
-          ],
-          ["externalIssueLink", formState.externalIssueLink],
-          [
-            "affectsVersionId",
-            formState.affectsVersionId === "none"
-              ? ""
-              : formState.affectsVersionId,
-          ],
-          [
-            "resolvedVersionId",
-            formState.resolvedVersionId &&
-            formState.resolvedVersionId !== "none"
-              ? formState.resolvedVersionId
-              : null,
-          ],
-        ],
+        entries,
         {
           headers: { "X-Billetsys-Client": "react" },
         },
@@ -1115,14 +1131,40 @@ export default function SupportTicketDetailPage({
                     />
                   </Field>
                 )}
+                <CustomFieldsFields
+                  fields={ticket.customFields}
+                  values={formState.customFields}
+                  onChange={(fieldId, value) =>
+                    setFormState((current) =>
+                      current
+                        ? {
+                            ...current,
+                            customFields: {
+                              ...current.customFields,
+                              [fieldId]: value,
+                            },
+                          }
+                        : current,
+                    )
+                  }
+                  editable={canEditCustomFields}
+                  enforceRequired={false}
+                />
               </div>
+
+              {saveState.error && (
+                <p className="text-sm font-medium text-destructive">
+                  {saveState.error}
+                </p>
+              )}
 
               {!isClosed &&
                 (canEditStatus ||
                   canEditCategory ||
                   canEditExternalIssue ||
                   canEditAffectsVersion ||
-                  canEditResolvedVersion) && (
+                  canEditResolvedVersion ||
+                  (canEditCustomFields && hasEditableCustomFields)) && (
                   <div className="flex justify-end pt-6">
                     <Button type="submit" disabled={saveState.saving}>
                       {saveState.saving ? "Saving..." : "Save"}

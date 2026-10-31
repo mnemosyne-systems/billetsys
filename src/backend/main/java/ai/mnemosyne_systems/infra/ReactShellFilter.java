@@ -37,6 +37,7 @@ public class ReactShellFilter implements Filter {
             Pattern.compile("^/attachments/[^/]+$"), Pattern.compile("^/companies(?:$|/new$|/[^/]+(?:/edit)?$)"),
             Pattern.compile("^/articles(?:$|/new$|/[^/]+(?:/edit)?$)"),
             Pattern.compile("^/categories(?:$|/new$|/[^/]+(?:/edit)?$)"),
+            Pattern.compile("^/custom-fields(?:$|/new$|/[^/]+/edit$)"),
             Pattern.compile("^/entitlements(?:$|/new$|/[^/]+(?:/edit)?$)"),
             Pattern.compile("^/levels(?:$|/new$|/[^/]+(?:/edit)?$)"),
             Pattern.compile("^/support/tickets(?:$|/open$|/closed$|/new$|/[^/]+$)"),
@@ -92,8 +93,8 @@ public class ReactShellFilter implements Filter {
     private boolean isLegacyBaseRoute(String path) {
         return switch (path) {
             case "/", "/login", "/error", "/not-found", "/profile", "/reports", "/owner", "/users", "/companies",
-                    "/articles", "/categories", "/entitlements", "/levels", "/support/tickets", "/support/users",
-                    "/tam/users", "/user/tickets", "/superuser/tickets", "/superuser/users" -> true;
+                    "/articles", "/categories", "/custom-fields", "/entitlements", "/levels", "/support/tickets",
+                    "/support/users", "/tam/users", "/user/tickets", "/superuser/tickets", "/superuser/users" -> true;
             default -> false;
         };
     }

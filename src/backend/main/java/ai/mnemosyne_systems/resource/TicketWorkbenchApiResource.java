@@ -16,6 +16,7 @@ import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
 import ai.mnemosyne_systems.model.Version;
 import ai.mnemosyne_systems.service.TicketBootstrapService;
+import ai.mnemosyne_systems.service.TicketCustomFieldService;
 import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.util.CurrentUser;
 import io.smallrye.common.annotation.Blocking;
@@ -54,6 +55,9 @@ public class TicketWorkbenchApiResource {
 
     @Inject
     TicketBootstrapService ticketBootstrapService;
+
+    @Inject
+    TicketCustomFieldService ticketCustomFieldService;
 
     @GET
     @Transactional
@@ -106,6 +110,9 @@ public class TicketWorkbenchApiResource {
             ticket.company = selectedCompany;
             ticket.category = defaultCategory;
         }
+        List<TicketCustomFieldService.CustomFieldView> customFields = ticketId == null
+                ? TicketCustomFieldService.toViews(ticketCustomFieldService.activeDefinitions())
+                : ticketCustomFieldService.valuesForTicket(ticket);
         return new TicketFormResponse(ticketId == null ? "New ticket" : "Edit ticket",
                 ticketId == null ? "/tickets" : "/tickets/" + ticketId, "/tickets", ticketId != null,
                 ticketBootstrapService.allCompanyOptions().stream()
@@ -125,7 +132,8 @@ public class TicketWorkbenchApiResource {
                         ticket.category == null ? null : ticket.category.id, ticket.externalIssueLink,
                         defaultVersion == null ? null : defaultVersion.id(),
                         ticket.resolvedVersion == null ? null : ticket.resolvedVersion.id, ticket.rating,
-                        ticket.ratingComment));
+                        ticket.ratingComment),
+                customFields);
     }
 
     @GET
@@ -193,7 +201,8 @@ public class TicketWorkbenchApiResource {
 
     public record TicketFormResponse(String title, String submitPath, String cancelPath, boolean edit,
             List<CompanyOption> companies, List<EntitlementOption> entitlements, List<CategoryOption> categories,
-            List<VersionOption> versions, List<MessageSummary> messages, TicketFormData ticket) {
+            List<VersionOption> versions, List<MessageSummary> messages, TicketFormData ticket,
+            List<TicketCustomFieldService.CustomFieldView> customFields) {
     }
 
     public record CompanyOption(Long id, String name) {

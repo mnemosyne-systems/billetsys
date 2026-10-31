@@ -21,6 +21,7 @@ import ai.mnemosyne_systems.service.CrossReferenceService;
 import ai.mnemosyne_systems.service.DirectoryService;
 import ai.mnemosyne_systems.service.EventService;
 import ai.mnemosyne_systems.service.TicketBootstrapService;
+import ai.mnemosyne_systems.service.TicketCustomFieldService;
 import ai.mnemosyne_systems.service.UserAvailabilityService;
 import ai.mnemosyne_systems.util.AuthHelper;
 import ai.mnemosyne_systems.util.AuthHelper;
@@ -62,6 +63,9 @@ public class SuperuserTicketApiResource {
 
     @Inject
     TicketBootstrapService ticketBootstrapService;
+
+    @Inject
+    TicketCustomFieldService ticketCustomFieldService;
 
     @Inject
     DirectoryService directoryService;
@@ -160,7 +164,7 @@ public class SuperuserTicketApiResource {
                         .map(version -> new SupportTicketApiResource.VersionOption(version.id(), version.name(),
                                 version.date() == null ? null : version.date().toString()))
                         .toList(),
-                "/superuser/tickets");
+                "/superuser/tickets", TicketCustomFieldService.toViews(ticketCustomFieldService.activeDefinitions()));
     }
 
     private Long entitlementIdForVersions(Long selectedEntitlementId,
@@ -237,7 +241,8 @@ public class SuperuserTicketApiResource {
                 "/superuser/tickets/" + ticket.id + "/messages", "/tickets/export/" + ticket.id,
                 List.of("Open", "Assigned", "In Progress", "Resolved", "Closed"), false, false, false, true, true,
                 externalUsers.stream().map(this::toUserReference).toList(),
-                userUsers.stream().map(this::toUserReference).toList(), eventEntries, availabilityWarnings);
+                userUsers.stream().map(this::toUserReference).toList(), eventEntries, availabilityWarnings,
+                ticketCustomFieldService.valuesForTicket(ticket), false);
     }
 
     @GET

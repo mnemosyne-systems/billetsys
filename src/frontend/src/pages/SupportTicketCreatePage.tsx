@@ -13,12 +13,18 @@ import AttachmentPicker from "../components/common/AttachmentPicker";
 import DataState from "../components/common/DataState";
 import PageHeader from "../components/layout/PageHeader";
 import MessageVisibilityField from "../components/tickets/MessageVisibilityField";
+import CustomFieldsFields from "../components/tickets/CustomFieldsFields";
 import { toast } from "sonner";
 import LexicalEditor from "../components/editor/LexicalEditor";
 import useJson from "../hooks/useJson";
 import useSubmissionGuard from "../hooks/useSubmissionGuard";
 import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import { postMultipart } from "../utils/api";
+import {
+  customFieldValues,
+  hasActiveCustomFields,
+  serializeCustomFields,
+} from "../utils/customFields";
 import { toQueryString } from "../utils/formatting";
 import { resolvePostRedirectPath } from "../utils/routing";
 import type { SessionPageProps } from "../types/app";
@@ -113,6 +119,7 @@ export default function SupportTicketCreatePage({
           affectsVersionId: initialAffectsVersionId,
           message: "",
           isPublic: true,
+          customFields: customFieldValues(bootstrap.customFields),
         };
       }
       const validEntitlementIds = (bootstrap.companyEntitlements || []).map(
@@ -142,6 +149,12 @@ export default function SupportTicketCreatePage({
           ? current.affectsVersionId
           : initialAffectsVersionId,
         isPublic: current.isPublic,
+        customFields: Object.fromEntries(
+          (bootstrap.customFields || []).map((field) => [
+            String(field.id),
+            current.customFields[String(field.id)] ?? "",
+          ]),
+        ),
       };
     });
   }, [bootstrap]);
@@ -173,6 +186,15 @@ export default function SupportTicketCreatePage({
         ["affectsVersionId", formState.affectsVersionId || null],
         ...files.map((file): [string, File] => ["attachments", file]),
       ];
+      if (hasActiveCustomFields(bootstrap?.customFields)) {
+        entries.push([
+          "customFields",
+          serializeCustomFields(
+            bootstrap?.customFields,
+            formState.customFields,
+          ),
+        ]);
+      }
       const response = await postMultipart(
         bootstrap?.submitPath || submitFallbackPath,
         entries,
@@ -386,6 +408,24 @@ export default function SupportTicketCreatePage({
                           </SelectContent>
                         </Select>
                       </Field>
+                      <CustomFieldsFields
+                        fields={bootstrap.customFields}
+                        values={formState.customFields}
+                        onChange={(fieldId, value) =>
+                          setFormState((current) =>
+                            current
+                              ? {
+                                  ...current,
+                                  customFields: {
+                                    ...current.customFields,
+                                    [fieldId]: value,
+                                  },
+                                }
+                              : current,
+                          )
+                        }
+                        editable
+                      />
                     </div>
 
                     <Field>
@@ -573,6 +613,24 @@ export default function SupportTicketCreatePage({
                         </SelectContent>
                       </Select>
                     </Field>
+                    <CustomFieldsFields
+                      fields={bootstrap.customFields}
+                      values={formState.customFields}
+                      onChange={(fieldId, value) =>
+                        setFormState((current) =>
+                          current
+                            ? {
+                                ...current,
+                                customFields: {
+                                  ...current.customFields,
+                                  [fieldId]: value,
+                                },
+                              }
+                            : current,
+                        )
+                      }
+                      editable
+                    />
                   </div>
 
                   <Field>
@@ -600,6 +658,12 @@ export default function SupportTicketCreatePage({
             </div>
 
             <AttachmentPicker files={files} onFilesChange={setFiles} />
+
+            {saveState.error && (
+              <p className="text-sm font-medium text-destructive">
+                {saveState.error}
+              </p>
+            )}
 
             <div className="flex items-center justify-end space-x-3 pt-4">
               <Button type="submit" disabled={saveState.saving}>
