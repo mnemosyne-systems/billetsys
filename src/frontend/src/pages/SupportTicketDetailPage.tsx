@@ -10,6 +10,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
+import TicketReference from "../components/tickets/TicketReference";
 import DataState from "../components/common/DataState";
 import PageHeader from "../components/layout/PageHeader";
 import MarkdownContent from "../components/markdown/MarkdownContent";
@@ -759,6 +760,7 @@ export default function SupportTicketDetailPage({
                 </AlertDescription>
               </Alert>
             )}
+            <TicketReference ticketId={ticket.id} />
             <form onSubmit={saveTicket} className="space-y-8">
               <div className="grid gap-5 md:grid-cols-2">
                 <Field>

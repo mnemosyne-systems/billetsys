@@ -196,3 +196,55 @@ The build output is written to `dist/`. Quarkus packages those files through Qui
 - In development, Quinoa proxies `/app/*` to the Vite dev server on port `5173`.
 - Top-level browser routes such as `/profile` are redirected by the backend to `/app/#...`, and `src/main.tsx` converts those locations back into normal client-side routes during app startup.
 - Production packaging uses the `dist/` output generated from this frontend project. The legacy generated folder under `src/backend/main/resources/META-INF/resources/app` should not be used as the active frontend source anymore.
+
+## Experimental ticket references
+
+This optional UI uses RefMint `0.1.0-alpha.3` to encode a ticket's existing positive
+numeric ID with a checksum. It does not allocate another ID or add a database
+column, migration, index, endpoint or mapping table. Ticket names, numeric URLs,
+and the existing search remain unchanged.
+
+The controls are **off by default**. Set `VITE_TICKET_REFERENCES=true` in the
+frontend build environment (or `.env` for local development), then rebuild or
+restart Vite. Other values, including an unset variable, leave them hidden.
+With it enabled, an existing ticket detail/form shows a copyable reference, and
+the authenticated header for support, superuser, TAM and user accepts that reference in a separate **Open** field.
+The decoder checks the code locally before opening the current role's existing
+ticket route. Invalid input stays in the form with an error message.
+
+The namespace is `btk`, codec kind `uint64`, format version `1`. Do not change
+these after sharing references without planning compatibility. IDs must be
+positive signed Java Long values. Exact decimal strings are supported through
+`9223372036854775807`; unsafe JSON numbers are not displayed as references,
+because their original value may already have been rounded by JavaScript.
+
+A reference is **public, reversible and enumerable**. Its checksum helps detect
+manual-entry mistakes; it is not encryption, authorization, an invitation, or a
+secret ticket URL. Existing server authentication, role, company and participant
+checks decide access. A valid code can still refer to a missing or inaccessible
+ticket. Codes also do not identify an installation: use them only with the
+Billetsys instance where they were issued.
+
+RefMint is still alpha and is pinned exactly. Its v1 wire contract does not make
+the package API or maintenance stable. Adopting it requires dependency and
+format-lifecycle review. References are longer than small ticket numbers; no
+user study has established faster lookup or a practical benefit for Billetsys.
+Keep the feature disabled if the existing ticket names and search are sufficient.
+The dependency is installed even when the UI is disabled.
+
+Use Node.js 24 for frontend checks (also used in CI). The dependency requires
+Node.js 22 or newer, and the tests use Node's native TypeScript support:
+
+```bash
+npm ci
+npm run test:references
+npm run check
+npm run build
+```
+
+The focused tests cover the four ticket-viewing roles and rejection of admin
+(which has no ticket API permission), exact large IDs, input formatting,
+checksum errors, foreign codes and malformed input. They do not replace a real
+Keycloak/PostgreSQL permissions test. Before enabling the feature in production,
+check missing tickets, denied tickets, cross-company access, and normal access
+with each ticket-viewing role in the deployment's existing authorization setup.
