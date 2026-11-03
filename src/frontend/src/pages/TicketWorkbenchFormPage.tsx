@@ -10,6 +10,7 @@ import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
+import { TicketReference } from "../components/tickets/OptionalTicketReferences";
 import DataState from "../components/common/DataState";
 import PageHeader from "../components/layout/PageHeader";
 import CustomFieldsFields from "../components/tickets/CustomFieldsFields";
@@ -272,6 +273,9 @@ export default function TicketWorkbenchFormPage(props: SessionPageProps) {
       >
         {bootstrap && formState && (
           <form className="space-y-6 pb-20" onSubmit={submit}>
+            {bootstrap.ticket?.id != null && (
+              <TicketReference ticketId={bootstrap.ticket.id} />
+            )}
             <Card>
               <CardContent className="grid gap-6">
                 <Field>

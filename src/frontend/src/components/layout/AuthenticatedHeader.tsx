@@ -6,6 +6,7 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
+import { TicketReferenceLookup } from "../tickets/OptionalTicketReferences";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useJson from "../../hooks/useJson";
@@ -385,6 +386,7 @@ export default function AuthenticatedHeader({
       <div className="flex items-center gap-3 justify-end">
         {session?.authenticated && (
           <>
+            <TicketReferenceLookup role={role} />
             <div ref={searchContainerRef} className="relative">
               <div className="relative flex items-center">
                 <SearchIcon className="pointer-events-none absolute left-3 size-4 shrink-0 text-muted-foreground" />
