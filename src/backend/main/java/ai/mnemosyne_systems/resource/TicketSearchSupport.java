@@ -11,6 +11,7 @@ package ai.mnemosyne_systems.resource;
 import ai.mnemosyne_systems.model.Message;
 import ai.mnemosyne_systems.model.Ticket;
 import ai.mnemosyne_systems.model.User;
+import ai.mnemosyne_systems.util.AuthHelper;
 import io.quarkus.hibernate.orm.panache.Panache;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -29,6 +30,20 @@ final class TicketSearchSupport {
         }
         String normalized = searchTerm.trim();
         return normalized.isEmpty() ? null : normalized;
+    }
+
+    /**
+     * Status label shown by the ticket lists. Assigned tickets are already normalized by the list data builders; this
+     * additionally mirrors the summary normalization for statuses that users and superusers never see verbatim.
+     */
+    static String displayStatus(String status, User viewer) {
+        if (status == null || status.isBlank()) {
+            return "Open";
+        }
+        if (!AuthHelper.isSupport(viewer) && "Waiting for External Feedback".equalsIgnoreCase(status.trim())) {
+            return "In Progress";
+        }
+        return status;
     }
 
     static List<Ticket> filterTicketsBySearch(List<Ticket> tickets, String searchTerm, User viewer) {

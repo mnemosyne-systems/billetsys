@@ -6,19 +6,32 @@
  *   OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
  */
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import DataState from "../components/common/DataState";
 import PaginationControls from "../components/common/PaginationControls";
 import SortableTableHead from "../components/common/SortableTableHead";
 import PageHeader from "../components/layout/PageHeader";
+import AdvancedSearchFilters from "../components/tickets/AdvancedSearchFilters";
+import useJson from "../hooks/useJson";
 import usePaginatedList from "../hooks/usePaginatedList";
 import { shouldUseLightTextOnColor } from "../utils/formatting";
 import useNumberShortcuts from "../hooks/useNumberShortcuts";
 import { SmartLink } from "../utils/routing";
+import {
+  advancedSearchChips,
+  advancedSearchFilterSignature,
+  emptyAdvancedSearchDraft,
+  parseAdvancedSearch,
+  removeAdvancedSearchChip,
+  serializeAdvancedSearchParams,
+  validateAdvancedSearch,
+  type AdvancedSearchBootstrap,
+  type AdvancedSearchDraft,
+} from "../utils/advancedSearch";
 import type { SessionPageProps } from "../types/app";
 import type { CollectionResponse, TicketListItem } from "../types/domain";
 import { Button } from "../components/ui/button";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -33,6 +46,7 @@ interface SupportTicketsPageProps extends SessionPageProps {
   apiBase?: string;
   createFallbackPath?: string;
   title?: string;
+  advancedSearch?: boolean;
 }
 
 interface TicketListResponse extends CollectionResponse<TicketListItem> {
@@ -58,18 +72,165 @@ export default function SupportTicketsPage({
   sessionState,
   apiBase = "/api/support/tickets",
   createFallbackPath = "/support/tickets/new",
+  advancedSearch = false,
 }: SupportTicketsPageProps) {
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const locationSearchTerm =
     new URLSearchParams(location.search).get("q") || "";
+  const role = sessionState.data?.role;
+
+  const [bootstrapRefresh, setBootstrapRefresh] = useState(0);
+  const bootstrapLoadedRef = useRef(false);
+  const bootstrapState = useJson<AdvancedSearchBootstrap>(
+    advancedSearch
+      ? `${apiBase}/bootstrap?allVersions=true&refresh=${bootstrapRefresh}`
+      : null,
+    { keepPreviousData: true },
+  );
+  const bootstrap = bootstrapState.data;
+
+  useEffect(() => {
+    if (bootstrapState.data) {
+      bootstrapLoadedRef.current = true;
+    }
+  }, [bootstrapState.data]);
+
+  // Custom fields can be added while this page is open in another tab. Refresh
+  // the lookups when the tab becomes visible again so the new fields appear.
+  useEffect(() => {
+    if (!advancedSearch) {
+      return undefined;
+    }
+    const refresh = () => {
+      if (bootstrapLoadedRef.current) {
+        setBootstrapRefresh((value) => value + 1);
+      }
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refresh();
+      }
+    };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [advancedSearch]);
+
+  const customFields = useMemo(
+    () =>
+      (bootstrap?.customFields || []).filter((field) => field.active !== false),
+    [bootstrap],
+  );
+
+  const [draft, setDraft] = useState<AdvancedSearchDraft>(() =>
+    parseAdvancedSearch(searchParams, role),
+  );
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
+  const filterSignature = useMemo(
+    () => advancedSearchFilterSignature(searchParams, role),
+    [searchParams, role],
+  );
+  const [draftSignature, setDraftSignature] = useState(filterSignature);
+
+  if (draftSignature !== filterSignature) {
+    setDraftSignature(filterSignature);
+    setDraft(parseAdvancedSearch(searchParams, role));
+    setValidationErrors({});
+  }
+
+  const appliedDraft = useMemo(
+    () => parseAdvancedSearch(searchParams, role),
+    [searchParams, role],
+  );
+  const appliedParams = useMemo(
+    () =>
+      serializeAdvancedSearchParams(
+        appliedDraft,
+        role,
+        bootstrap ? customFields : undefined,
+      ),
+    [appliedDraft, role, bootstrap, customFields],
+  );
 
   const extraParams = useMemo(
-    () => ({
-      view: view !== "assigned" ? view : undefined,
-      q: locationSearchTerm || undefined,
-    }),
-    [view, locationSearchTerm],
+    () =>
+      advancedSearch
+        ? appliedParams
+        : {
+            view: view !== "assigned" ? view : undefined,
+            q: locationSearchTerm || undefined,
+          },
+    [advancedSearch, appliedParams, view, locationSearchTerm],
   );
+
+  const chips = useMemo(
+    () =>
+      advancedSearch
+        ? advancedSearchChips(draft, {
+            companies: bootstrap?.companies,
+            categories: bootstrap?.categories,
+            versions: bootstrap?.versions,
+            customFields,
+          })
+        : [],
+    [advancedSearch, draft, bootstrap, customFields],
+  );
+
+  function applyDraft(nextDraft: AdvancedSearchDraft) {
+    const next = new URLSearchParams(searchParams);
+    const preserved = new Set(["page", "pageSize", "sort", "dir"]);
+    for (const key of Array.from(next.keys())) {
+      if (!preserved.has(key)) {
+        next.delete(key);
+      }
+    }
+    const serialized = serializeAdvancedSearchParams(
+      nextDraft,
+      role,
+      customFields,
+    );
+    for (const [key, value] of Object.entries(serialized)) {
+      next.set(key, value);
+    }
+    next.set("page", "1");
+    setSearchParams(next);
+  }
+
+  function handleDraftChange(nextDraft: AdvancedSearchDraft) {
+    setDraft(nextDraft);
+    if (Object.keys(validationErrors).length > 0) {
+      setValidationErrors({});
+    }
+  }
+
+  function handleApply() {
+    const errors = validateAdvancedSearch(draft, customFields);
+    setValidationErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+    applyDraft(draft);
+  }
+
+  function handleReset() {
+    const empty = emptyAdvancedSearchDraft();
+    setDraft(empty);
+    setValidationErrors({});
+    applyDraft(empty);
+  }
+
+  function handleRemoveChip(chipId: string) {
+    const nextDraft = removeAdvancedSearchChip(draft, chipId);
+    setDraft(nextDraft);
+    setValidationErrors({});
+    applyDraft(nextDraft);
+  }
 
   const defaultPageSize = sessionState.data?.defaultPageSize ?? undefined;
 
@@ -86,7 +247,7 @@ export default function SupportTicketsPage({
     setSort,
     pageSizeOptions,
   } = usePaginatedList<TicketListResponse>({
-    apiUrl: apiBase,
+    apiUrl: advancedSearch ? `${apiBase}/search` : apiBase,
     extraParams,
     defaultPageSize,
     defaultSort: "name",
@@ -96,10 +257,11 @@ export default function SupportTicketsPage({
 
   const currentView = ticketsState.data?.view || view || "assigned";
   const activeSearch = ticketsState.data?.searchTerm || locationSearchTerm;
+  const hasActiveAdvancedFilters = Object.keys(appliedParams).length > 0;
   const showLevelColumn = apiBase !== "/api/user/tickets";
-  const showCreateButton = !(
-    apiBase === "/api/user/tickets" && currentView === "closed"
-  );
+  const showCreateButton =
+    !advancedSearch &&
+    !(apiBase === "/api/user/tickets" && currentView === "closed");
   const pageTitle =
     title ||
     (currentView === "open"
@@ -107,9 +269,13 @@ export default function SupportTicketsPage({
       : currentView === "closed"
         ? "Closed tickets"
         : "Active tickets");
-  const emptyMessage = activeSearch
-    ? `No tickets matched "${activeSearch}".`
-    : "No tickets";
+  const emptyMessage = advancedSearch
+    ? hasActiveAdvancedFilters
+      ? "No tickets matched your search."
+      : "No tickets"
+    : activeSearch
+      ? `No tickets matched "${activeSearch}".`
+      : "No tickets";
 
   const shortcutTickets = (ticketsState.data?.items || []).slice(0, 10);
 
@@ -123,8 +289,8 @@ export default function SupportTicketsPage({
       <PageHeader
         title={pageTitle}
         actions={
-          <div className="flex flex-wrap gap-2">
-            {showCreateButton ? (
+          showCreateButton ? (
+            <div className="flex flex-wrap gap-2">
               <Button asChild>
                 <SmartLink
                   href={ticketsState.data?.createPath || createFallbackPath}
@@ -132,12 +298,25 @@ export default function SupportTicketsPage({
                   Create
                 </SmartLink>
               </Button>
-            ) : null}
-          </div>
+            </div>
+          ) : undefined
         }
       />
 
       <div className="w-full">
+        {advancedSearch ? (
+          <AdvancedSearchFilters
+            role={role}
+            bootstrap={bootstrap || undefined}
+            draft={draft}
+            errors={validationErrors}
+            chips={chips}
+            onChange={handleDraftChange}
+            onApply={handleApply}
+            onReset={handleReset}
+            onRemoveChip={handleRemoveChip}
+          />
+        ) : null}
         <DataState state={ticketsState} emptyMessage={emptyMessage}>
           <div className="max-w-full overflow-x-auto">
             <Table className="text-base">

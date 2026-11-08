@@ -38,10 +38,13 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 @Path("/api/user/tickets")
@@ -110,6 +113,33 @@ public class UserTicketApiResource {
     }
 
     @GET
+    @Path("/search")
+    @Transactional
+    public SupportTicketApiResource.SupportTicketListResponse search(@Context UriInfo uriInfo,
+            @QueryParam("page") Integer page, @QueryParam("pageSize") Integer pageSize, @QueryParam("sort") String sort,
+            @QueryParam("dir") String dir) {
+        User user = currentUser.get();
+        UserResource.SupportTicketData data = userResource.buildTicketDataForUser(user);
+        List<Ticket> scoped = TicketSearchSupport.combineTickets(data.assignedTickets, data.openTickets,
+                data.closedTickets);
+        TicketAdvancedSearchSupport.Criteria criteria = TicketAdvancedSearchSupport.parse(uriInfo, user,
+                ticketCustomFieldService);
+        List<Ticket> tickets = TicketAdvancedSearchSupport.filter(scoped, criteria, user, data.messageDates,
+                ticketCustomFieldService);
+        Map<Long, Ticket> displayTickets = TicketAdvancedSearchSupport.indexById(scoped);
+        int totalItems = tickets.size();
+        List<SupportTicketApiResource.SupportTicketSummary> allSummaries = tickets.stream()
+                .map(ticket -> toSummary(displayTickets.getOrDefault(ticket.id, ticket), data, user)).toList();
+        List<SupportTicketApiResource.SupportTicketSummary> pageItems = PaginationSupport.sortAndPaginate(allSummaries,
+                sort, dir, SupportTicketApiResource.ticketSortColumns(), page, pageSize);
+        PaginationSupport.PaginationMeta meta = PaginationSupport.meta(page, pageSize, totalItems);
+        return new SupportTicketApiResource.SupportTicketListResponse("advanced", "Search results",
+                data.assignedTickets == null ? 0 : data.assignedTickets.size(),
+                data.openTickets == null ? 0 : data.openTickets.size(), "/user/tickets/new", criteria.q(), pageItems,
+                meta.page(), meta.pageSize(), meta.totalItems(), meta.totalPages());
+    }
+
+    @GET
     @Path("/suggest")
     @Transactional
     public SupportTicketApiResource.TicketSuggestionResponse suggest(
@@ -132,7 +162,8 @@ public class UserTicketApiResource {
     @Path("/bootstrap")
     @Transactional
     public SupportTicketApiResource.SupportTicketBootstrapResponse bootstrap(@QueryParam("companyId") Long companyId,
-            @QueryParam("companyEntitlementId") Long companyEntitlementId) {
+            @QueryParam("companyEntitlementId") Long companyEntitlementId,
+            @QueryParam("allVersions") @DefaultValue("false") boolean allVersions) {
         User user = currentUser.get();
         UserResource.SupportTicketData data = userResource.buildTicketDataForUser(user);
         List<Company> companies = directoryService.allowedCompanies(user);
@@ -142,8 +173,11 @@ public class UserTicketApiResource {
         Long selectedCompanyEntitlementId = TicketBootstrapService.selectEntitlementId(entitlements,
                 companyEntitlementId);
         Long versionsEntitlementId = entitlementIdForVersions(selectedCompanyEntitlementId, entitlements);
-        List<TicketBootstrapService.VersionOption> versions = versionsEntitlementId == null ? List.of()
-                : ticketBootstrapService.versionOptionsForEntitlement(versionsEntitlementId);
+        List<TicketBootstrapService.VersionOption> versions = allVersions
+                ? ticketBootstrapService
+                        .versionOptionsForCompanies(companies.stream().map(company -> company.id).toList())
+                : versionsEntitlementId == null ? List.of()
+                        : ticketBootstrapService.versionOptionsForEntitlement(versionsEntitlementId);
         TicketBootstrapService.VersionOption defaultVersion = TicketBootstrapService
                 .selectDefaultVersionOption(versions);
         Category defaultCategory = Category.findDefault();
@@ -221,7 +255,8 @@ public class UserTicketApiResource {
         List<SupportTicketApiResource.EventEntry> eventEntries = rawEvents.stream().map(this::toEventEntry).toList();
         List<String> availabilityWarnings = userAvailabilityService.getWarningsForTicket(ticket);
         return new RoleTicketDetailResponse(ticket.id, ticket.name, ticket.displayTitle(),
-                normalizeDisplayStatus(ticket.status), data.assignedTickets == null ? 0 : data.assignedTickets.size(),
+                TicketSearchSupport.displayStatus(ticket.status, user),
+                data.assignedTickets == null ? 0 : data.assignedTickets.size(),
                 data.openTickets == null ? 0 : data.openTickets.size(),
                 ticket.company == null ? null : ticket.company.id, ticket.company == null ? null : ticket.company.name,
                 ticket.category == null ? null : ticket.category.id,
@@ -268,7 +303,7 @@ public class UserTicketApiResource {
             User currentUser) {
         User assignedSupport = data.supportAssignmentUsers.get(ticket.id);
         return new SupportTicketApiResource.SupportTicketSummary(ticket.id, ticket.name, ticket.displayTitle(),
-                normalizeDisplayStatus(ticket.status), data.messageDateLabels.get(ticket.id),
+                TicketSearchSupport.displayStatus(ticket.status, currentUser), data.messageDateLabels.get(ticket.id),
                 data.messageDates.get(ticket.id) == null ? null : data.messageDates.get(ticket.id).toString(),
                 data.messageDirectionArrows.get(ticket.id), data.slaColors.get(ticket.id),
                 ticket.category == null ? null : ticket.category.name,
@@ -331,16 +366,6 @@ public class UserTicketApiResource {
             return "closed";
         }
         return "assigned";
-    }
-
-    private String normalizeDisplayStatus(String status) {
-        if (status == null || status.isBlank()) {
-            return "Open";
-        }
-        if ("Waiting for External Feedback".equalsIgnoreCase(status.trim())) {
-            return "In Progress";
-        }
-        return status;
     }
 
     private Company selectCompany(List<Company> companies, Long companyId) {

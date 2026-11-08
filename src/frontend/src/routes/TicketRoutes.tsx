@@ -73,7 +73,8 @@ export function getTicketRoutes(sessionState: SessionState): AppRoute[] {
         <SupportTicketsPage
           sessionState={sessionState}
           view="assigned"
-          title="Search"
+          title="Advanced search"
+          advancedSearch
         />
       ),
       requiresAuth: true,
@@ -149,7 +150,8 @@ export function getTicketRoutes(sessionState: SessionState): AppRoute[] {
           view="assigned"
           apiBase="/api/user/tickets"
           createFallbackPath={PATHS.userTicketsNew}
-          title="Search"
+          title="Advanced search"
+          advancedSearch
         />
       ),
       requiresAuth: true,
@@ -236,7 +238,8 @@ export function getTicketRoutes(sessionState: SessionState): AppRoute[] {
           view="assigned"
           apiBase="/api/superuser/tickets"
           createFallbackPath={PATHS.superuserTicketsNew}
-          title="Search"
+          title="Advanced search"
+          advancedSearch
         />
       ),
       requiresAuth: true,

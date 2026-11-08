@@ -149,6 +149,19 @@ export function rssPath(role?: Role): string {
   return "";
 }
 
+export function advancedSearchPath(role?: Role): string | null {
+  if (role === "support") {
+    return "/support/tickets/search";
+  }
+  if (role === "superuser") {
+    return "/superuser/tickets/search";
+  }
+  if (role === "tam" || role === "user") {
+    return "/user/tickets/search";
+  }
+  return null;
+}
+
 export function ticketShortcutPaths(role?: Role): TicketShortcutPaths | null {
   if (role === "support") {
     return {

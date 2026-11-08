@@ -39,11 +39,14 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.UriInfo;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 @Path("/api/support/tickets")
@@ -104,6 +107,32 @@ public class SupportTicketApiResource {
     }
 
     @GET
+    @Path("/search")
+    @Transactional
+    public SupportTicketListResponse search(@Context UriInfo uriInfo, @QueryParam("page") Integer page,
+            @QueryParam("pageSize") Integer pageSize, @QueryParam("sort") String sort, @QueryParam("dir") String dir) {
+        User user = currentUser.get();
+        SupportTicketViewSupport.SupportTicketData data = SupportTicketViewSupport.buildTicketData(user);
+        SupportTicketViewSupport.SupportTicketCounts counts = SupportTicketViewSupport.loadTicketCounts(user);
+        List<Ticket> scoped = TicketSearchSupport.combineTickets(data.assignedTickets(), data.openTickets(),
+                data.closedTickets());
+        TicketAdvancedSearchSupport.Criteria criteria = TicketAdvancedSearchSupport.parse(uriInfo, user,
+                ticketCustomFieldService);
+        List<Ticket> tickets = TicketAdvancedSearchSupport.filter(scoped, criteria, user, data.messageDates(),
+                ticketCustomFieldService);
+        Map<Long, Ticket> displayTickets = TicketAdvancedSearchSupport.indexById(scoped);
+        int totalItems = tickets.size();
+        List<SupportTicketSummary> allSummaries = tickets.stream()
+                .map(ticket -> toSummary(displayTickets.getOrDefault(ticket.id, ticket), data)).toList();
+        List<SupportTicketSummary> pageItems = PaginationSupport.sortAndPaginate(allSummaries, sort, dir,
+                ticketSortColumns(), page, pageSize);
+        PaginationSupport.PaginationMeta meta = PaginationSupport.meta(page, pageSize, totalItems);
+        return new SupportTicketListResponse("advanced", "Search results", counts.assignedCount(), counts.openCount(),
+                "/support/tickets/new", criteria.q(), pageItems, meta.page(), meta.pageSize(), meta.totalItems(),
+                meta.totalPages());
+    }
+
+    @GET
     @Path("/suggest")
     @Transactional
     public TicketSuggestionResponse suggest(@QueryParam("view") @DefaultValue("assigned") String view,
@@ -125,7 +154,8 @@ public class SupportTicketApiResource {
     @Path("/bootstrap")
     @Transactional
     public SupportTicketBootstrapResponse bootstrap(@QueryParam("companyId") Long companyId,
-            @QueryParam("companyEntitlementId") Long companyEntitlementId) {
+            @QueryParam("companyEntitlementId") Long companyEntitlementId,
+            @QueryParam("allVersions") @DefaultValue("false") boolean allVersions) {
         User user = currentUser.get();
         SupportTicketViewSupport.SupportTicketCounts counts = SupportTicketViewSupport.loadTicketCounts(user);
         List<TicketBootstrapService.CompanyOption> companies = ticketBootstrapService.allCompanyOptions();
@@ -136,8 +166,11 @@ public class SupportTicketApiResource {
         Long selectedCompanyEntitlementId = TicketBootstrapService.selectEntitlementId(entitlements,
                 companyEntitlementId);
         Long versionsEntitlementId = entitlementIdForVersions(selectedCompanyEntitlementId, entitlements);
-        List<TicketBootstrapService.VersionOption> versions = versionsEntitlementId == null ? List.of()
-                : ticketBootstrapService.versionOptionsForEntitlement(versionsEntitlementId);
+        List<TicketBootstrapService.VersionOption> versions = allVersions
+                ? ticketBootstrapService.versionOptionsForCompanies(
+                        companies.stream().map(TicketBootstrapService.CompanyOption::id).toList())
+                : versionsEntitlementId == null ? List.of()
+                        : ticketBootstrapService.versionOptionsForEntitlement(versionsEntitlementId);
         TicketBootstrapService.VersionOption defaultVersion = TicketBootstrapService
                 .selectDefaultVersionOption(versions);
         Category defaultCategory = Category.findDefault();
