@@ -25,6 +25,7 @@ import {
   headerNavigation,
   rssPath,
   ticketShortcutPaths,
+  advancedSearchPath,
 } from "../../utils/navigation";
 import type { Session } from "../../types/app";
 import {
@@ -35,7 +36,19 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
-import { BookOpenIcon, MoonIcon, SearchIcon, SunIcon } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../ui/tooltip";
+import {
+  BookOpenIcon,
+  MoonIcon,
+  SearchIcon,
+  SlidersHorizontalIcon,
+  SunIcon,
+} from "lucide-react";
 
 interface TicketCounts {
   assignedCount?: number;
@@ -105,6 +118,7 @@ export default function AuthenticatedHeader({
       .toLowerCase() === "true";
   const isTicketRoute = isRoleTicketRoute(role, location.pathname);
   const rssHref = rssPath(role);
+  const advancedSearchHref = advancedSearchPath(role);
 
   // --- Universal search ---
   const ticketSuggestApiBase = ticketCountsApiPath(role);
@@ -194,6 +208,32 @@ export default function AuthenticatedHeader({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [session?.authenticated]);
+
+  useEffect(() => {
+    if (!session?.authenticated || !advancedSearchHref) {
+      return undefined;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        !(event.ctrlKey || event.metaKey) ||
+        !event.shiftKey ||
+        event.altKey ||
+        isEditableTarget(event.target)
+      ) {
+        return;
+      }
+      if (event.key.toLowerCase() !== "f") {
+        return;
+      }
+      event.preventDefault();
+      navigate(advancedSearchHref);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [advancedSearchHref, navigate, session?.authenticated]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -387,7 +427,10 @@ export default function AuthenticatedHeader({
         {session?.authenticated && (
           <>
             <TicketReferenceLookup role={role} />
-            <div ref={searchContainerRef} className="relative">
+            <div
+              ref={searchContainerRef}
+              className="relative flex items-center gap-1"
+            >
               <div className="relative flex items-center">
                 <SearchIcon className="pointer-events-none absolute left-3 size-4 shrink-0 text-muted-foreground" />
                 <input
@@ -404,42 +447,63 @@ export default function AuthenticatedHeader({
                   className="h-10 w-full min-w-48 rounded-xl border border-input bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring md:min-w-72"
                   aria-label="Search"
                 />
-              </div>
-              {showDropdown && (
-                <div className="absolute top-full left-0 z-50 mt-1 w-full min-w-72 overflow-hidden rounded-lg bg-popover text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/10">
-                  {!hasResults && (
-                    <div className="px-4 py-3 text-center text-muted-foreground">
-                      No matches.
-                    </div>
-                  )}
-                  {allSuggestions.map((suggestion, index) => (
-                    <button
-                      key={`${suggestion.detailPath}-${suggestion.id}`}
-                      type="button"
-                      className={`flex w-full items-center gap-2 px-3 py-2 text-left cursor-pointer ${
-                        activeIndex === index
-                          ? "bg-accent text-accent-foreground"
-                          : "hover:bg-accent hover:text-accent-foreground"
-                      }`}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => selectSuggestion(suggestion)}
-                      onMouseEnter={() => setActiveIndex(index)}
-                    >
-                      <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
-                      <div className="flex min-w-0 flex-col">
-                        <span className="truncate font-medium">
-                          {suggestion.name}
-                        </span>
-                        {suggestion.title &&
-                          suggestion.title !== suggestion.name && (
-                            <span className="truncate text-xs text-muted-foreground">
-                              {suggestion.title}
-                            </span>
-                          )}
+                {showDropdown && (
+                  <div className="absolute top-full left-0 z-50 mt-1 w-full min-w-72 overflow-hidden rounded-lg bg-popover text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/10">
+                    {!hasResults && (
+                      <div className="px-4 py-3 text-center text-muted-foreground">
+                        No matches.
                       </div>
-                    </button>
-                  ))}
-                </div>
+                    )}
+                    {allSuggestions.map((suggestion, index) => (
+                      <button
+                        key={`${suggestion.detailPath}-${suggestion.id}`}
+                        type="button"
+                        className={`flex w-full items-center gap-2 px-3 py-2 text-left cursor-pointer ${
+                          activeIndex === index
+                            ? "bg-accent text-accent-foreground"
+                            : "hover:bg-accent hover:text-accent-foreground"
+                        }`}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => selectSuggestion(suggestion)}
+                        onMouseEnter={() => setActiveIndex(index)}
+                      >
+                        <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
+                        <div className="flex min-w-0 flex-col">
+                          <span className="truncate font-medium">
+                            {suggestion.name}
+                          </span>
+                          {suggestion.title &&
+                            suggestion.title !== suggestion.name && (
+                              <span className="truncate text-xs text-muted-foreground">
+                                {suggestion.title}
+                              </span>
+                            )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {advancedSearchHref && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Advanced search"
+                        onClick={() => navigate(advancedSearchHref)}
+                        className="shrink-0"
+                      >
+                        <SlidersHorizontalIcon className="size-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Advanced search (Ctrl/Cmd+Shift+F)
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
             <Button

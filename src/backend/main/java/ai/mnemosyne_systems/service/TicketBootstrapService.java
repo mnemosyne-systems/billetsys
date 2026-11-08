@@ -87,6 +87,22 @@ public class TicketBootstrapService {
     }
 
     /**
+     * Versions for advanced search: every version attached to an entitlement of the given companies, rather than only
+     * the entitlement currently selected in the ticket form. Search spans all companies a role can see, so limiting the
+     * version lookup to one entitlement hides valid filter values.
+     */
+    public List<VersionOption> versionOptionsForCompanies(List<Long> companyIds) {
+        if (companyIds == null || companyIds.isEmpty()) {
+            return List.of();
+        }
+        return Version
+                .<Version> find("select distinct v from Version v, CompanyEntitlement ce"
+                        + " where ce.entitlement = v.entitlement and ce.company.id in ?1"
+                        + " order by v.name asc, v.date asc, v.id asc", companyIds)
+                .list().stream().map(version -> new VersionOption(version.id, version.name, version.date)).toList();
+    }
+
+    /**
      * Selects the requested company id from already-loaded options, falling back to the first option — mirroring the
      * per-resource {@code selectCompany} helpers. Returns {@code null} only when there are no options at all.
      */

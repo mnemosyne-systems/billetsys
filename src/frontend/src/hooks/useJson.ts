@@ -15,6 +15,10 @@ interface JsonSnapshot<T> extends AsyncState<T> {
   url: string | null;
 }
 
+interface UseJsonOptions {
+  keepPreviousData?: boolean;
+}
+
 function emptyState<T>(): AsyncState<T> {
   return {
     loading: false,
@@ -37,7 +41,10 @@ function loadingState<T>(): AsyncState<T> {
   };
 }
 
-export default function useJson<T>(url: string | null): AsyncState<T> {
+export default function useJson<T>(
+  url: string | null,
+  options: UseJsonOptions = {},
+): AsyncState<T> {
   const [state, setState] = useState<JsonSnapshot<T>>({
     url: null,
     ...emptyState<T>(),
@@ -61,6 +68,13 @@ export default function useJson<T>(url: string | null): AsyncState<T> {
           return { forbidden: true } as JsonResult<T>;
         }
         if (!response.ok) {
+          const contentType = response.headers.get("content-type") || "";
+          if (contentType.includes("text/plain")) {
+            const body = (await response.text()).trim();
+            if (body) {
+              throw new Error(body);
+            }
+          }
           throw new Error(`Unable to load ${url}`);
         }
         const data = (await response.json()) as T;
@@ -132,6 +146,9 @@ export default function useJson<T>(url: string | null): AsyncState<T> {
   }
 
   if (state.url !== url) {
+    if (options.keepPreviousData && state.data) {
+      return { ...loadingState<T>(), data: state.data };
+    }
     return loadingState<T>();
   }
 
