@@ -20,7 +20,15 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
+import { Field, FieldLabel } from "../components/ui/field";
 import { Input } from "../components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import {
   Table,
   TableBody,
@@ -31,19 +39,25 @@ import {
 } from "../components/ui/table";
 import useJson from "../hooks/useJson";
 import { postMultipart } from "../utils/api";
+import type { FormEntries } from "../utils/api";
 import { resolvePostRedirectPath, SmartLink } from "../utils/routing";
 import { PATHS } from "../routes/paths";
+import type { NamedEntity } from "../types/domain";
 
 interface TicketImportFormat {
   id: string;
   label: string;
+  submitPath: string;
   requiredColumns: string[];
   optionalColumns: string[];
 }
 
 interface TicketImportBootstrap {
   formats: TicketImportFormat[];
-  submitPath: string;
+  companies: NamedEntity[];
+  entitlements: NamedEntity[];
+  timezones: string[];
+  defaultTimezone: string;
 }
 
 interface TicketImportResult {
@@ -68,29 +82,73 @@ interface TicketImportSummary {
   results: TicketImportResult[];
 }
 
+const DEFAULT_FORMAT = "csv";
+
 export default function TicketImportPage() {
   const navigate = useNavigate();
-  const bootstrapState = useJson<TicketImportBootstrap>(
-    "/api/ticket-imports/bootstrap",
-  );
+  const [formatId, setFormatId] = useState(DEFAULT_FORMAT);
+  const [companyId, setCompanyId] = useState("");
+  const [companyEntitlementId, setCompanyEntitlementId] = useState("");
+  const [timezone, setTimezone] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [summary, setSummary] = useState<TicketImportSummary | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const csvFormat = bootstrapState.data?.formats?.find(
-    (format) => format.id === "csv",
+
+  const bootstrapState = useJson<TicketImportBootstrap>(
+    "/api/ticket-imports/bootstrap",
   );
+  const bootstrap = bootstrapState.data;
+  const entitlementsState = useJson<TicketImportBootstrap>(
+    companyId
+      ? `/api/ticket-imports/bootstrap?companyId=${encodeURIComponent(companyId)}`
+      : null,
+  );
+  const entitlements = companyId
+    ? entitlementsState.data?.entitlements || []
+    : [];
+  const entitlementsLoading = Boolean(companyId) && entitlementsState.loading;
+  const selectedFormat = bootstrap?.formats?.find(
+    (format) => format.id === formatId,
+  );
+  const isBugzilla = selectedFormat?.id === "bugzilla";
+  const effectiveTimezone = timezone || bootstrap?.defaultTimezone || "UTC";
+
+  const canSubmit =
+    !!file &&
+    !submitting &&
+    (!isBugzilla ||
+      (!!companyId && !!companyEntitlementId && !!effectiveTimezone));
+
+  const changeFormat = (value: string) => {
+    setFormatId(value);
+    setFile(null);
+    setSummary(null);
+  };
+
+  const changeCompany = (value: string) => {
+    setCompanyId(value);
+    setCompanyEntitlementId("");
+    setSummary(null);
+  };
 
   const submitImport = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!file || submitting) {
+    if (!file || !canSubmit || !selectedFormat) {
       return;
     }
     setSubmitting(true);
     try {
-      const response = await postMultipart(
-        bootstrapState.data?.submitPath || "/api/ticket-imports/csv",
-        [["file", file]],
-      );
+      const entries: FormEntries = [["file", file]];
+      if (isBugzilla) {
+        entries.push(
+          ["companyId", companyId],
+          ["companyEntitlementId", companyEntitlementId],
+          ["timezone", effectiveTimezone],
+          ["baseUrl", baseUrl.trim()],
+        );
+      }
+      const response = await postMultipart(selectedFormat.submitPath, entries);
       if (
         response.type === "opaqueredirect" ||
         (response.status >= 300 && response.status < 400)
@@ -125,9 +183,107 @@ export default function TicketImportPage() {
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
             <Card>
               <CardHeader>
-                <CardTitle>CSV</CardTitle>
+                <CardTitle>{selectedFormat?.label || "Import"}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <Field>
+                  <FieldLabel>Format</FieldLabel>
+                  <Select value={formatId} onValueChange={changeFormat}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(bootstrap?.formats || []).map((format) => (
+                        <SelectItem key={format.id} value={format.id}>
+                          {format.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                {isBugzilla && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field>
+                      <FieldLabel>Company</FieldLabel>
+                      <Select value={companyId} onValueChange={changeCompany}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a company" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(bootstrap?.companies || []).map((company) => (
+                            <SelectItem
+                              key={company.id}
+                              value={String(company.id)}
+                            >
+                              {company.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Field>
+                      <FieldLabel>Entitlement</FieldLabel>
+                      <Select
+                        value={companyEntitlementId}
+                        onValueChange={setCompanyEntitlementId}
+                        disabled={!companyId || entitlementsLoading}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue
+                            placeholder={
+                              entitlementsLoading
+                                ? "Loading entitlements..."
+                                : "Select an entitlement"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {entitlements.map((entitlement) => (
+                            <SelectItem
+                              key={entitlement.id}
+                              value={String(entitlement.id)}
+                            >
+                              {entitlement.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {entitlementsState.error ? (
+                        <p className="text-sm text-destructive">
+                          {entitlementsState.error}
+                        </p>
+                      ) : null}
+                    </Field>
+                    <Field>
+                      <FieldLabel>Time zone</FieldLabel>
+                      <Select
+                        value={effectiveTimezone}
+                        onValueChange={setTimezone}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a time zone" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(bootstrap?.timezones || []).map((zone) => (
+                            <SelectItem key={zone} value={zone}>
+                              {zone}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Field>
+                      <FieldLabel>Bugzilla URL</FieldLabel>
+                      <Input
+                        value={baseUrl}
+                        onChange={(event) => setBaseUrl(event.target.value)}
+                        placeholder="https://bugzilla.example.com"
+                      />
+                    </Field>
+                  </div>
+                )}
+
                 <div className="flex items-start gap-4 rounded-sm border bg-muted/20 p-4">
                   <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-sm bg-sky-50 text-sky-700 ring-1 ring-sky-100">
                     <FileSpreadsheet className="h-5 w-5" />
@@ -143,6 +299,7 @@ export default function TicketImportPage() {
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-foreground">File</p>
                   <Input
+                    key={formatId}
                     type="file"
                     accept=".csv,text/csv"
                     onChange={(event) =>
@@ -156,7 +313,7 @@ export default function TicketImportPage() {
               </CardContent>
             </Card>
 
-            {csvFormat && (
+            {selectedFormat && (
               <Card>
                 <CardHeader>
                   <CardTitle>Columns</CardTitle>
@@ -165,7 +322,7 @@ export default function TicketImportPage() {
                   <div>
                     <p className="mb-2 font-medium">Required</p>
                     <div className="flex flex-wrap gap-2">
-                      {csvFormat.requiredColumns.map((column) => (
+                      {selectedFormat.requiredColumns.map((column) => (
                         <Badge key={column} variant="secondary">
                           {column}
                         </Badge>
@@ -175,20 +332,34 @@ export default function TicketImportPage() {
                   <div>
                     <p className="mb-2 font-medium">Optional</p>
                     <div className="flex flex-wrap gap-2">
-                      {csvFormat.optionalColumns.map((column) => (
+                      {selectedFormat.optionalColumns.map((column) => (
                         <Badge key={column} variant="outline">
                           {column}
                         </Badge>
                       ))}
                     </div>
                   </div>
+                  {isBugzilla && (
+                    <div className="space-y-2 border-t pt-4 leading-6 text-muted-foreground">
+                      <p>
+                        Export with field names by removing{" "}
+                        <span className="font-medium text-foreground">
+                          human=1
+                        </span>{" "}
+                        from the Bugzilla URL.
+                      </p>
+                      <p>
+                        Descriptions, comments and attachments are not imported.
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
           </div>
 
           <div className="flex justify-end">
-            <Button type="submit" disabled={!file || submitting}>
+            <Button type="submit" disabled={!canSubmit}>
               {submitting ? "Importing" : "Import"}
             </Button>
           </div>

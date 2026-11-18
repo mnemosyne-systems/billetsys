@@ -18,8 +18,12 @@ import ai.mnemosyne_systems.model.User;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.BadRequestException;
+import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +36,9 @@ public class TicketImportService {
     CsvTicketImportSource csvSource;
 
     @Inject
+    BugzillaTicketImportSource bugzillaSource;
+
+    @Inject
     TicketCreationService ticketCreationService;
 
     @Transactional
@@ -39,7 +46,21 @@ public class TicketImportService {
         return importRows(csvSource, csvSource.parse(data), fileName, actor);
     }
 
+    @Transactional
+    public TicketImportSummary importBugzilla(byte[] data, String fileName, User actor, Long companyId,
+            Long companyEntitlementId, String timezone, String baseUrl) {
+        Company company = requireCompany(companyId);
+        CompanyEntitlement entitlement = requireEntitlement(company, companyEntitlementId);
+        List<TicketImportRow> rows = bugzillaSource.parse(data, parseTimezone(timezone), baseUrl);
+        return importRows(bugzillaSource, rows, fileName, actor, new ImportSelection(company, entitlement));
+    }
+
     TicketImportSummary importRows(TicketImportSource source, List<TicketImportRow> rows, String fileName, User actor) {
+        return importRows(source, rows, fileName, actor, null);
+    }
+
+    TicketImportSummary importRows(TicketImportSource source, List<TicketImportRow> rows, String fileName, User actor,
+            ImportSelection selection) {
         TicketImportBatch batch = new TicketImportBatch();
         batch.sourceType = source.sourceType();
         batch.fileName = fileName;
@@ -50,7 +71,7 @@ public class TicketImportService {
 
         List<TicketImportResult> results = new ArrayList<>();
         for (TicketImportRow row : rows) {
-            TicketImportResult result = importRow(batch, row, actor);
+            TicketImportResult result = importRow(batch, row, actor, selection);
             results.add(result);
             if (TicketImportRecord.RESULT_CREATED.equals(result.result())) {
                 batch.createdCount++;
@@ -76,7 +97,8 @@ public class TicketImportService {
         return TicketImportBatch.STATUS_COMPLETED;
     }
 
-    private TicketImportResult importRow(TicketImportBatch batch, TicketImportRow row, User actor) {
+    private TicketImportResult importRow(TicketImportBatch batch, TicketImportRow row, User actor,
+            ImportSelection selection) {
         String sourceSystem = sourceIdentity(row.sourceSystem(), batch.sourceType);
         String sourceKey = sourceIdentity(row.sourceKey(), "__missing_source_key_row_" + row.rowNumber());
         try {
@@ -92,8 +114,9 @@ public class TicketImportService {
             }
             String title = normalizeRequired(row.title(), "Title is required");
             String initialMessage = normalizeRequired(row.initialMessage(), "Initial message is required");
-            Company company = resolveCompany(row.company());
-            CompanyEntitlement entitlement = resolveEntitlement(company, row.entitlement());
+            Company company = selection == null ? resolveCompany(row.company()) : selection.company();
+            CompanyEntitlement entitlement = selection == null ? resolveEntitlement(company, row.entitlement())
+                    : selection.entitlement();
             Category category = resolveCategory(row.category());
             User requester = resolveRequester(row.requesterEmail(), actor);
             String status = row.status() == null || row.status().isBlank() ? "Open" : row.status().trim();
@@ -135,6 +158,39 @@ public class TicketImportService {
         return new TicketImportResult(record.rowNumber, record.sourceSystem, record.sourceKey, record.result,
                 record.ticket == null ? null : record.ticket.id, record.ticket == null ? null : record.ticket.name,
                 record.errorMessage);
+    }
+
+    private Company requireCompany(Long companyId) {
+        if (companyId == null) {
+            throw new BadRequestException("Company is required");
+        }
+        Company company = Company.findById(companyId);
+        if (company == null) {
+            throw new BadRequestException("Company not found: " + companyId);
+        }
+        return company;
+    }
+
+    private CompanyEntitlement requireEntitlement(Company company, Long companyEntitlementId) {
+        if (companyEntitlementId == null) {
+            throw new BadRequestException("Entitlement is required");
+        }
+        CompanyEntitlement entitlement = CompanyEntitlement.findById(companyEntitlementId);
+        if (entitlement == null || entitlement.company == null || !company.id.equals(entitlement.company.id)) {
+            throw new BadRequestException("Entitlement not found for company: " + companyEntitlementId);
+        }
+        return entitlement;
+    }
+
+    private ZoneId parseTimezone(String timezone) {
+        if (timezone == null || timezone.isBlank()) {
+            return ZoneOffset.UTC;
+        }
+        try {
+            return ZoneId.of(timezone.trim());
+        } catch (DateTimeException ex) {
+            throw new BadRequestException("Timezone is invalid: " + timezone.trim());
+        }
     }
 
     private Company resolveCompany(String name) {
@@ -216,5 +272,8 @@ public class TicketImportService {
 
     public record TicketImportResult(int rowNumber, String sourceSystem, String sourceKey, String result, Long ticketId,
             String ticketName, String errorMessage) {
+    }
+
+    private record ImportSelection(Company company, CompanyEntitlement entitlement) {
     }
 }
