@@ -169,7 +169,7 @@ There is one row per bug. An unresolved bug has `---` as its resolution. Bugzill
 
 On the import page, select Bugzilla, choose the company and the entitlement, enter the time zone of the export (default UTC), and upload the file. The Bugzilla base URL is optional. The company and entitlement must exist in billetsys and apply to every row.
 
-If the base URL is filled in, `external_issue_link` is set to the base URL + `show_bug.cgi?id=` + `bug_id`. If it is left empty, `external_issue_link` stays empty. The ticket can still be traced through `source_key` and the "Imported from Bugzilla bug #101" line in the initial message.
+If the base URL is filled in, it must start with `http://` or `https://`, and `external_issue_link` is set to the base URL + `show_bug.cgi?id=` + `bug_id`. If it is left empty, `external_issue_link` stays empty. The ticket can still be traced through `source_key` and the "Imported from Bugzilla bug #101" line in the initial message.
 
 The time zone of the export is set in Bugzilla under Preferences, in the field "Timezone used to display dates and times". The default, "Site Default", is the time zone of the Bugzilla server.
 

@@ -12,6 +12,8 @@ import java.util.List;
 
 public interface TicketImportSource {
 
+    int MAX_IMPORT_BYTES = 5 * 1024 * 1024;
+
     String sourceType();
 
     List<TicketImportRow> parse(byte[] data);
