@@ -50,7 +50,7 @@ public class TicketParticipantUsersApiResource {
         User actor = requireRole(currentUser.get(), role);
 
         Ticket ticket = Ticket.findById(ticketId);
-        if (ticket == null) {
+        if (ticket == null || !MessageVisibilitySupport.canAccessTicket(actor, ticket)) {
             throw new NotFoundException();
         }
 
@@ -110,7 +110,7 @@ public class TicketParticipantUsersApiResource {
         User actor = requireRole(currentUser.get(), role);
 
         Ticket ticket = Ticket.findById(ticketId);
-        if (ticket == null) {
+        if (ticket == null || !MessageVisibilitySupport.canAccessTicket(actor, ticket)) {
             throw new NotFoundException();
         }
 

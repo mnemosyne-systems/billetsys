@@ -51,7 +51,7 @@ public class TicketExternalUsersApiResource {
         Company roleCompany = resolveCompanyForRole(actor, role, null);
 
         Ticket ticket = Ticket.findById(ticketId);
-        if (ticket == null) {
+        if (ticket == null || !MessageVisibilitySupport.canAccessTicket(actor, ticket)) {
             throw new NotFoundException();
         }
 
@@ -105,7 +105,7 @@ public class TicketExternalUsersApiResource {
         Company roleCompany = resolveCompanyForRole(actor, role, null);
 
         Ticket ticket = Ticket.findById(ticketId);
-        if (ticket == null) {
+        if (ticket == null || !MessageVisibilitySupport.canAccessTicket(actor, ticket)) {
             throw new NotFoundException();
         }
 
