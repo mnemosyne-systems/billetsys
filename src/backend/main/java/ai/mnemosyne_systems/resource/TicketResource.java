@@ -263,7 +263,6 @@ public class TicketResource {
 
         ticket.status = status;
         ticket.company = company;
-        ticket.requester = user;
         ticket.companyEntitlement = entitlement;
         ticket.affectsVersion = resolveVersion(entitlement, affectsVersionId, "Affects", true);
         ticket.resolvedVersion = resolveVersion(entitlement, resolvedVersionId, "Resolved", false);
