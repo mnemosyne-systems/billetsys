@@ -1134,4 +1134,33 @@ class SupportAccessTest extends AccessTestSupport {
         Assertions.assertTrue(refreshedUser(target.id).active);
     }
 
+    @Test
+    @TestSecurity(user = "support1@mnemosyne-systems.ai", roles = "support")
+    @JwtSecurity(claims = { @Claim(key = "email", value = "support1@mnemosyne-systems.ai"),
+            @Claim(key = "sub", value = "support1") })
+    void supportWorkbenchUpdatePreservesOriginalRequester() {
+        ensureUser("user", "user@mnemosyne-systems.ai", User.TYPE_USER);
+        ensureUser("support1", "support1@mnemosyne-systems.ai", User.TYPE_SUPPORT);
+        ensureUser("tam1", "tam1@mnemosyne-systems.ai", User.TYPE_TAM);
+        ensureEntitlement("Starter", "Email support");
+        ensureLevel("Normal", "Normal response level", 1440, "White");
+        Long companyId = ensureCompany("Workbench Requester Co");
+        ensureCompanyUsers(companyId, "user@mnemosyne-systems.ai", "tam1@mnemosyne-systems.ai");
+        Ticket ticket = ensureTicket(companyId);
+        User requester = User.find("email", "user@mnemosyne-systems.ai").firstResult();
+        Assertions.assertNotNull(requester);
+        Assertions.assertNotNull(ticket.requester);
+        Assertions.assertEquals(requester.id, ticket.requester.id);
+
+        RestAssured.given().redirects().follow(false).contentType(ContentType.URLENC).formParam("status", "In Progress")
+                .formParam("companyId", companyId).formParam("companyEntitlementId", ticket.companyEntitlement.id)
+                .formParam("affectsVersionId", ensureVersion(ticket.companyEntitlement.entitlement, "1.0.0").id)
+                .post("/tickets/" + ticket.id).then().statusCode(303);
+
+        Ticket updatedTicket = refreshedTicket(ticket.id);
+        Assertions.assertEquals("In Progress", updatedTicket.status);
+        Assertions.assertNotNull(updatedTicket.requester);
+        Assertions.assertEquals(requester.id, updatedTicket.requester.id);
+    }
+
 }
